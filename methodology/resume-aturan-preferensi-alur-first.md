@@ -2,9 +2,9 @@
 
 Status: resume ringkas aturan mengikat metode alur-first, 15 Nov 2026.
 Revisi 15 Nov 2026 ~19:05 WIB (perintah Kim "benahi yang terkait pada
-fase A B C"): Tahap C selesai, B16 dilaksanakan di pilot (status tetap
-USULAN), inventory ramping dinilai berisiko (tidak diadopsi), K9
+fase A B C"): Tahap C selesai, B16 dilaksanakan di pilot (status: TIDAK DIPAKAI sejak 22:33 WIB 16 Nov 2026), inventory ramping dinilai berisiko (tidak diadopsi), K9
 dilewati, SM-05 + daftar alur + bentuk Tahap D masih terbuka.
+Revisi 16 Nov 2026 22:33 WIB: 10 butir diputus Kim (lihat §10) — B16 TIDAK DIPAKAI; Tahap F diterima bersyarat; Tahap D per-alur + dua gelombang; Tahap E/G bentuk rinci = yang dipraktikkan; B9 rerun diterima; A5 dua celah diterima; arah metode = pakai paling mutakhir; deep-run per jalur; larangan filter ditulis; SM-05 dieksplorasi ketika terkait.
 Yang mengikat = berkas aturan kanonik `aturan-alur-first.md`; bila resume
 ini berbeda dengan berkas aturan, berkas aturan yang berlaku. Acuan
 workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
@@ -103,7 +103,7 @@ workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
 - B15: B7 ringan WAJIB di Tahap B; cek onchain mendalam WAJIB di B8; Tahap A
   tidak cek onchain; sensus live penuh tetap opsional; pengecualian
   TESTNET/DEVNET: "live" = lingkungan itu.
-- B16 (USULAN, belum diputus — syarat "jahitan lengkap" dari Kim mengikat):
+- B16 TIDAK DIPAKAI (diputus Kim 22:33 WIB 16 Nov 2026 — 'B16 tidak perlu'; mekanisme di bawah ini arsip usulan, bukan rule):
   jahitan dienumerasi utuh di depan dari graf tepi keluar EP+VM; klaster
   diidentifikasi dari graf, bukan label tangan; daftar jahitan SM-xx
   (produsen, konsumen, bukti, status: dienumerasi → produsen terverifikasi
@@ -116,15 +116,15 @@ workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
   BUKAN DAG (2 siklus) — urutan topologis total tidak ada. Dilaksanakan
   di pilot (pass jahitan + siklus hidup di Tahap C: 11/12 TERTUTUP, SM-05
   dienumerasi — konsumennya TokenMessenger eksternal, butuh keputusan
-  Kim) — status rule tetap USULAN.
+  Kim) — status rule: TIDAK DIPAKAI.
 
 ## 5. Tahap B — yang wajib selesai (7 butir)
 
 1. Daftar scope + scope lock (B13).
-2. Sensus statis 100% + tepi keluar tiap fungsi EP+VM (B1/B6/B16).
+2. Sensus statis 100% (B1/B6). (Field 'keluar' TIDAK wajib — B16 tidak dipakai.)
 3. Inventaris alamat live — daftarnya saja (B3).
 4. Sensus live ringan B7 (B15).
-5. Identifikasi klaster + daftar jahitan lengkap (B16).
+5. Identifikasi klaster + daftar handoff (B11). (Daftar jahitan SM-xx lengkap TIDAK wajib — B16 tidak dipakai.)
 6. Ledger sisa — seed (B10).
 7. Struktur registry invariant — kosong, diisi Tahap D (B3).
 
@@ -149,7 +149,8 @@ penutupan B9 (dieksekusi di akhir; bahannya yang wajib ada di Tahap B).
 11. Filter di DALAM klaster saat inventory (hanya data yang dibutuhkan
     alur live) — dinilai BERISIKO oleh Kim (15 Nov 2026 18:22 WIB),
     tidak diadopsi; filter yang aman hanya utuh per klaster/alur (K9
-    dilewati utuh; K7 bila EV 0).
+    dilewati utuh; K7 bila EV 0). Larangan ini ditulis ke berkas kanonik
+    22:33 WIB 16 Nov 2026 atas perintah Kim.
 
 ## 7. Output tiap tahap
 
@@ -182,14 +183,18 @@ penutupan B9 (dieksekusi di akhir; bahannya yang wajib ada di Tahap B).
   inventory ramping per-klaster dinilai berisiko, tidak diadopsi.
 - D — Eksplorasi: buruan per segmen/handoff/simpul + merumuskan invariant
   (wajib sumber) + kartu lead (wajib klaim finansial). Tanpa PoC. Unit
-  round D belum diputus (usulan asisten: satu alur per round);
-  adaptasi Segitiga STAGE-C (dua gelombang C1 buta → C2 berpengetahuan +
-  katalog 52 plugin) diusulkan, belum diputus — lihat §11.
-- E — Uji test: PoC fork-live + P&L terukur per kandidat.
-- F — Komposisi (USULAN): hanya lead multi-segmen; PoC gabungan seluruh
-  rantai; lead satu segmen lewati F. Bukti = lemma.
+  round D DIPUTUS 22:33 WIB 16 Nov 2026: per-alur, dua gelombang (buta →
+  berpengetahuan + katalog 52 plugin); daftar alur (enumerasi + EV, dari
+  B02+B04) adalah prasyarat sebelum D.
+- E — Uji test: PoC fork-live + P&L terukur per kandidat. Bentuk rinci
+  DIPUTUS 22:33 WIB 16 Nov 2026: yang sudah dipraktikkan (batch maks 3,
+  fork blok pin + P&L).
+- F — Komposisi (DITERIMA BERSYARAT 22:33 WIB 16 Nov 2026: hanya bila
+  penting dan urgent): hanya lead multi-segmen; uji F pakai data terbaru,
+  tanpa fork/PoC ulang; lead satu segmen lewati F. Bukti = lemma.
 - G — Verdict: verdict per kandidat (06/07/08/09; tiga verdict terpisah;
   severity dari plafon teramati); distribusi akhir di seluruh protokol.
+  Bentuk rinci DIPUTUS 22:33 WIB 16 Nov 2026: yang sudah dipraktikkan.
 
 ## 9. Preferensi mengikat (C1–C9)
 
@@ -247,30 +252,17 @@ penutupan B9 (dieksekusi di akhir; bahannya yang wajib ada di Tahap B).
 - 15 Nov 2026 (18:48 WIB): Tahap C SELESAI — K1–K7 inventaris alur +
   K8 primitif; masuk alur 145/169; SM 11/12 TERTUTUP (SM-05 dienumerasi,
   butuh keputusan Kim tentang konsumennya); H 0, E 0.
+- 16 Nov 2026 (22:33 WIB): 10 butir diputus Kim — (1) B16 TIDAK DIPAKAI; (2) Tahap F DITERIMA BERSYARAT (hanya bila penting dan urgent); (3) Tahap D per-alur + dua gelombang; (4) Tahap E/G bentuk rinci = yang dipraktikkan, uji F tanpa fork/PoC ulang (data terbaru); (5) B9 rerun sensus manual DITERIMA; (6) A5 dua celah DITERIMA; (7) arah metode: pakai paling mutakhir (flow money first = metode kerja aktif); (8) deep-run per jalur DITERIMA (mulai P4); (9) larangan filter di dalam klaster DITULIS ke berkas kanonik; (10) SM-05 tetap dieksplorasi ketika terkait.
 
 ## 11. Belum diputus
 
-- Urutan K1–K8 (Tahap C) — SELESAI (round jalan K1→K8 sesuai default
-  EV; K8 primitif, K9 dilewati). Yang masih terbuka: urutan round Tahap D
-  (per-alur, urut EV) — bagian dari bentuk rinci Tahap D.
-- Dua celah A5 (pin commit run dari-0; blok referensi).
-- Cara enumerasi independen sapuan akhir (B9).
-- Bentuk rinci Tahap D (batching/gerbang; unit round per-alur [usulan
-  asisten] vs per-klaster) + Tahap E/F/G — belum ditulis/diputus.
-  Bentuk Tahap C sudah terbukti di pilot (8 round).
-- Isi Tahap F (komposisi) — usulan.
-- B16 (mekanisme jahitan lengkap + urutan hulu→hilir default).
-- SM-05: siapa konsumennya (TokenMessenger eksternal Circle) — butuh
-  keputusan Kim (produsen K6 terverifikasi, konsumen bukan fungsi K5/K6).
-- Daftar alur (enumerasi + EV per alur) sebagai prasyarat Tahap D
-  per-alur — belum diproduksi; bila unit D diputus per-alur, daftar ini
-  wajib ada (dari B02+B04) sebelum D.
-- Adaptasi Segitiga STAGE-C untuk Tahap D (dua gelombang C1 buta → C2
-  berpengetahuan + katalog 52 plugin) — diusulkan, belum diputus.
 - Inventory per-alur (Tahap C) — dievaluasi, tidak diadopsi untuk
   sekarang; bisa dibuka lagi.
-- Arah metode (terima/tolak sebagai pengganti Segitiga) — pilot adalah
-  buktinya.
+- Cara parser independen sapuan akhir (B9) — terbuka sebagai riset
+  (rerun sensus manual sudah diterima sebagai enumerasi kedua).
+- Skill per tahap A–G + `verify_flow.py` — item pembangunan repo
+  (bukan rule); bentuk rinci Tahap D–G sudah diputus sehingga skill
+  kini tidak lagi terblokir bentuk.
 
 ## 12. Angka terukur pilot Across (acuan biaya)
 

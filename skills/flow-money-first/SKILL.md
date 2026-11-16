@@ -15,7 +15,7 @@ Baca berkas-berkas ini dari repo moneyflow (jalur relatif terhadap root repo):
 
 ## Peta tahap (ringkas)
 
-A INTEL (brief 9 butir, pin commit + blok referensi) → B Mapping (sensus 100% + klaster + jahitan + ledger sisa + registry) → C pemetaan mendalam per klaster (inventaris alur + segmentasi + kontrak handoff deskriptif) → D eksplorasi (gelombang 1 buta → gelombang 2 berpengetahuan → kartu lead + invariant) → E uji test (PoC fork-live + P&L terukur, batch maks 3) → F komposisi (USULAN, hanya lead multi-segmen) → G verdict (06/07/08/09 + distribusi akhir). Rolling per klaster/alur: C → D → E. Tahap F lintas-klaster + Tahap G di akhir.
+A INTEL (brief 9 butir, pin commit + blok referensi) → B Mapping (sensus 100% + klaster + jahitan + ledger sisa + registry) → C pemetaan mendalam per klaster (inventaris alur + segmentasi + kontrak handoff deskriptif) → D eksplorasi per-alur (gelombang 1 buta → gelombang 2 berpengetahuan → kartu lead + invariant) → E uji test (PoC fork-live + P&L terukur, batch maks 3) → F komposisi (bersyarat — hanya bila penting dan urgent; uji pakai data terbaru, tanpa fork/PoC ulang) → G verdict (06/07/08/09 + distribusi akhir). Rolling per klaster/alur: C → D → E. Tahap F lintas-klaster + Tahap G di akhir.
 
 ## Gerbang yang tidak boleh dilanggar
 
@@ -33,8 +33,8 @@ Katalog 52 plugin ada di `references/` (CHAIN 10 + M 10 + POV 15) + `methodology
 
 ## Delegasi
 
-Brief berdiri sendiri (membawa semua konteks yang dibutuhkan). Sekuensial, satu anak aktif per antrean. Koordinator memverifikasi verdict dari berkas bukti sebelum menerapkannya ke antrean bersama. Induk satu-satunya penulis berkas kanonik + ledger sisa. Brief Tahap E memakai bahasa verifikasi invariant, bukan bahasa serangan. Penolakan safety classifier tidak boleh diulang, diparafrase, atau diputar lewat jalur lain.
+Brief berdiri sendiri (membawa semua konteks yang dibutuhkan). Sekuensial, satu anak aktif per antrean. Deep-run per jalur (diputus 22:33 WIB 16 Nov 2026): satu perintah berdiri hulu→hilir sampai verdict per lead; berlaku mulai jalur berikut (P4). Koordinator memverifikasi verdict dari berkas bukti sebelum menerapkannya ke antrean bersama. Induk satu-satunya penulis berkas kanonik + ledger sisa. Brief Tahap E memakai bahasa verifikasi invariant, bukan bahasa serangan. Penolakan safety classifier tidak boleh diulang, diparafrase, atau diputar lewat jalur lain.
 
 ## Yang belum ada
 
-Skill per tahap (A, B, C, D, E, F, G) belum ditulis — bentuk rinci Tahap D–G belum diputus (lihat "Belum diputus" di berkas aturan). Skill ini adalah pintu masuk runtime; kerja tiap tahap mengikuti berkas aturan, bukan SKILL.md ini.
+Skill per tahap (A, B, C, D, E, F, G) belum ditulis — bentuk rinci Tahap D–G SUDAH diputus 22:33 WIB 16 Nov 2026, jadi skill kini tidak lagi terblokir bentuk. Skill ini adalah pintu masuk runtime; kerja tiap tahap mengikuti berkas aturan, bukan SKILL.md ini.

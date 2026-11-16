@@ -2,7 +2,7 @@
 
 Skill pintu masuk `flow-money-first/` SUDAH ADA (`flow-money-first/SKILL.md`): bootloader runtime metode ini — dibaca bila user menyebut flow money first / alur-first atau memulai audit Tahap A–G. Skill itu menunjuk ke berkas aturan kanonik di `methodology/` sebagai sumber kebenaran; ia tidak menduplikasi aturan.
 
-Skill per tahap (A, B, C, D, E, F, G) BELUM DITULIS — bentuk rinci Tahap D–G belum diputus (lihat "Belum diputus" di `methodology/aturan-alur-first.md`).
+Skill per tahap (A, B, C, D, E, F, G) BELUM DITULIS — bentuk rinci Tahap D–G SUDAH diputus 22:33 WIB 16 Nov 2026, jadi skill kini tidak lagi terblokir bentuk.
 
 Skill `sc-*` dari theadvers sengaja TIDAK disalin ke repo ini: skill itu mengkodekan STAGE-0 + Tahap A–F Segitiga (wilayah R_i, FACTS/RADAR/STATE, gate Segitiga) dan tidak berlaku untuk Tahap A–G metode ini.
 

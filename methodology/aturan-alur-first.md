@@ -1,6 +1,6 @@
 # Aturan Alur-First — Tahap A (INTEL) dan Tahap B (Scope Mapping)
 
-Status: aturan mengikat untuk metode alur-first (draf). Disusun 15 Nov 2026
+Status: aturan mengikat untuk metode alur-first. Metode kerja aktif sejak 22:33 WIB 16 Nov 2026 (diputus Kim: 'pakai paling mutakhir'; Segitiga menjadi rujukan/legacy). Disusun 15 Nov 2026
 dari keputusan Kim + preferensi yang sudah mengikat. Sumber: draf
 `usulan-alur-first.md` + `MEMORY.md` + berkas pilot
 `~/workspace/theadvers/projects/across-flow-first/B01-SCOPE.md`.
@@ -74,7 +74,7 @@ Tangga per butir (urutan cek):
 
 A5. INTEL dikunci dengan pin: commit + blok referensi (+ stage). INTEL
 kanonik read-only selama audit — tidak disentuh. Bila D menemukan INTEL
-salah, koreksi dicatat eksplisit dan terbuka, tidak diam-diam.
+salah, koreksi dicatat eksplisit dan terbuka, tidak diam-diam. Diputus 22:33 WIB 16 Nov 2026: (a) commit yang dipin di run dari-0 = HEAD saat penemuan; (b) blok referensi ditentukan di Tahap B (sensus live).
 
 ## B. Scope Mapping
 
@@ -154,7 +154,7 @@ sapuan akhir dengan enumerasi independen kedua dibanding ledger
 akhir. Caranya masih terbuka — bukan AST (diputus 15 Nov 2026) dan
 bukan regex yang sama (terbukti cacat di pilot). Sensus di
 depan adalah rencana + daftar periksa, bukan bukti kelengkapan;
-buktinya datang dari eksplorasi + sapuan akhir.
+buktinya datang dari eksplorasi + sapuan akhir. Diputus 22:33 WIB 16 Nov 2026: rerun sensus manual DITERIMA sebagai enumerasi independen kedua (pilot: rerun menemukan 15 baris yang sensus pertama lewatkan). Cara parser independen tetap terbuka sebagai riset, bukan rule.
 
 B10. Ledger "sisa" sesudah tiap round (entrypoint belum masuk alur,
 handoff terbuka, klaster belum dikerjakan). Round selesai hanya bila
@@ -229,9 +229,7 @@ ditulis; yang tidak live-match masuk TUNDA-LIVE; PoC klaster itu
 TERBLOKIR sampai cek live-match ada. Pengecualian: proyek
 TESTNET/DEVNET — "live" = lingkungan itu sendiri (A3).
 
-B16. Jahitan hulu→hilir LENGKAP (USULAN 15 Nov 2026, belum diputus
-Kim — menjawab syarat Kim "jahitan benar interaksi hulu-hilir itu
-lengkap"): jahitan (handoff antar-klaster) dienumerasi UTUH di depan
+B16. TIDAK DIPAKAI (diputus Kim 22:33 WIB 16 Nov 2026 — 'B16 tidak perlu'). Mekanisme di bawah ini TIDAK menjadi rule; dibiarkan sebagai arsip usulan: jahitan (handoff antar-klaster) dienumerasi UTUH di depan
 (Tahap B mapping), dari graf alur — bukan ditemukan belakangan per
 klaster. (1) Sensus mencatat, untuk tiap fungsi EP+VM, tepi
 keluarnya: fungsi/kontrak apa yang dipanggil, token apa yang
@@ -269,13 +267,12 @@ tanpa baca ulang seluruh protokol. Yang tidak memenuhi uji itu bukan
 pekerjaan Tahap B.
 Wajib selesai di Tahap B:
 1. Daftar scope + scope lock (B13) — gerbang masuk sensus.
-2. Sensus statis 100% peristiwa pemindah nilai (B1/B6), termasuk tepi
-keluar tiap fungsi EP+VM (B16) — fondasi cakupan.
+2. Sensus statis 100% peristiwa pemindah nilai (B1/B6) — fondasi cakupan. (Field 'keluar' tiap fungsi EP+VM TIDAK wajib — B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.)
 3. Inventaris alamat live — daftarnya saja (B3); verifikasi onchain
 daftar itu = B7/B8.
 4. Sensus live ringan B7 (B15) — konfirmasi live klaim INTEL, sumber
 EV, sinyal live identifikasi klaster.
-5. Identifikasi klaster + daftar jahitan lengkap (B16) — partisi kerja.
+5. Identifikasi klaster + daftar handoff (B11) — partisi kerja. (Daftar jahitan SM-xx lengkap TIDAK wajib — B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.)
 6. Ledger sisa — seed (B10): semua entrypoint, klaster, jahitan,
 handoff terbuka; diperbarui sesudah tiap round.
 7. Struktur registry invariant (B3) — penomoran + registry kosong;
@@ -330,10 +327,18 @@ kedua yang independen = sapuan akhir B9, bukan sensus ulang di
 Tahap B.
 10. Menulis laporan akhir / memoles artefak — artefak Tahap B adalah
 berkas kerja (baris JSON, daftar, ledger), bukan laporan poles.
+11. Filter di DALAM klaster saat inventory (hanya data yang dibutuhkan
+alur live) — dinilai BERISIKO oleh Kim (15 Nov 2026 18:22 WIB), tidak
+diadopsi; larangan ini ditulis ke berkas ini 22:33 WIB 16 Nov 2026
+atas perintah Kim ('larangan ditulis'). Filter yang aman hanya utuh
+per klaster/alur.
 Untuk proyek baru, tepi keluar EP+VM dicatat DALAM pass sensus
 (field 'keluar' di baris sensus) — bukan pass terpisah; pass
 enumerasi jahitan yang terpisah hanya catch-up untuk pilot Across
-yang sensusnya sudah jalan tanpa field itu. Yang dikerjakan di
+yang sensusnya sudah jalan tanpa field itu. (Koreksi 22:33 WIB
+16 Nov 2026: field 'keluar' TIDAK wajib — B16 tidak dipakai. Pass
+enumerasi jahitan terpisah tetap hanya catch-up pilot Across.)
+Yang dikerjakan di
 Tahap B: lihat seksi 'Tahap B — yang wajib selesai'.
 
 ## C. Preferensi yang mengikat (berlaku selama metode dijalankan)
@@ -381,33 +386,34 @@ Pemetaan huruf (15 Nov 2026, perintah Kim 'ubah tahap jadi huruf saja'): Tahap A
 
 - Tahap B — Mapping: sensus + klaster + daftar jahitan + ledger sisa + registry (B1–B16). Tanpa invariant (B12), tanpa pemetaan mendalam, tanpa buruan/PoC/verdict.
 - Tahap C — Pemetaan mendalam per klaster: inventaris alur + segmentasi + kontrak handoff deskriptif per klaster (B12, B16). Tanpa invariant, tanpa buruan/PoC/verdict.
-- Tahap D — Eksplorasi: buruan per segmen/handoff/simpul; merumuskan invariant tiap kandidat (wajib cantumkan sumber: field handoff atau docs/NatSpec) + kartu lead (tiap kartu lead wajib klaim finansial sendiri). Tanpa PoC.
-- Tahap E — Uji test: PoC fork-live + P&L terukur per kandidat; membuktikan/membantah mekanisme.
-- Tahap F — Komposisi (USULAN, belum diputus Kim): HANYA untuk lead multi-segmen — merangkai segmen/handoff/simpul yang sudah terbukti jadi jalur serangan ujung-ke-ujung (per klaster dulu, lintas-klaster di akhir); uji di Tahap F = PoC gabungan yang menjalankan seluruh rantai, karena bukti segmen terpisah tidak menjamin rantai ujung-ke-ujung bekerja. Lead satu segmen LEWATI Tahap F (PoC Tahap E sudah final). Bukti komposisi = lemma (segmen terbukti + handoff cocok + simpul terbukti + jalur gabungan dites).
-- Tahap G — Verdict: verdict per kandidat (06/07/08/09; tiga verdict terpisah; severity dari plafon teramati); distribusi akhir dihitung di seluruh protokol.
+- Tahap D — Eksplorasi: buruan per segmen/handoff/simpul; merumuskan invariant tiap kandidat (wajib cantumkan sumber: field handoff atau docs/NatSpec) + kartu lead (tiap kartu lead wajib klaim finansial sendiri). Tanpa PoC. Diputus 22:33 WIB 16 Nov 2026: unit round = per-alur, dua gelombang (buta → berpengetahuan + katalog 52 plugin); daftar alur (enumerasi + EV, dari B02+B04) adalah prasyarat sebelum D.
+- Tahap E — Uji test: PoC fork-live + P&L terukur per kandidat; membuktikan/membantah mekanisme. Diputus 22:33 WIB 16 Nov 2026: bentuk rinci = yang sudah dipraktikkan (batch maks 3, fork blok pin + P&L terukur); verdict mengikuti bentuk yang sekarang (06/07/08/09).
+- Tahap F — Komposisi (DITERIMA BERSYARAT, diputus Kim 22:33 WIB 16 Nov 2026: 'terima jika memang penting dan urgent'): HANYA untuk lead multi-segmen; F hanya dijalankan bila penting dan urgent. Uji F TIDAK menjalankan fork ulang dan TIDAK menjalankan PoC ulang — pakai data terbaru (hasil Tahap E); bukti komposisi = lemma (segmen terbukti + handoff cocok + simpul terbukti + jalur gabungan dirangkai dari data terbaru). Lead satu segmen LEWATI Tahap F (PoC Tahap E sudah final).
+- Tahap G — Verdict: verdict per kandidat (06/07/08/09; tiga verdict terpisah; severity dari plafon teramati); distribusi akhir dihitung di seluruh protokol. Diputus 22:33 WIB 16 Nov 2026: bentuk rinci = yang sudah dipraktikkan (verdict mengikuti bentuk yang sekarang).
 
-Rolling per klaster: Tahap C klaster → Tahap D klaster → Tahap E klaster → …; Tahap F lintas-klaster + Tahap G di akhir. Bentuk rinci tiap tahap (batching/gerbang masuk-keluar) BELUM ditulis — masih terbuka.
+Rolling per klaster: Tahap C klaster → Tahap D klaster → Tahap E klaster → …; Tahap F lintas-klaster + Tahap G di akhir. Bentuk rinci Tahap D/E/G sudah diputus 22:33 WIB 16 Nov 2026 (lihat butir di atas); bentuk rinci Tahap C sudah terbukti di pilot (8 round). Deep-run per jalur (diputus Kim 22:33 WIB 16 Nov 2026): satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah; berlaku mulai jalur berikut (P4 — P3 sudah jalan step-by-step).
 
 Just-in-time lintas-klaster (15 Nov 2026, perintah Kim; KOREKSI 15 Nov 2026 — dipindah dari Tahap C ke Tahap D atas pertanyaan Kim 'bukankah ini harusnya pas eksplorasi?'): materi terkait dan urgent dari klaster lain ditarik just-in-time di Tahap D (eksplorasi) — saat memburu satu alur, pemburu mengikuti alur itu melewati klaster, hanya yang dilewati alur itu. Di Tahap C, kerja per klaster; jahitan adalah batas (sisi produsen/konsumen yang klasternya belum dipetakan dicatat terbuka, dilengkapi di round klaster itu lewat siklus hidup B16). Alasan: kebutuhan tarik lintas-klaster ada di Tahap D, karena alur (unit buruan) tidak mengenal batas klaster; di Tahap C, tarikan dini berisiko menyeret penilaian (apakah handoff cocok?) ke dalam kerja deskriptif. Keputusan klaster yang dipenuhi: (2) round 1 Tahap C = K1 SAJA (loop K1+K2 diburu bersama di Tahap D, dirangkai di Tahap F); (3) K8 = round sendiri di Tahap C (diinventarisasi sekali, dirujuk konsumen; ditarik just-in-time di Tahap D bila alur yang diburu memakainya). Urutan EV (K1 dulu) tetap sebagai prioritas, bukan pagar.
 
+## Diputus 16 Nov 2026 (22:33 WIB)
+
+Diputus Kim atas daftar 10 butir yang belum diputus:
+1. B16 TIDAK DIPAKAI ('B16 tidak perlu') — mekanisme jahitan lengkap + urutan hulu→hilir + field 'keluar' tidak menjadi rule; urutan klaster default tetap EV (B2); daftar jahitan pilot tetap artefak eksekusi.
+2. Tahap F DITERIMA BERSYARAT ('terima jika memang penting dan urgent') — isi F diterima; F hanya dijalankan bila penting dan urgent.
+3. Tahap D: unit round = per-alur, dua gelombang (buta → berpengetahuan + katalog 52).
+4. Tahap E/G: bentuk rinci = yang sudah dipraktikkan; verdict mengikuti bentuk yang sekarang; uji F TIDAK menjalankan fork ulang dan TIDAK menjalankan PoC ulang — pakai data terbaru.
+5. B9: rerun sensus manual DITERIMA sebagai enumerasi independen kedua (YA).
+6. A5: dua celah DITERIMA (YA) — pin HEAD saat penemuan; blok referensi ditentukan di Tahap B.
+7. Arah metode: 'pakai paling mutakhir' — flow money first menjadi metode kerja aktif; Segitiga menjadi rujukan/legacy.
+8. Deep-run per jalur DITERIMA — mode eksekusi per jalur; berlaku mulai jalur berikut (P4).
+9. Larangan filter di dalam klaster DITULIS ke berkas ini (butir 11 seksi 'Tahap B — yang TIDAK dilakukan').
+10. SM-05 (pilot): tetap dieksplorasi ketika terkait — konsumennya tidak dipatok sekarang.
+
 ## Belum diputus (bukan rule)
 
-- Keputusan klaster pilot Across: urutan K1–K8 (default EV, bukan pagar —
-  masih terbuka bila Kim mau menukar). Round 1 dan K8 dipenuhi (seksi D):
-  round 1 Tahap C = K1 SAJA; K8 = round sendiri di Tahap C; just-in-time
-  lintas-klaster berlaku di Tahap D. Tahap C round 1 (K1) dimulai
-  15 Nov 2026 17:02 WIB atas perintah Kim.
-- Dua celah A5: commit mana yang dipin di run dari-0 (usulan: HEAD
-  saat penemuan) + blok referensi belum dicakup tangga A4 (usulan:
-  ditentukan di Tahap B sensus live). Kim menunda untuk fase ini
-  (15 Nov 2026).
-- Cara enumerasi independen untuk sapuan akhir (B9) — bukan AST,
-  bukan regex yang sama.
-- Bentuk rinci Tahap C–G (batching/gerbang masuk-keluar tiap tahap belum ditulis).
-- Isi Tahap F (usulan: komposisi) — menunggu konfirmasi Kim.
-- B16 (usulan jahitan lengkap + urutan hulu→hilir default + field 'keluar' sensus) — menunggu keputusan Kim. Syarat 'jahitan lengkap' dari Kim sendiri sudah mengikat; mekanismenya yang masih usulan.
-- Arah metode (terima/tolak sebagai pengganti Segitiga) — pilot adalah
-  buktinya, bukan keputusannya.
+- Inventory per-alur (Tahap C) — dievaluasi, tidak diadopsi untuk sekarang; bisa dibuka lagi.
+- Cara parser independen untuk sapuan akhir (B9) — terbuka sebagai riset (rerun sensus manual sudah diterima sebagai enumerasi kedua, 22:33 WIB 16 Nov 2026).
+- Skill per tahap A–G + `verify_flow.py` — item pembangunan repo (bukan rule); bentuk rinci Tahap D–G sudah diputus sehingga skill kini tidak lagi terblokir bentuk.
 
 ## Diputus tidak dipakai
 

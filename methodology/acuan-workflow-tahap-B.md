@@ -17,14 +17,14 @@ tanpa buruan. Keluarannya — dua lapis:
 A. Sekali, untuk seluruh protokol (bagian depan):
 1. B01-SCOPE.md — daftar scope + scope lock (B13).
 2. B02-CENSUS-STATIC.md + staging JSON — sensus statis 100%
-   peristiwa pemindah nilai, termasuk tepi keluar tiap fungsi EP+VM
-   (B1/B6/B16).
+   peristiwa pemindah nilai (B1/B6). (Field 'keluar' tiap fungsi EP+VM
+   TIDAK wajib — B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.)
 3. B03-CENSUS-LIVE.md — inventaris alamat live (daftar) + sensus live
    ringan B7 (WAJIB, B15); sensus live penuh opsional, sisanya
    just-in-time per klaster (B8).
-4. B04-CLUSTERS.md — identifikasi klaster + daftar jahitan lengkap
-   (B16, USULAN — belum diputus): SM-xx, produsen, konsumen, bukti,
-   status.
+4. B04-CLUSTERS.md — identifikasi klaster + daftar handoff (B11).
+   (Daftar jahitan SM-xx lengkap TIDAK wajib — B16 tidak dipakai,
+   diputus 22:33 WIB 16 Nov 2026.)
 5. Ledger sisa (B10) — seed: entrypoint belum masuk alur, handoff
    terbuka, klaster belum dikerjakan.
 6. Registry invariant (B3) — struktur + penomoran (kosong; diisi
@@ -170,7 +170,7 @@ input N+1.
 
 ### B12. Invariant TIDAK dinyatakan di Tahap B
 Definisi: Tahap B hanya membangun yang riil/teramati untuk
-seluruh protokol — sensus, klaster, daftar jahitan (B16). Tahap C
+seluruh protokol — sensus, klaster, daftar handoff (B11). (B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.) Tahap C
 membangun yang riil/teramati per klaster — inventaris alur,
 segmentasi, kontrak handoff deskriptif (jaminan produsen + asumsi
 konsumen sebagaimana teramati di kode). Invariant adalah klaim asumsi

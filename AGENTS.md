@@ -13,12 +13,12 @@ Repo ini adalah MESIN/METODE, bukan proyek audit. Tidak memuat kode kontrak targ
 | A | INTEL | `A01-INTEL` (brief 9 butir), `A02-INTEL-discovery` | Brief saja (A1–A5); tanpa cek onchain |
 | B | Mapping | `B01-SCOPE`, `B02-CENSUS-STATIC`, `B03-CENSUS-LIVE`, `B04-CLUSTERS`, `B05-LEDGER-SISA`, `B06-REGISTRY-INVARIANT` | Tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
 | C | Pemetaan mendalam per klaster | `C<NN>-<KLASTER>-FLOW-INVENTORY` | Deskriptif saja; tanpa invariant/buruan/PoC/verdict; jahitan adalah batas |
-| D | Eksplorasi | Kartu lead + invariant (`INV-Sx/Hx/Jx/Fx`) | Dua gelombang (buta → berpengetahuan); tanpa PoC |
-| E | Uji test | PoC fork-live + P&L per kandidat | Fork blok pin; P&L terukur |
-| F | Komposisi (USULAN) | PoC gabungan (lemma) | Hanya lead multi-segmen |
+| D | Eksplorasi | Kartu lead + invariant (`INV-Sx/Hx/Jx/Fx`) | Per-alur, dua gelombang (buta → berpengetahuan + katalog); tanpa PoC |
+| E | Uji test | PoC fork-live + P&L per kandidat | Fork blok pin; P&L terukur; batch maks 3 |
+| F | Komposisi (bersyarat — hanya bila penting dan urgent) | Lemma dari data terbaru (tanpa fork/PoC ulang) | Hanya lead multi-segmen |
 | G | Verdict | Verdict 06/07/08/09 per kandidat + distribusi akhir | Tiga verdict terpisah |
 
-Rolling per klaster: C → D → E. Tahap F lintas-klaster + Tahap G di akhir. Acuan kerja Tahap B: `methodology/acuan-workflow-tahap-B.md`. Aturan hemat Fase D + prinsip efisiensi + lantai bawah: `methodology/rancangan-hemat-fase-d.md`.
+Rolling per klaster: C → D → E. Tahap F lintas-klaster + Tahap G di akhir. Deep-run per jalur (diputus 22:33 WIB 16 Nov 2026): satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah; berlaku mulai jalur berikut (P4). Acuan kerja Tahap B: `methodology/acuan-workflow-tahap-B.md`. Aturan hemat Fase D + prinsip efisiensi + lantai bawah: `methodology/rancangan-hemat-fase-d.md`.
 
 ## 2. Delegasi (keras)
 
@@ -48,7 +48,7 @@ Lantai bawah: baca kode, ukur live, verifikasi parent atas bukti penentu. Yang j
 
 ## 6. Yang belum ada di repo ini (terbuka, bukan rule)
 
-- Skill pintu masuk `skills/flow-money-first/SKILL.md` SUDAH ADA (bootloader runtime metode ini). Skill per Tahap A–G BELUM ditulis (skill `sc-*` theadvers sengaja TIDAK disalin — skill itu mengkodekan STAGE-0 + A–F Segitiga). Lihat `skills/README.md`.
+- Skill per Tahap A–G BELUM ditulis (skill `sc-*` theadvers sengaja TIDAK disalin — skill itu mengkodekan STAGE-0 + A–F Segitiga). Bentuk rinci Tahap D–G sudah diputus 22:33 WIB 16 Nov 2026, jadi skill kini tidak lagi terblokir bentuk. Lihat `skills/README.md`. Skill pintu masuk `skills/flow-money-first/SKILL.md` SUDAH ADA (bootloader runtime metode ini).
 - `tools/verify_flow.py` (verifier format untuk artefak A–G). `verify_segitiga.py` theadvers sengaja TIDAK disalin — pemeriksa itu terikat format Segitiga.
-- Bentuk rinci Tahap D–G (batching/gerbang masuk-keluar), isi Tahap F, cara enumerasi independen sapuan akhir (B9), dua celah A5 — lihat "Belum diputus" di berkas aturan.
+- Inventory per-alur (Tahap C) — dievaluasi, tidak diadopsi; bisa dibuka lagi. Cara parser independen sapuan akhir (B9) — terbuka sebagai riset.
 - Katalog 52 plugin (`references/` + `methodology/attack-forms/` + `methodology/domains/`) diwarisi utuh dari theadvers dan tumbuh dari hasil jelajah (temuan di luar katalog = kandidat plugin baru).

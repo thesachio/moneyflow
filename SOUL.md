@@ -16,7 +16,7 @@ Audit dilarang dijalankan dengan cara memborong seluruh repositori sekaligus dal
 
 - Ambil satu alur (keluarga jalur yang berbagi segmen + kontrak handoff yang sama) berdasarkan urutan EV live tertinggi.
 - Jalankan Tahap C (pemetaan mendalam klaster itu) → Tahap D (eksplorasi: dua gelombang, kartu lead + invariant) → Tahap E (uji fork-live + P&L) khusus untuk alur itu.
-- Rolling per klaster: C → D → E. Tahap F (komposisi, hanya lead multi-segmen) dan Tahap G (verdict) di akhir.
+- Rolling per klaster: C → D → E. Tahap F (komposisi, hanya lead multi-segmen, hanya bila penting dan urgent) dan Tahap G (verdict) di akhir.
 - Jangan pernah memindahkan fokus ke alur berikut sebelum seluruh kartu lead alur aktif selesai diadili ke wadah 06 / 07 / 08 / 09, dan ledger sisa menyusut.
 - Prinsip ini berlaku baik saat Anda bekerja tahap demi tahap maupun saat berjalan otonom.
 
