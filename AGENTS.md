@@ -48,7 +48,7 @@ Lantai bawah: baca kode, ukur live, verifikasi parent atas bukti penentu. Yang j
 
 ## 6. Yang belum ada di repo ini (terbuka, bukan rule)
 
-- Skill per Tahap A–G + autopilot SUDAH DITULIS (22:39 WIB 16 Nov 2026): `skills/flow-a-intel/`, `flow-b-map/`, `flow-c-inventory/`, `flow-d-explore/`, `flow-e-test/`, `flow-f-compose/`, `flow-g-verdict/`, `flow-autopilot/`. Skill `sc-*` theadvers sengaja TIDAK disalin — skill itu mengkodekan STAGE-0 + A–F Segitiga. Lihat `skills/README.md`. Skill pintu masuk `skills/flow-money-first/SKILL.md` SUDAH ADA.
+- Skill per Tahap A–G + autopilot SUDAH DITULIS (22:39 WIB 16 Nov 2026): `skills/flow-a-intel/`, `flow-b-map/`, `flow-c-inventory/`, `flow-d-explore/`, `flow-e-test/`, `flow-f-compose/`, `flow-g-verdict/`, `flow-autopilot/`. Autopilot ditulis ulang 22:47 WIB 16 Nov 2026 menjadi full-autopilot proyek penuh (semua klaster, semua jalur) — versi pertama hanya satu jalur. Skill `sc-*` theadvers sengaja TIDAK disalin — skill itu mengkodekan STAGE-0 + A–F Segitiga. Lihat `skills/README.md`. Skill pintu masuk `skills/flow-money-first/SKILL.md` SUDAH ADA.
 - `tools/verify_flow.py` (verifier format untuk artefak A–G). `verify_segitiga.py` theadvers sengaja TIDAK disalin — pemeriksa itu terikat format Segitiga.
 - Inventory per-alur (Tahap C) — dievaluasi, tidak diadopsi; bisa dibuka lagi. Cara parser independen sapuan akhir (B9) — terbuka sebagai riset.
 - Katalog 52 plugin (`references/` + `methodology/attack-forms/` + `methodology/domains/`) diwarisi utuh dari theadvers dan tumbuh dari hasil jelajah (temuan di luar katalog = kandidat plugin baru).

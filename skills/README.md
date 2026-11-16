@@ -11,7 +11,7 @@ Skill per tahap (A, B, C, D, E, F, G) + autopilot SUDAH DITULIS (22:39 WIB 16 No
 - `flow-e-test/` — Tahap E (PoC fork-live + P&L, batch maks 3, verifikasi parent).
 - `flow-f-compose/` — Tahap F (bersyarat: penting + urgent; data terbaru, tanpa fork/PoC ulang).
 - `flow-g-verdict/` — Tahap G (verdict 06/07/08/09, tiga verdict terpisah, HOLD).
-- `flow-autopilot/` — deep-run per jalur (B8 → D → E → F bersyarat → G atas satu perintah berdiri; /stop mencabut otorisasi seketika).
+- `flow-autopilot/` — full-autopilot PROYEK PENUH (semua klaster, semua jalur, dari kursor sampai sapuan akhir atas satu perintah berdiri; /stop mencabut otorisasi seketika). Ditulis ulang 22:47 WIB 16 Nov 2026 atas perintah Kim — versi pertama hanya satu jalur.
 
 Skill `sc-*` dari theadvers sengaja TIDAK disalin ke repo ini: skill itu mengkodekan STAGE-0 + Tahap A–F Segitiga (wilayah R_i, FACTS/RADAR/STATE, gate Segitiga) dan tidak berlaku untuk Tahap A–G metode ini. Autopilot di sini dibangun dari aturan flow money first (deep-run diputus 22:33 WIB 16 Nov 2026) — bentuk orkestrasinya meminjam pola sc-autopilot (mesin status, hukum pengendali loop, checkpoint, staging), bukan gate Segitiga.
 
