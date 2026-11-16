@@ -37,4 +37,4 @@ Brief berdiri sendiri (membawa semua konteks yang dibutuhkan). Sekuensial, satu 
 
 ## Yang belum ada
 
-Skill per tahap (A, B, C, D, E, F, G) belum ditulis — bentuk rinci Tahap D–G SUDAH diputus 22:33 WIB 16 Nov 2026, jadi skill kini tidak lagi terblokir bentuk. Skill ini adalah pintu masuk runtime; kerja tiap tahap mengikuti berkas aturan, bukan SKILL.md ini.
+Skill per tahap (A, B, C, D, E, F, G) + autopilot SUDAH DITULIS (`skills/flow-a-intel/`, `flow-b-map/`, `flow-c-inventory/`, `flow-d-explore/`, `flow-e-test/`, `flow-f-compose/`, `flow-g-verdict/`, `flow-autopilot/`). Skill ini adalah pintu masuk runtime; kerja tiap tahap mengikuti berkas aturan + skill tahapnya, bukan SKILL.md ini.
