@@ -1,0 +1,25 @@
+# === Rahasia & kredensial — DILARANG PERNAH DI-COMMIT ===
+.env
+.env.*
+!.env.example
+*.secret
+*.pem
+*.key
+
+# === Proyek audit: tidak ikut commit ===
+# Alasan: berisi kode kontrak target + temuan yang belum tersubmit.
+projects/
+
+# === Artefak build ===
+out/
+out-*/
+cache/
+cache-*/
+zkout/
+node_modules/
+target/
+*.log
+
+# Python
+__pycache__/
+*.pyc
