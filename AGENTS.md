@@ -48,7 +48,7 @@ Lantai bawah: baca kode, ukur live, verifikasi parent atas bukti penentu. Yang j
 
 ## 6. Yang belum ada di repo ini (terbuka, bukan rule)
 
-- Skill untuk Tahap A–G (skill `sc-*` theadvers sengaja TIDAK disalin — skill itu mengkodekan STAGE-0 + A–F Segitiga). Lihat `skills/README.md`.
+- Skill pintu masuk `skills/flow-money-first/SKILL.md` SUDAH ADA (bootloader runtime metode ini). Skill per Tahap A–G BELUM ditulis (skill `sc-*` theadvers sengaja TIDAK disalin — skill itu mengkodekan STAGE-0 + A–F Segitiga). Lihat `skills/README.md`.
 - `tools/verify_flow.py` (verifier format untuk artefak A–G). `verify_segitiga.py` theadvers sengaja TIDAK disalin — pemeriksa itu terikat format Segitiga.
 - Bentuk rinci Tahap D–G (batching/gerbang masuk-keluar), isi Tahap F, cara enumerasi independen sapuan akhir (B9), dua celah A5 — lihat "Belum diputus" di berkas aturan.
 - Katalog 52 plugin (`references/` + `methodology/attack-forms/` + `methodology/domains/`) diwarisi utuh dari theadvers dan tumbuh dari hasil jelajah (temuan di luar katalog = kandidat plugin baru).

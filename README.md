@@ -57,7 +57,7 @@ templates/                  wadah kerja audit + standar laporan (diwarisi)
   07-needs-next-step.md 08-valid-not-eligible.md 09-confirmed-findings.md
   INTEL.md POC-PACKAGE.md SEVERITY-RUBRIC.md SUBMISSION-EMAIL.md
   TECHNICAL-REPORT.md VERDICT.md case/
-skills/                     README — skill Tahap A–G BELUM ditulis (lihat §6 AGENTS.md)
+skills/                     pintu masuk runtime: flow-money-first/SKILL.md (skill per tahap BELUM ditulis — lihat §6 AGENTS.md)
 tools/
   deploy_parity.py          cek parity deployment live vs HEAD (diwarisi)
 verify/                     skema verdict 06–09 + severity rubric (diwarisi)

@@ -1,10 +1,12 @@
-# skills/ — BELUM DITULIS
+# skills/
 
-Skill untuk Tahap A–G metode Flow Money First belum ditulis.
+Skill pintu masuk `flow-money-first/` SUDAH ADA (`flow-money-first/SKILL.md`): bootloader runtime metode ini — dibaca bila user menyebut flow money first / alur-first atau memulai audit Tahap A–G. Skill itu menunjuk ke berkas aturan kanonik di `methodology/` sebagai sumber kebenaran; ia tidak menduplikasi aturan.
+
+Skill per tahap (A, B, C, D, E, F, G) BELUM DITULIS — bentuk rinci Tahap D–G belum diputus (lihat "Belum diputus" di `methodology/aturan-alur-first.md`).
 
 Skill `sc-*` dari theadvers sengaja TIDAK disalin ke repo ini: skill itu mengkodekan STAGE-0 + Tahap A–F Segitiga (wilayah R_i, FACTS/RADAR/STATE, gate Segitiga) dan tidak berlaku untuk Tahap A–G metode ini.
 
-Yang sudah ada sebagai fondasi skill:
+Yang sudah ada sebagai fondasi skill per tahap:
 
 - `methodology/aturan-alur-first.md` — aturan kanonik tiap tahap (apa yang dilakukan + gerbangnya).
 - `methodology/acuan-workflow-tahap-B.md` — acuan kerja Tahap B (paling siap dijadikan skill pertama).
