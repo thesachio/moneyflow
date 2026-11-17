@@ -82,5 +82,5 @@ Metode Segitiga (STAGE-0 + A–F, `path-map.md`, `FACTS.md`, `RADAR.md`, `STATE.
 `verify_segitiga.py`, skill `sc-*`) **bukan** metode aktif repo ini. Sisa berkasnya disimpan utuh di
 `archive/segitiga-v2/` sebagai rujukan sejarah dan **tidak** dipakai untuk proyek baru.
 
-`templates/` masih memuat template era Segitiga yang tidak dirujuk oleh tahap A–G mana pun — kandidat pembersihan,
-bukan bagian alur kerja aktif.
+`templates/` tetap dipakai metode flow (Tahap G memakai format `06`/`09` + laporan teknis + email; autopilot memakai
+`INTEL.md`), jadi bukan residu.
