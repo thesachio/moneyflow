@@ -333,7 +333,7 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 
 **10. Kalibrasi Bahaya Finansial & Severity (Financial Danger Floor)**
 > *"Dampak akhir PoC membuktikan bahaya finansial nyata — pencurian dana pokok/yield signifikan, insolvensi protokol, pembekuan aset permanen/jangka panjang, atau sabotase fungsi keselamatan berbatas waktu (repay/liquidate) yang memicu penyitaan paksa/kredit macet — bukan sekadar gangguan kelas Low ('Annoying but not financially dangerous'). Tingkat keparahan yang diklaim (CRITICAL/HIGH/MEDIUM) sesuai 100% dengan bukti kuantitatif pada log PoC."*
-- Hanya pembulatan debu (1 wei–beberapa sen) yang tak dapat dilipatgandakan dan tidak mengunci dana → **[KETAT]** `REJECTED_DUST` → `06`
+- Hanya pembulatan debu (1 wei–beberapa sen, **nilai < $1**) yang tak dapat dilipatgandakan dan tidak mengunci dana → **[KETAT]** `REJECTED_DUST` → `06`. **Ambang kerugian (direvisi 17 Nov 2026, perintah Kim): potensi kerugian ≥ $1 = BUKAN debu — kandidat sah, disimpan; hanya yang < $1 yang gugur DUST.**
 - Mekanisme nyata tetapi dampak jatuh ke kelas Low:
   1. **DoS with No Fund Loss** — transaksi hanya revert **sementara sekali waktu**; pengguna cukup mengirim ulang atau memakai jalur alternatif **tanpa kehilangan pokok/yield/hak** dan **tanpa bisa diblokir ulang terus-menerus secara murah** oleh penyerang. *(Peringatan: Apabila penyerang dapat mem-frontrun/me-reset kondisi secara berulang dengan biaya murah sehingga pengguna **terkunci secara efektif**, memblokir fungsi keselamatan berbatas waktu seperti `repay`/`liquidate`, **ATAU** memaksa pengguna keluar lewat `emergencyWithdraw` yang menghanguskan yield/mengenakan penalti/potongan pokok, maka itu adalah **Bahaya Finansial Nyata (HIGH/MEDIUM -> `09`)**, BUKAN `LOW_NUISANCE`!)*
   2. **Minor Capped Economic Damage** — kerugian kecil dan terbatas (*bounded*), tidak dapat menguras pool.
@@ -433,7 +433,7 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 | `REJECTED_PRIVILEGED_FANTASY` | Gugur mutlak (#8a) | Mengandalkan admin/keeper bodoh-jahat atau oracle rusak sendiri | `06-refuted-invalid.md` |
 | `REJECTED_NON_LIVE_INIT` | Gugur mutlak (#7a) | Menyerang `initialize()` yang sudah terkunci | `06-refuted-invalid.md` |
 | `REJECTED_NO_VICTIM` | Gugur mutlak (#4) | Korban menyabotase diri sendiri; atau hanya pool penyerang | `06-refuted-invalid.md` |
-| `REJECTED_DUST` | Gugur mutlak (#10a) | Debu 1 wei–beberapa sen tanpa amplifikasi & tanpa penguncian dana | `06-refuted-invalid.md` |
+| `REJECTED_DUST` | Gugur mutlak (#10a) | Debu 1 wei–beberapa sen (< $1) tanpa amplifikasi & tanpa penguncian dana; potensi kerugian ≥ $1 BUKAN debu (direvisi 17 Nov 2026) | `06-refuted-invalid.md` |
 | `REJECTED_NEGATIVE_EV` | Gugur mutlak (#5) | Modal hangus > kerugian korban, tanpa keuntungan | `06-refuted-invalid.md` |
 | `REJECTED_BY_DESIGN` | Gugur mutlak (#6) | Perilaku didokumentasikan sebagai disengaja | `06-refuted-invalid.md` |
 | `REJECTED_MISMATCH` | Gugur mutlak (#6) | Baris kode tidak mendukung klaim | `06-refuted-invalid.md` |
