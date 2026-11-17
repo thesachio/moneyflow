@@ -3,22 +3,35 @@
 .env.*
 !.env.example
 *.secret
+rpc-env.sh
+rpc-env.sh.bak.*
+.env.rpc*
 *.pem
 *.key
 
-# === Proyek audit: tidak ikut commit ===
-# Alasan: berisi kode kontrak target + temuan yang belum tersubmit.
-projects/
+# === Kode target: di-pin lewat target/PIN.md, bukan di-vendor ===
+# Alasan: 205 MB tree + 3 submodule; isi tidak boleh bercabang dari upstream.
+target/contracts/
+target/src-mirror/
 
-# === Artefak build ===
+# === Artefak build (bisa 800 MB+) ===
 out/
 out-*/
 cache/
 cache-*/
 zkout/
 node_modules/
-target/
+target/*/target/
 *.log
+
+# === Lab: binary & dump ===
+audit/lab/*.so
+audit/lab/out/
+audit/lab/cache/
+audit/lab/broadcast/
+
+# === Backup write-ahead ikut di-commit (bukti), tapi bukan dump besar ===
+audit/notes/backups/*.tmp
 
 # Python
 __pycache__/

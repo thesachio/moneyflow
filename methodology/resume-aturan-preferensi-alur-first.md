@@ -5,6 +5,8 @@ Revisi 15 Nov 2026 ~19:05 WIB (perintah Kim "benahi yang terkait pada
 fase A B C"): Tahap C selesai, B16 dilaksanakan di pilot (status: TIDAK DIPAKAI sejak 22:33 WIB 16 Nov 2026), inventory ramping dinilai berisiko (tidak diadopsi), K9
 dilewati, SM-05 + daftar alur + bentuk Tahap D masih terbuka.
 Revisi 16 Nov 2026 22:33 WIB: 10 butir diputus Kim (lihat §10) — B16 TIDAK DIPAKAI; Tahap F diterima bersyarat; Tahap D per-alur + dua gelombang; Tahap E/G bentuk rinci = yang dipraktikkan; B9 rerun diterima; A5 dua celah diterima; arah metode = pakai paling mutakhir; deep-run per jalur; larangan filter ditulis; SM-05 dieksplorasi ketika terkait.
+Revisi 17 Nov 2026 (perintah Kim): C10 — definisi kerugian = yang bisa dibuktikan (mekanisme jalan di fork/test atas kode+state nyata + plafon terukur + pemicu terjangkau operasi normal tanpa peran istimewa/state eksotis; TIDAK harus live) — gate D: plafon live 0 tidak lagi membuat lead DORMAN; verdict 09 tidak lagi mensyaratkan P&L live > 0.
+Revisi 17 Nov 2026 (perintah Kim 12:14 WIB): C11 — standar bukti TERBUKTI = ada CUKUP jalur pendek yang saling bergantung (1 atau beberapa) dari pelanggaran invariant sampai ke kerugian yang terukur, lewat verifikasi alur-alur TERKAIT; tes yang berhenti di satu fungsi pendek lalu menyimpulkan = masih HIPOTESIS — kartu E yang buktinya cuma satu fungsi pendek harus dinilai ulang; Gelombang 1/2 tidak memberi verdict TERBUKTI.
 Yang mengikat = berkas aturan kanonik `aturan-alur-first.md`; bila resume
 ini berbeda dengan berkas aturan, berkas aturan yang berlaku. Acuan
 workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
@@ -76,7 +78,17 @@ workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
 - B8: cek live-match diulang di awal fase uji per klaster sebelum PoC;
   tidak live-match → TUNDA-LIVE (tercatat di ledger, nol waktu eksekusi,
   dibuka lagi bila deployment live muncul atau Kim memerintah cek ulang,
-  ditinjau di sapuan akhir).
+  ditinjau di sapuan akhir). Utamakan alur, log untuk verifikator terakhir
+  (diputus 17 Nov 2026 08:26 WIB, perintah Kim, MENGIKAT untuk semua B8
+  berikut): mekanisme dibuktikan dari tes tool (baca kode + cast/cek live +
+  uji fork di Tahap E), BUKAN dari pindai log tx orang lain — pindai log
+  hanya untuk verifikator akhir (Tahap G / sapuan akhir). Pemicu: B8 P4
+  ~8,5 jam memindai RelayedRootBundle per rantai. Cek desain kode dulu
+  (diputus 17 Nov 2026 ~08:33 WIB, perintah Kim, MENGIKAT): nilai 0 atau
+  bukan ditentukan dari desain kode (DISET 0 oleh kode atau BISA MEMUAT),
+  bukan dari log — contoh P4: slowRelayRoot = input proposer :565,
+  disimpan :579, diteruskan :685, tanpa require/validasi, jadi BISA
+  MEMUAT non-zero by design; live 0 dari proposer/off-chain.
 - B9: scope mapping usaha yang cukup + 4 mekanisme deteksi miss di
   eksplorasi (baca ulang mendalam per klaster; cek handoff + konservasi;
   jejak event live; cek penutupan graf) + sapuan akhir enumerasi independen
@@ -185,18 +197,26 @@ penutupan B9 (dieksekusi di akhir; bahannya yang wajib ada di Tahap B).
   (wajib sumber) + kartu lead (wajib klaim finansial). Tanpa PoC. Unit
   round D DIPUTUS 22:33 WIB 16 Nov 2026: per-alur, dua gelombang (buta →
   berpengetahuan + katalog 52 plugin); daftar alur (enumerasi + EV, dari
-  B02+B04) adalah prasyarat sebelum D.
+  B02+B04) adalah prasyarat sebelum D. DIPUTUS 17 Nov 2026: gate finansial
+  — plafon live 0 TIDAK lagi membuat lead DORMAN; yang menentukan kerugian
+  yang bisa dibuktikan (C10). DIPUTUS 17 Nov 2026: standar TERBUKTI —
+  kartu E yang buktinya cuma satu fungsi pendek harus dinilai ulang;
+  Gelombang 1/2 tidak memberi verdict TERBUKTI (C11).
 - E — Uji test: PoC fork-live + P&L terukur per kandidat. Bentuk rinci
   DIPUTUS 22:33 WIB 16 Nov 2026: yang sudah dipraktikkan (batch maks 3,
-  fork blok pin + P&L).
+  fork blok pin + P&L). DIPUTUS 17 Nov 2026: Tahap E membuktikan rantai
+  (a)+(b)+(c) sebagai satu rantai, bukan hanya satu fungsi (C11).
 - F — Komposisi (DITERIMA BERSYARAT 22:33 WIB 16 Nov 2026: hanya bila
   penting dan urgent): hanya lead multi-segmen; uji F pakai data terbaru,
   tanpa fork/PoC ulang; lead satu segmen lewati F. Bukti = lemma.
 - G — Verdict: verdict per kandidat (06/07/08/09; tiga verdict terpisah;
   severity dari plafon teramati); distribusi akhir di seluruh protokol.
   Bentuk rinci DIPUTUS 22:33 WIB 16 Nov 2026: yang sudah dipraktikkan.
+  DIPUTUS 17 Nov 2026: verdict 09 TIDAK lagi mensyaratkan P&L live > 0;
+  syaratnya kerugian yang bisa dibuktikan (C10). DIPUTUS 17 Nov 2026:
+  verdict memakai standar TERBUKTI (C11) bersama C10.
 
-## 9. Preferensi mengikat (C1–C9)
+## 9. Preferensi mengikat (C1–C11)
 
 - C1 Fork-live: fork ke kondisi live (blok pin), kecuali user bilang
   testnet/devnet di awal; mekanisme penentu diuji ulang di fork live bila
@@ -220,6 +240,26 @@ penutupan B9 (dieksekusi di akhir; bahannya yang wajib ada di Tahap B).
   tetapkan target lanjutan konkret.
 - C9 /stop mencabut otorisasi round seketika: hentikan subagent, tulis nol
   berkas, lanjutkan hanya atas perintah eksplisit baru.
+- C10 Definisi kerugian — yang bisa dibuktikan (diputus 17 Nov 2026,
+  perintah Kim): kerugian = sesuatu yang BISA DIBUKTIKAN merugikan —
+  mekanisme jalan di fork/test atas kode+state nyata, plafon terukur,
+  pemicu terjangkau lewat jalur operasi normal, TANPA peran istimewa dan
+  TANPA state eksotis; TIDAK HARUS LIVE (kejadian nyata / P&L live /
+  korban nyata bukan syarat). Konsekuensi: gate D — plafon live 0 tidak
+  lagi membuat lead DORMAN; verdict 09 — tidak lagi mensyaratkan P&L live
+  > 0. Sama dengan standar tiga tingkat Kim 23 Okt 2026.
+- C11 Standar bukti TERBUKTI — jalur pendek yang saling bergantung (diputus
+  17 Nov 2026, perintah Kim 12:14 WIB): TERBUKTI = ada CUKUP jalur pendek
+  yang saling bergantung (1 atau beberapa) dari pelanggaran invariant
+  sampai ke kerugian yang terukur; kerugian diukur lewat verifikasi
+  alur-alur TERKAIT, bukan simpulan di dalam satu fungsi pendek — tes yang
+  berhenti di satu fungsi pendek lalu menyimpulkan = masih HIPOTESIS.
+  Konsekuensi: kartu E yang buktinya cuma satu fungsi pendek harus dinilai
+  ulang; Gelombang 1/2 tidak memberi verdict TERBUKTI (tiap observasi/
+  jawaban dilabeli DIANALISIS + dicatat alur terkait yang masih kurang);
+  kartu lead merumuskan rantai (a)+(b)+(c) sebagai satu rantai yang harus
+  diuji Tahap E; verdict 09/G memakai standar ini bersama C10. Berlaku ke
+  G02 juga (buka ulang P7) dan mulai P8.
 
 ## 10. Keputusan yang sudah diputus (log singkat)
 
@@ -253,6 +293,8 @@ penutupan B9 (dieksekusi di akhir; bahannya yang wajib ada di Tahap B).
   K8 primitif; masuk alur 145/169; SM 11/12 TERTUTUP (SM-05 dienumerasi,
   butuh keputusan Kim tentang konsumennya); H 0, E 0.
 - 16 Nov 2026 (22:33 WIB): 10 butir diputus Kim — (1) B16 TIDAK DIPAKAI; (2) Tahap F DITERIMA BERSYARAT (hanya bila penting dan urgent); (3) Tahap D per-alur + dua gelombang; (4) Tahap E/G bentuk rinci = yang dipraktikkan, uji F tanpa fork/PoC ulang (data terbaru); (5) B9 rerun sensus manual DITERIMA; (6) A5 dua celah DITERIMA; (7) arah metode: pakai paling mutakhir (flow money first = metode kerja aktif); (8) deep-run per jalur DITERIMA (mulai P4); (9) larangan filter di dalam klaster DITULIS ke berkas kanonik; (10) SM-05 tetap dieksplorasi ketika terkait.
+- 17 Nov 2026 (perintah Kim "tulis begitu"): C10 — definisi kerugian = yang bisa dibuktikan (bukan syarat istimewa, tidak harus live); gate D dan syarat 09 direvisi mengikuti definisi ini.
+- 17 Nov 2026 (perintah Kim 12:14 WIB): C11 — standar bukti TERBUKTI = jalur pendek yang saling bergantung sampai ke kerugian terukur lewat alur terkait; tes satu fungsi pendek lalu menyimpulkan = masih HIPOTESIS; kartu E yang buktinya cuma satu fungsi pendek harus dinilai ulang; berlaku ke G02 juga (buka ulang P7) dan mulai P8.
 
 ## 11. Belum diputus
 
@@ -283,7 +325,7 @@ penutupan B9 (dieksekusi di akhir; bahannya yang wajib ada di Tahap B).
 
 ## 13. Berkas kanonik & cara pakai
 
-- Aturan kanonik: `aturan-alur-first.md` (A1–A5, B1–B16, C1–C9, seksi D,
+- Aturan kanonik: `aturan-alur-first.md` (A1–A5, B1–B16, C1–C11, seksi D,
   wajib/TIDAK, Belum diputus).
 - Acuan workflow Tahap B: `acuan-workflow-tahap-B.md` (konsolidasi +
   definisi + artefak; pekerja Tahap B jalan dari berkas ini + INTEL

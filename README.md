@@ -1,73 +1,87 @@
-# moneyflow v1.0 — Mesin Audit Adversarial Berbasis Aliran Uang (Flow Money First)
+> **Metode aktif: Flow Money First.** Sejak 22:33 WIB 16 Nov 2026 (keputusan Kim), metode kerja aktif repo ini adalah Flow Money First — aturan kanonik di `methodology/aturan-alur-first.md` dan skill di `skills/flow-*`. Metode Segitiga v2.0 (STAGE-0 + A–F) sudah tidak dipakai sebagai metode aktif; seluruh berkasnya diarsipkan utuh di `archive/segitiga-v2/` sebagai rujukan/legacy.
 
-**Repo ini adalah MESIN/METODE, bukan proyek audit.** Tidak memuat kode kontrak target dan tidak memuat temuan. Dipakai dengan cara disalin ke folder kerja audit baru, lalu dijalankan tahap demi tahap.
+# theadvers — Profil Muse (Metode Segitiga v2.0)
 
-Metode inti: **Flow Money First** — partisi berdasarkan aliran uang, bukan wadahnya (berkas). Unitnya satu aliran uang ujung-ke-ujung; tiap aliran diukur nilai live-nya sejak awal, diburu per segmen dan handoff, dan dibuktikan di fork live dengan P&L terukur.
+Profil audit adversarial untuk Muse, diadaptasi dari workflow
+[`thesachio/theadvers`](https://github.com/thesachio/theadvers) (branch `v2`,
+HEAD `de9e418`, 2026-11-10 — sinkronisasi kedua; pertama `10af20e`). Metode
+inti: **Segitiga** — `L-VALUE` (di mana nilai) → `L-PATH` (jalur sentuh) →
+`L-PROVE` (bukti eksekusi). Tiga titik wajib terhubung; anomali tanpa dampak
+nilai bukan temuan.
 
-Status: **pilot** (16 Nov 2026). Metode ini sedang diuji di audit Across dan belum diputuskan sebagai pengganti metode Segitiga. Aturan di sini adalah hasil revisi terbaru.
+## Isi profil ini
 
----
+| Berkas | Isi |
+| :--- | :--- |
+| `PERSONA.md` | Identitas auditor, 7 Hukum Kognitif Besi, prioritas EV P1–P5, pantangan mutlak (adaptasi `SOUL.md`). |
+| `CONSTITUTION.md` | Konstitusi operasional: bootloader, wadah kanonik, PRE-STAGE-0 (INTEL.md), siklus STAGE-0 + A–F + FINAL-SWEEP, plugin, zero-compression, delegasi, gerbang, aturan bukti 06/07/08/09, VERDICT, submisi, RPC (adaptasi `AGENTS.md`). |
+| `SYNC-2026-11-10.md` | Catatan sinkronisasi pertama: HEAD `10af20e`, 140 berkas, keputusan penempatan, pemetaan adaptasi, yang tidak diadopsi, verifikasi. |
+| `SYNC-2026-11-10-2.md` | Catatan sinkronisasi kedua: HEAD `de9e418`, 183 berkas, perubahan metodologi (batch 3, INTEL.md, aturan wadah mekanis, fork LIVE, deploy_parity per lead, katalog M baru), uji dampak ke proyek Across. |
+| `CATATAN-MUSE.md` | Catatan operasional khusus Muse: path, prosedur `--sync`, pemetaan tool, batas keamanan. |
+| `projects/` | Proyek audit (skema v2) — `projects/across/` (R_1 [CLOSED] 2026-11-10 di bawah aturan sinkronisasi pertama; lihat SYNC-2026-11-10-2.md §8 untuk uji dampak aturan baru). |
 
-## 1. Siklus Eksekusi
+Salinan referensi upstream yang setia (183 berkas, SHA terverifikasi):
+`~/workspace/theadvers-source/` — `methodology/`, `references/`, `skills/`
+(8 skill: sc-pre-intel + A–F + autopilot), `templates/` (termasuk
+`INTEL.md` baru), `tools/`, `verify/`, `SOUL.md`, `AGENTS.md`, `README.md`,
+`.gitignore`, `notes/backups/` (residu v1 + arsip per-perubahan v2).
 
-```
-A   INTEL        Brief 9 butir → pin (commit + blok referensi + stage)
-B   Mapping      Sensus 100% + klaster + jahitan + ledger sisa + registry
-   │
-   ├── Untuk SETIAP alur (vertikal, rolling C → D → E):
-   │     C   Pemetaan mendalam klaster — inventaris alur + segmentasi + kontrak handoff deskriptif
-   │     D   Eksplorasi — gelombang 1 buta → gelombang 2 berpengetahuan → kartu lead + invariant
-   │     E   Uji test — PoC fork-live + P&L terukur per kandidat (batch maks 3)
-   │
-   ├── F   Komposisi (USULAN) — hanya lead multi-segmen, PoC gabungan
-   └── G   Verdict — 06 / 07 / 08 / 09 per kandidat + distribusi akhir
-       + sapuan akhir (enumerasi independen kedua dibanding ledger akhir)
-```
+## Memulai audit baru
 
-## 2. Berkas Konstitusi (mengikat)
+```bash
+# 0. PRE-STAGE-0 — isi INTEL.md dulu (prasyarat --gate 0, bukan tahap baru)
+cp ~/workspace/theadvers-source/templates/INTEL.md <audit-dir>/INTEL.md
+#    isi: Deployment Stage (MAINNET/TESTNET/DEVNET), identitas, URL langsung,
+#    commit terpin, bukti live, Blok Referensi; lalu periksa:
+python3 ~/workspace/theadvers-source/tools/verify_segitiga.py --intel <audit-dir>
 
-| Berkas | Isi | Kapan dibaca |
-| :--- | :--- | :--- |
-| **`SOUL.md`** | identitas, 7 Hukum Kognitif Besi, lantai bawah, prioritas EV | setiap sesi, sebelum apa pun |
-| **`AGENTS.md`** | konstitusi operasional: bootloader, tahap A–G, delegasi, gerbang, hemat | setiap sesi + tiap delegasi |
-| **`methodology/aturan-alur-first.md`** | aturan kanonik (A1–A5, B1–B16, C1–C9, Tahap C–G, belum diputus) | sumber kebenaran metode |
-| **`methodology/resume-aturan-preferensi-alur-first.md`** | ringkasan aturan + preferensi | acuan cepat |
-| **`methodology/acuan-workflow-tahap-B.md`** | acuan kerja Tahap B | pekerja Tahap B |
-| **`methodology/rancangan-hemat-fase-d.md`** | aturan hemat Fase D + prinsip efisiensi + lantai bawah | mulai Fase D |
+# 1. Salin mesin + template ke folder proyek (tanpa notes/backups)
+mkdir -p ~/workspace/theadvers/projects/<nama-proyek>/audit
+cd ~/workspace/theadvers/projects/<nama-proyek>
+cp ~/workspace/theadvers-source/templates/STATE.md ~/workspace/theadvers-source/templates/FACTS.md \
+   ~/workspace/theadvers-source/templates/RADAR.md ~/workspace/theadvers-source/templates/path-map.md audit/
+cp ~/workspace/theadvers-source/templates/0*.md audit/
+cp -r ~/workspace/theadvers-source/tools ~/workspace/theadvers-source/methodology \
+      ~/workspace/theadvers-source/references ~/workspace/theadvers-source/skills \
+      ~/workspace/theadvers-source/verify ~/workspace/theadvers-source/templates .
 
-## 3. Struktur
-
-```
-SOUL.md                     identitas + hukum kognitif + lantai bawah
-AGENTS.md                   konstitusi operasional
-methodology/
-  aturan-alur-first.md      aturan kanonik (A1–A5, B1–B16, C1–C9)
-  resume-aturan-preferensi-alur-first.md
-  acuan-workflow-tahap-B.md acuan Tahap B
-  rancangan-hemat-fase-d.md aturan hemat + efisiensi + floor
-  attack-forms/             AF-01..AF-10 — kelas kerentanan (diwarisi theadvers)
-  domains/                  DOM-* — 7 domain (diwarisi theadvers)
-references/
-  methods/                  M-001..M-010 — metode bedah universal (diwarisi)
-  pov/                      POV-* — 15 sudut pandang aktor (diwarisi)
-  chains/                   CHAIN-* — 10 plugin rantai (diwarisi)
-templates/                  wadah kerja audit + standar laporan (diwarisi)
-  STATE.md FACTS.md RADAR.md path-map.md
-  04-code-guarded.md 05-raw-leads.md 06-refuted-invalid.md
-  07-needs-next-step.md 08-valid-not-eligible.md 09-confirmed-findings.md
-  INTEL.md POC-PACKAGE.md SEVERITY-RUBRIC.md SUBMISSION-EMAIL.md
-  TECHNICAL-REPORT.md VERDICT.md case/
-skills/                     pintu masuk runtime: flow-money-first/SKILL.md (skill per tahap BELUM ditulis — lihat §6 AGENTS.md)
-tools/
-  deploy_parity.py          cek parity deployment live vs HEAD (diwarisi)
-verify/                     skema verdict 06–09 + severity rubric (diwarisi)
-projects/                   tempat proyek target (di-.gitignore, tidak ikut commit)
+# 2. Isi identitas proyek di audit/STATE.md, lalu mulai STAGE-0
+python3 ~/workspace/theadvers-source/tools/verify_segitiga.py --context-packet audit
 ```
 
-## 4. Asal
+Atau minta Muse menjalankan `sc-pre-intel` lalu `sc-autopilot` (skill di
+`~/workspace/theadvers-source/skills/sc-pre-intel/SKILL.md` dan
+`sc-autopilot/SKILL.md`) — induk mengorkestrasi PRE-STAGE-0 → STAGE-0 →
+A–F per wilayah → FINAL-SWEEP.
 
-Dibangun dari 0 dengan RULE dan PREFERENSI terbaru metode alur-first. Yang tetap + data modular diambil dari `thesachio/theadvers` (branch `v2`, commit `2f31e1a`): katalog 52 plugin (AF 10 + DOM 7 + M 10 + POV 15 + CHAIN 10), templates, `tools/deploy_parity.py`, dan `verify/`. Yang TIDAK diambil: skill `sc-*` dan `verify_segitiga.py` (terikat STAGE-0 + A–F Segitiga — harus ditulis ulang untuk Tahap A–G), `methodology/METHODOLOGY-SEGITIGA.md` + `BOOTSTRAP.md` + `INJECTION-CONTRACT.md` (digantikan berkas aturan di `methodology/`), dan `notes/backups/` (arsip riwayat).
+## Yang TIDAK berubah vs upstream
 
-## 5. Lantai Bawah (tidak boleh dipangkas)
+Metodologi (Hukum 1–7, EV P1–P5, dua gelombang C1/C2, zero-compression,
+pemisahan wadah 04–09, 11 Pernyataan VERDICT termasuk #11e
+anti-paper-refutation, gerbang mekanis) TIDAK diubah. Yang berubah hanya
+lapisan tooling — lihat `SYNC-2026-11-10-2.md` §5 dan
+`CONSTITUTION.md` §10. Perhatikan perubahan metodologi pada sinkronisasi
+kedua (diterapkan di profil ini): **Rolling Batch maksimal 3** kandidat
+`[ACTIVE]` per siklus D → E (dulu 5), terikat satu wilayah dengan
+`Batch ID: <R_i>-B<nn>`; `INTEL.md` prasyarat `--gate 0`; aturan bukti
+06/07/08/09 ditegakkan mekanis (`--rules`, `--gate E`); fork LIVE wajib
+untuk proyek mainnet; `deploy_parity` wajib per lead di gate D; katalog
+metode M-001..M-010 diganti total (ID lama tidak lagi menunjuk metode yang
+sama — rujukan M-xxx pada proyek lama dibaca dengan katalog yang berlaku
+saat wilayah itu dikerjakan).
 
-Baca kode, ukur live, verifikasi parent atas bukti penentu.
+## Status
+
+- Profil dibuat 2026-11-10 (sinkronisasi pertama theadvers v2, HEAD
+  `10af20e`); sinkronisasi kedua 2026-11-10 (HEAD `de9e418`, 183 berkas).
+- Proyek pertama: Across (`projects/across/`), R_1 [CLOSED] 2026-11-10
+  (distribusi akhir 06=3, 07=0, 08=4, 09=0) di bawah aturan sinkronisasi
+  pertama. Uji dampak aturan baru terhadap proyek itu (read-only, tanpa
+  perbaikan): `--gate 0` FAIL (belum ada INTEL.md), `--gate D` FAIL
+  (Deployment Stage belum dinyatakan), `--gate E`/`--rules` FAIL
+  (53 pelanggaran format wadah baru) — R_1 TIDAK dibuka kembali; delta ini
+  menunggu keputusan Kim. STAGE-A R_2 belum diperintahkan.
+- Profil `~/workspace/research-persona/` (v6.2.5 — Relay, Aero v2) dan
+  `~/workspace/theadver/` (default — Velocity) TIDAK disentuh.
+- Tanpa draft/submisi/kontak program tanpa persetujuan eksplisit Kim.
+  Tersimpan ≠ tersubmit.
