@@ -1,45 +1,131 @@
 ---
 name: flow-d-explore
-description: Tahap D — Eksplorasi per-alur, dua gelombang (buta → berpengetahuan + katalog 52), kartu lead + invariant. Dipakai saat memburu alur, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead.
+description: Tahap D — Eksplorasi per-alur, dua gelombang (buta → berpengetahuan + katalog 52), kartu lead + invariant tiga lapis, gate finansial C10, label DIANALISIS wajib di gelombang 1/2 (C11). Skill ini memuat aturan dan format sampai Tahap D selesai. Dipakai saat memburu alur, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead.
 ---
 
 # Skill flow-d-explore — Tahap D (Eksplorasi)
 
-Tahap D = buruan per alur. Unit round = **per-alur**, dua gelombang (diputus 22:33 WIB 16 Nov 2026). Sumber kebenaran: `methodology/aturan-alur-first.md` (seksi D — Tahap D + B12 + C10/C11). Skill ini menuntun eksekusi; aturan ada di berkas itu.
+Tahap D = buruan **per alur**. Unit round = per-alur, dua gelombang (buta → berpengetahuan + katalog).
+Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-alur-first.md` (seksi D — Tahap D, B12, C10, C11) hanya rujukan sengketa.
 
-## Prasyarat
+## Prasyarat (tanpa ini D tidak mulai)
 
-Daftar alur (enumerasi + EV per alur, dari B02+B04) sudah ada sebelum D. Tanpa daftar alur, D tidak mulai.
+- Daftar alur klaster: enumerasi + EV per alur, dari `B02` + `B04`.
+- Inventaris alur klaster (`C<NN>-K<n>-FLOW-INVENTORY.md`).
+- Registry invariant (`B06`) sudah punya struktur penomoran.
 
-## Langkah
+**Definisi alur:** satu alur = **KELUARGA jalur** yang berbagi segmen + kontrak handoff yang sama. Bila intinya beda, **pecah** jadi kartu lead sendiri atau round sendiri. Alur ≠ klaster: satu klaster bisa berisi beberapa alur.
 
-### 1. Gelombang 1 — buta
+## Gelombang 1 — buta
 
-- Bekal: L-VALUE + L-PATH + inventaris alur klaster (C01) + premis parent.
-- **DILARANG:** membuka katalog (`_ROUTER.md` atau plugin apa pun), membaca badan fungsi klaster lain, memakai laporan audit lama.
-- Pengecualian wajib: baca M-005 §3 sebelum entri 04.
-- Keluaran: observasi (OBS) + jalur terjaga (G) + sinyal RADAR (R) + pertanyaan gelombang 2 (Q).
+Bekal: L-VALUE + L-PATH + inventaris alur klaster + premis parent.
 
-### 2. Gelombang 2 — berpengetahuan + katalog
+**DILARANG:**
 
-- Silang: inversi handoff + konservasi + jejak event live + katalog 52 plugin (baca hanya plugin yang gejalanya cocok; `[NO-CATALOG]` bila tidak ada yang cocok — kandidat DILARANG gugur hanya karena tidak cocok katalog).
-- Temuan di luar katalog = kandidat plugin baru (niat C1: jangan batasi eksplorasi).
-- Keluaran: kandidat QUEUED (QD..) dengan prioritas P1–P5 + DORMAN (hanya bila gagal gate C10 — lihat §3) + disposisi Q/RADAR.
+- membuka katalog (`_ROUTER.md` atau plugin `M-*` / `AF-*` / `DOM-*` / `POV-*` / `CHAIN-*` apa pun)
+- membaca badan fungsi klaster lain
+- memakai laporan audit lama sebagai sumber dugaan
 
-### 3. Kartu lead + invariant
+**Pengecualian wajib:** baca `M-005` §3 sebelum menulis entri `04`.
 
-- Kartu lead 1:1 dari kandidat QUEUED; **tiap kartu wajib klaim finansial sendiri**.
-- Invariant dirumuskan bersama kartu leadnya. Tiap invariant **WAJIB mencantumkan sumbernya**: field kontrak handoff, atau baris docs/NatSpec. Tiga lapis: L1 dalam segmen (INV-Sx), L2 handoff + simpul (INV-Hx, INV-Jx), L3 ujung-ke-ujung/komposisi (INV-Fx). Tiap invariant wajib akibat finansial bila pecah.
-- Registry invariant satu penomoran global (B3), diisi mulai Tahap D.
-- **Gate finansial (C10, direvisi 17 Nov 2026):** lead masuk Tahap E bila kerugian yang bisa dibuktikan — mekanisme jalan di fork/test atas kode+state nyata + plafon terukur + pemicu terjangkau lewat jalur operasi normal (tanpa peran istimewa/state eksotis). **Plafon live 0 TIDAK lagi membuat lead DORMAN** — P&L live tidak disyaratkan; syarat buka-ulang konkret tetap dicatat bila ada.
+Keluaran gelombang 1 (4 label):
 
-## Aturan yang mengikat
+| Label | Arti |
+| :--- | :--- |
+| `OBS` | observasi anomali (fakta kode, belum jalur) |
+| `G` | jalur yang terbukti dijaga penjaga kode eksak |
+| `R` | sinyal RADAR (menyentuh modul/variabel lain) |
+| `Q` | pertanyaan untuk gelombang 2 |
 
-- **Bahasa brief:** bahasa verifikasi invariant, bukan bahasa serangan. Brief Tahap E memakai bahasa verifikasi.
-- **Tugas agen dibatasi ALUR, bukan klaster:** boleh baca lintas klaster hanya sepanjang alur yang dilewati.
-- **Definisi alur:** satu alur = KELUARGA jalur yang berbagi segmen + kontrak handoff yang sama. Bila inti beda, pecah jadi kartu lead sendiri atau round sendiri.
-- **Deep-run per jalur** (diputus 22:33 WIB 16 Nov 2026): satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah; berlaku mulai jalur berikut (P4 — P3 sudah jalan step-by-step).
+## Gelombang 2 — berpengetahuan + katalog
+
+Silang empat hal:
+
+1. **Inversi handoff** — patahkan jaminan produsen / asumsi konsumen dari `C<NN>`.
+2. **Konservasi** — Σkeluaran vs masukan di tiap simpul fork/join.
+3. **Jejak event live** — dipakai sebagai enumerasi independen, bukan cara kerja utama (pindai log = verifikator terakhir).
+4. **Katalog 52 plugin** — baca **hanya** plugin yang gejalanya cocok. Tidak ada yang cocok → tulis `[NO-CATALOG]`. **Kandidat DILARANG gugur hanya karena tidak cocok katalog.** Temuan di luar katalog = kandidat plugin baru.
+
+Keluaran gelombang 2: kandidat `QUEUED` (`QD..`) + `DORMAN` (hanya bila gagal gate C10) + disposisi `Q`/RADAR.
+
+### Urutan prioritas QUEUED
+
+Aturan operasional yang **terdefinisi** di repo ini: urutkan menurut **EV live** (nilai harapan dari data live — volume/saldo per entrypoint), tertinggi dulu.
+
+> Catatan jujur: label `P1–P5` yang dipakai di beberapa berkas adalah kosakata warisan katalog dan **tidak punya definisi di methodology repo ini**. Jangan mengarang definisinya. Kalau butuh label prioritas, tulis angka EV + alasannya; kalau butuh `P1–P5`, minta user mendefinisikannya lebih dulu.
+
+## Kartu lead + invariant
+
+### Kartu lead (1:1 dari QUEUED)
+
+Tiap kartu **wajib punya klaim finansial sendiri** — bukan "ini mencurigakan", tapi "kalau ini pecah, X unit nilai berpindah dari A ke B".
+
+**C11 mengikat bentuk kartu:** kartu merumuskan rantai **(a)+(b)+(c)** sebagai **satu rantai** yang akan diuji utuh di Tahap E:
+
+- (a) pelanggaran invariant (di mana, fungsi mana);
+- (b) jalur pendek yang menyambungkannya ke nilai;
+- (c) kerugian terukur (berapa, dari mana angkanya).
+
+Kartu yang hanya berhenti di (a) = **HIPOTESIS**, bukan kandidat uji.
+
+### Invariant tiga lapis
+
+| Lapis | ID | Cakupan |
+| :--- | :--- | :--- |
+| L1 | `INV-Sx` | di dalam segmen |
+| L2 | `INV-Hx`, `INV-Jx` | di handoff dan di simpul |
+| L3 | `INV-Fx` | ujung-ke-ujung / komposisi |
+
+Aturan wajib per invariant:
+
+- **Wajib mencantumkan sumbernya**: field kontrak handoff, atau baris `docs`/NatSpec. **Bukan** perasaan agen.
+- **Wajib punya akibat finansial bila pecah** — invariant tanpa akibat finansial bukan invariant, itu catatan.
+- Cek **testability** dicatat saat perumusan: fork apa, data live apa; dilabeli bila tidak bisa diuji.
+- Registry invariant **satu penomoran global** (`B06`), diisi mulai Tahap D.
+
+## Gate finansial (C10) — gerbang masuk Tahap E
+
+Lead **masuk** Tahap E bila **ketiganya** terpenuhi:
+
+1. mekanisme jalan di fork/test atas **kode + state nyata**;
+2. **plafon terukur** (angka, bukan perkiraan);
+3. pemicu **terjangkau lewat jalur operasi normal** — tanpa peran istimewa, tanpa state eksotis.
+
+**Yang TIDAK disyaratkan:** P&L live > 0, korban nyata, kejadian on-chain.
+
+**Konsekuensi penting:** **plafon live 0 TIDAK lagi membuat lead DORMAN.** Nilai 0 di live hanya berarti pemicunya belum terjadi, bukan bahwa mekanismenya tidak bisa merugikan.
+
+`DORMAN` hanya dipakai bila **gate C10 gagal**, dan wajib mencatat **syarat buka-ulang yang konkret** (mis. "buka bila pool X punya likuiditas", "buka bila parameter Y diubah").
+
+## C11 — gelombang 1 dan 2 TIDAK memberi verdict TERBUKTI
+
+Konsekuensi yang sering dilanggar:
+
+- Gelombang 1/2 **tidak boleh** menyimpulkan `TERBUKTI`.
+- Tiap observasi/jawaban dilabeli **`DIANALISIS`**.
+- Wajib mencatat **alur terkait apa yang masih kurang** menuju kerugian terukur.
+- `TERBUKTI` hanya boleh datang dari Tahap E yang menguji rantai (a)+(b)+(c) utuh.
+
+## Aturan mengikat lain
+
+- **Bahasa brief: verifikasi invariant, bukan bahasa serangan.** Brief Tahap E memakai bahasa verifikasi.
+- **Tugas agen dibatasi ALUR, bukan klaster** — boleh baca lintas klaster **hanya sepanjang alur yang dilewati**.
+- **Deep-run per jalur**: satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah.
+- **`/stop` mencabut otorisasi seketika** — hentikan subagent, tulis nol berkas.
 
 ## Keluaran
 
-- `Dnn-<JALUR>-WAVE1-BLIND.md`, `Dnn-<JALUR>-WAVE2-QUEUED.md`, `Dnn-<JALUR>-LEAD-CARDS.md` + registry invariant terisi.
+- `D<nn>-<JALUR>-WAVE1-BLIND.md` — OBS / G / R / Q, semua berlabel `DIANALISIS`.
+- `D<nn>-<JALUR>-WAVE2-QUEUED.md` — QUEUED berurut EV + DORMAN (dengan syarat buka-ulang) + disposisi.
+- `D<nn>-<JALUR>-LEAD-CARDS.md` — kartu 1:1 dengan rantai (a)+(b)+(c) + klaim finansial.
+- Registry invariant (`B06`) terisi dengan sumber tiap invariant.
+
+## Definition of done Tahap D (per alur)
+
+- [ ] gelombang 1 dijalankan **tanpa** membuka katalog
+- [ ] gelombang 2 menyilang keempat sumber (handoff, konservasi, event live, katalog)
+- [ ] tiap QUEUED punya kartu lead dengan rantai (a)+(b)+(c) dan klaim finansial
+- [ ] tiap invariant punya sumber (field handoff / docs) + akibat finansial + cek testability
+- [ ] gate C10 diuji untuk tiap kandidat; DORMAN hanya bila gagal, dengan syarat buka-ulang
+- [ ] nol verdict `TERBUKTI` dari gelombang 1/2; semua berlabel `DIANALISIS`
+- [ ] nol PoC (itu Tahap E)

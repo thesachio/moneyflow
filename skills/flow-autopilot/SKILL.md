@@ -1,97 +1,127 @@
 ---
 name: flow-autopilot
-description: Autopilot / deep-run PROYEK PENUH. Jalankan SEMUA alur proyek — semua klaster, semua jalur — dari posisi kursor sampai sapuan akhir atas satu perintah berdiri, tanpa tap antar langkah; /stop mencabut otorisasi seketika. Dipakai saat user memerintah full-autopilot, autopilot, deep-run, jalankan penuh, atau satu perintah berdiri untuk seluruh proyek.
+description: Autopilot / deep-run PROYEK PENUH. Jalankan SEMUA alur proyek — semua klaster, semua jalur — dari posisi kursor sampai sapuan akhir atas satu perintah berdiri, tanpa tap antar langkah; /stop mencabut otorisasi seketika. Memuat 7 iron law, mesin status dua lapis, protokol delegasi, dan syarat penutupan proyek. Dipakai saat user memerintah full-autopilot, autopilot, deep-run, jalankan penuh, atau satu perintah berdiri untuk seluruh proyek.
 ---
 
 # Skill flow-autopilot — Mesin Orkestrator Full-Autopilot Proyek
 
-Anda adalah mesin otonom full-autopilot metode flow money first. Tugas Anda: menjalankan **SELURUH proyek** — semua klaster, semua jalur — dari posisi kursor saat ini sampai sapuan akhir, atas satu perintah berdiri, tanpa menunggu tap antar langkah. Berhenti hanya bila semua jalur selesai (QUEUED == 0 dan ACTIVE == 0 di semua klaster) atau bila `/stop` datang.
+Mesin otonom metode flow money first. Tugas: menjalankan **SELURUH proyek** — semua klaster, semua jalur — dari posisi kursor sampai sapuan akhir, atas **satu perintah berdiri**, tanpa menunggu tap antar langkah.
 
-Ini BUKAN autopilot satu jalur. Satu jalur adalah unit kerja; proyek adalah cakupannya. Skill ini yang mengatur pergantian jalur dan klaster, pembuatan daftar alur, dan penutupan proyek.
+**Berhenti hanya bila:** semua jalur selesai (QUEUED == 0 **dan** ACTIVE == 0 di semua klaster) **atau** `/stop` datang.
 
-Sumber kebenaran: `methodology/aturan-alur-first.md` + `methodology/rancangan-hemat-fase-d.md` (aturan hemat + lantai bawah). Skill ini menuntun orkestrasi; aturan ada di berkas itu. **Skill ini tidak memakai gate Segitiga** (tidak ada STAGE-0/A–F, tidak ada `verify_segitiga.py`, tidak ada wilayah R_i) — kursor dan gerbangnya milik metode ini.
+**Ini BUKAN autopilot satu jalur.** Satu jalur adalah unit kerja; proyek adalah cakupannya. Skill ini mengatur pergantian jalur/klaster, pembuatan daftar alur, dan penutupan proyek.
 
-## 1. Cakupan — proyek penuh
+**Skill ini tidak memakai gate Segitiga** — tidak ada STAGE-0/A–F, tidak ada `verify_segitiga.py`, tidak ada wilayah R_i. Kursor dan gerbangnya milik metode ini.
 
-- **Semua klaster, semua jalur.** Autopilot berjalan klaster demi klaster, jalur demi jalur, urut EV — sampai tidak ada lagi jalur yang belum selesai.
+## 1. Cakupan
+
+- **Semua klaster, semua jalur**, urut EV, sampai tidak ada jalur yang belum selesai.
 - **Selesaikan satu jalur sebelum pindah jalur; selesaikan satu klaster sebelum pindah klaster.** Dilarang menyentuh berkas jalur/klaster berikut selama yang aktif masih punya QUEUED > 0 atau ACTIVE > 0.
-- **Klaster yang Tahap D-nya selesai tapi Tahap E-nya sebagian dilanjutkan dari kartu yang tersisa** — jangan mulai dari awal. Kursor mencatat klaster + jalur + tahap + batch aktif.
-- **Klaster yang belum punya daftar alur:** buat dulu daftar alurnya (enumerasi + EV dari B02+B04) sebelum deep-run jalurnya.
-- **Jalur yang sudah selesai penuh** (E selesai, QUEUED == 0, ACTIVE == 0) tidak diulang. Jalur yang tidak live-match masuk wadah TUNDA-LIVE (nol waktu eksekusi) dan dilewati.
+- **Resume, bukan mulai ulang.** Klaster yang Tahap D selesai tapi E sebagian → lanjutkan dari kartu tersisa. Kursor mencatat klaster + jalur + tahap + batch.
+- **Klaster tanpa daftar alur** → buat daftarnya dulu (enumerasi + EV dari `B02` + `B04`) sebelum deep-run.
+- **Jalur selesai penuh tidak diulang.** Jalur yang tidak live-match → `TUNDA-LIVE` (nol waktu eksekusi) dan dilewati.
 
-## 2. Hukum Pengendali Loop (Iron Laws)
+## 2. Tujuh Iron Law (tidak boleh dilanggar)
 
-Selama autopilot berjalan, Anda terikat pada 7 hukum mekanis yang tidak boleh dilanggar:
+1. **Zero-trust terhadap ingatan chat.** Di awal setiap transisi tahap, baca ulang dari disk: berkas aturan kanonik + ledger sisa + registry invariant + daftar jalur (`D00`) + berkas jalur yang sedang jalan. **Output chat bukan acuan.**
+2. **Verify-before-transition.** Jangan ubah kursor ke tahap berikut sebelum gate tahap itu lulus:
+   - **B13** scope lock
+   - **B8** live-match (cara kerja: alur + cek desain kode dulu; log tx = verifikator terakhir)
+   - **gate finansial D** (C10 — plafon live 0 **tidak** membuat DORMAN)
+   - **verifikasi parent** atas bukti penentu di E
+   - **aturan verdict** di G (C10 + C11)
 
-1. **Jangan pernah mengandalkan ingatan chat (zero-trust):** di awal setiap transisi tahap, baca ulang dari disk — berkas aturan kanonik + ledger sisa + registry invariant + daftar jalur (D00) + berkas jalur yang sedang jalan. Output chat bukan acuan.
-2. **Jangan pernah melompati gate (verify-before-transition):** jangan ubah kursor ke tahap berikut sebelum gate tahap itu lulus — B13 scope lock, B8 live-match (cara kerja: alur + cek desain kode dulu, log tx = verifikator terakhir), gate finansial D (C10: kerugian yang bisa dibuktikan — plafon live 0 TIDAK membuat lead DORMAN), verifikasi parent atas bukti penentu di E, aturan verdict di G (C10 + C11). Gate gagal → perbaiki di berkas kerja saat itu juga, jalankan ulang gate.
-3. **Satu jalur, satu klaster, sampai selesai:** selesaikan satu jalur sebelum pindah jalur; selesaikan satu klaster sebelum pindah klaster (hukum §1).
-4. **Kuras habis antrean dengan rolling batch maks 3 ACTIVE di Tahap E:** tarik maks 3 kartu lead QUEUED dengan EV tertinggi, buktikan di E, adili di G, sampai QUEUED == 0 DAN ACTIVE == 0 — per jalur, lalu lanjut jalur berikut.
-5. **Larangan mutlak token kompresi malas:** jangan pernah menulis `...`, `dll.`, `dst.`, `etc.`, `and so on`, `rest of logic`, `rest of code` di berkas audit mana pun. Setiap klaim wajib punya jangkar verbatim `Path/File.ext:Lxx-Lyy` + batas fungsi diperiksa via `grep -n` (satu baris yang ada ≠ jangkar yang benar).
-6. **Write-ahead checkpoint di ledger:** perbarui kursor (klaster aktif, jalur aktif, tahap aktif, batch aktif, QUEUED/ACTIVE count) di ledger sisa SEBELUM memulai suatu tahap dan SEGERA setelah gate tahap itu lulus.
-7. **`/stop` atau perintah berhenti eksplisit mencabut otorisasi seketika:** hentikan subagent, tulis nol berkas, jangan promosi atau jalankan close-region, lanjutkan hanya atas perintah eksplisit baru yang menyebut wilayah atau batch-nya.
+   Gate gagal → perbaiki di berkas kerja saat itu juga, jalankan ulang gate.
+3. **Satu jalur, satu klaster, sampai selesai.**
+4. **Kuras antrean dengan rolling batch maks 3 ACTIVE di E.** Tarik maks 3 kartu QUEUED EV tertinggi → buktikan di E → adili di G → ulangi sampai QUEUED == 0 **dan** ACTIVE == 0, per jalur, lalu jalur berikut.
+5. **Larangan mutlak token kompresi malas.** Jangan pernah menulis `...`, `dll.`, `dst.`, `etc.`, `and so on`, `rest of logic`, `rest of code` di berkas audit mana pun. Setiap klaim wajib punya jangkar verbatim `Path/File.ext:Lxx-Lyy`, dan batas fungsi diperiksa via `grep -n` (**satu baris yang ada ≠ jangkar yang benar**).
+6. **Write-ahead checkpoint di ledger.** Perbarui kursor (klaster aktif, jalur aktif, tahap aktif, batch aktif, QUEUED/ACTIVE count) **SEBELUM** memulai tahap dan **SEGERA** setelah gate tahap itu lulus.
+7. **`/stop` mencabut otorisasi seketika.** Hentikan subagent, tulis nol berkas, jangan promosi, jangan jalankan close-region. Lanjut hanya atas perintah eksplisit baru yang menyebut wilayah/batch-nya.
 
 ## 3. Lantai bawah — yang tidak boleh dipangkas
 
-Baca kode, ukur live, verifikasi parent atas bukti penentu. Segala penghematan hanya boleh memotong di atas lantai ini. Yang TIDAK dipangkas deep-run: dua gelombang, bukti fork-live + P&L, ledger + sapuan akhir, `/stop` kapan saja.
+Baca kode, ukur live, verifikasi parent atas bukti penentu.
+
+**Yang TIDAK dipangkas deep-run:** dua gelombang · bukti fork-live + P&L · ledger + sapuan akhir · `/stop` kapan saja.
+
+**Yang BOLEH dihemat:** satu fork per wilayah dipakai ulang · `deploy_parity` sekali + cache · satu harness dua mode · triase fork-testability di awal · pipeline (bukan paralel buta) · cek mesin otomatis · pre-check murah sebelum gate.
 
 ## 4. Persiapan / Resume
 
-Saat dipanggil, periksa direktori proyek:
+1. **Belum ada berkas kerja kanonik** → buat dari `templates/` + `methodology/` (INTEL `A01`, `B01`–`B06`, ledger sisa, registry invariant), lalu jalankan `flow-a-intel` dan `flow-b-map` sampai Tahap B selesai. **Autopilot tidak memburu sebelum scope dikunci.**
+2. **Baca posisi kursor** dari ledger sisa + semua `D00`: klaster aktif, jalur aktif, tahap aktif, batch aktif, QUEUED/ACTIVE count. Lompat langsung ke STEP yang sesuai — jangan mulai dari awal.
+3. Jalur dan klaster yang selesai penuh **tidak diulang**.
 
-1. Jika belum ada berkas kerja kanonik: buat dari `templates/` + `methodology/` (INTEL A01, B01–B06, ledger sisa, registry invariant), lalu jalankan skill `flow-a-intel` dan `flow-b-map` sampai Tahap B selesai — autopilot tidak memburu sebelum scope dikunci.
-2. Baca posisi kursor proyek dari ledger sisa + semua D00 (daftar jalur per klaster): klaster aktif, jalur aktif, tahap aktif, batch aktif, QUEUED/ACTIVE count. Lompat langsung ke langkah mesin status yang sesuai — jangan mulai dari awal bila pekerjaan sudah berjalan.
-3. Jalur dan klaster yang sudah selesai penuh tidak diulang.
-
-## 5. Mesin Status (Execution Loop) — dua lapis
+## 5. Mesin Status — dua lapis
 
 ### Lapis proyek
 
-#### STEP PROJECT — Pilih pekerjaan berikut
-Baca ledger sisa + semua D00. Cari klaster/jalur pertama yang belum selesai (urut EV). Bila tidak ada → STEP FINAL-SWEEP. Tentukan posisi kursor klaster itu:
-- Belum punya daftar alur → STEP PATH-BUILD.
-- Daftar alur ada, Tahap D belum jalan → STEP PATH-RUN dari B8.
-- Tahap D selesai, Tahap E sebagian → STEP PATH-RUN dari E-BATCH (kartu tersisa saja).
-- Tahap E selesai, verdict belum → STEP PATH-RUN dari G.
+**STEP PROJECT — pilih pekerjaan berikut.**
+Baca ledger sisa + semua `D00`. Cari klaster/jalur pertama yang belum selesai (urut EV). Tidak ada → **STEP FINAL-SWEEP**. Tentukan posisi kursor:
 
-#### STEP PATH-BUILD — Daftar alur klaster
-Enumerasi alur klaster itu (dari B02+B04) + EV per alur; tulis `D00-<KLASTER>-PATHS.md`; urut EV. Checkpoint, lalu STEP PATH-RUN untuk jalur pertamanya.
+| Kondisi | Langkah |
+| :--- | :--- |
+| belum punya daftar alur | STEP PATH-BUILD |
+| daftar alur ada, D belum jalan | STEP PATH-RUN dari B8 |
+| D selesai, E sebagian | STEP PATH-RUN dari E-BATCH (kartu tersisa saja) |
+| E selesai, verdict belum | STEP PATH-RUN dari G |
 
-#### STEP CLUSTER-CLOSE — Tutup klaster
-Bila semua jalur klaster itu selesai (QUEUED == 0 dan ACTIVE == 0 di tiap jalur): perbarui ledger sisa + D00, checkpoint, kembali ke STEP PROJECT untuk klaster berikut.
+**STEP PATH-BUILD — daftar alur klaster.**
+Enumerasi alur klaster (dari `B02` + `B04`) + EV per alur → tulis `D00-<KLASTER>-PATHS.md` → urut EV → checkpoint → STEP PATH-RUN jalur pertama.
 
-#### STEP FINAL-SWEEP — Sapuan akhir proyek
-Enumerasi independen kedua (rerun sensus manual) dibanding ledger akhir; handoff terbuka + TUNDA-LIVE ditinjau; distribusi akhir dihitung di seluruh protokol. Selesai → COMPLETED, sajikan ringkasan akhir ke user (distribusi 06/07/08/09 + temuan 09 + sisa 07 beserta pemicunya).
+**STEP CLUSTER-CLOSE — tutup klaster.**
+Semua jalur klaster selesai (QUEUED == 0 **dan** ACTIVE == 0 di tiap jalur) → perbarui ledger + `D00` → checkpoint → STEP PROJECT untuk klaster berikut.
+
+**STEP FINAL-SWEEP — sapuan akhir proyek.**
+Enumerasi independen kedua (rerun sensus manual) dibanding ledger akhir; handoff terbuka + `TUNDA-LIVE` ditinjau; distribusi akhir dihitung di seluruh protokol. Selesai → **COMPLETED** + ringkasan akhir ke user (distribusi 06/07/08/09 + temuan 09 + sisa 07 beserta pemicunya).
 
 ### Lapis jalur (STEP PATH-RUN — deep-run satu jalur)
 
-Jalankan sub-loop berikut untuk jalur aktif, tanpa tap antar langkah:
+**STEP B8 — cek live-match jalur.**
+Jalankan B8 untuk jalur itu (sensus kaki + cek live pin, pakai ulang cache trunk).
+LULUS → gelombang 1. **TIDAK LIVE-MATCH** → `TUNDA-LIVE` (catat di ledger, nol waktu eksekusi) → kembali ke STEP PROJECT.
 
-#### STEP B8 — Cek live-match jalur
-Jalankan B8 untuk jalur itu (sensus kaki + cek live pin, pakai ulang cache trunk). LULUS → lanjut gelombang 1. TIDAK LIVE-MATCH → wadah TUNDA-LIVE (catat di ledger sisa, nol waktu eksekusi), ambil jalur berikut (kembali ke STEP PROJECT).
+**STEP D-WAVE1 — gelombang 1 buta.**
+Koordinator + 2 worker, **kode saja, buta** — tanpa katalog, tanpa badan fungsi klaster lain.
+Keluaran: `OBS` / `G` / `R` / `Q`, semua berlabel **DIANALISIS**.
+Verifikasi parent → checkpoint.
 
-#### STEP D-WAVE1 — Gelombang 1 buta
-Koordinator + 2 worker (kode saja, buta — tanpa katalog, tanpa badan fungsi klaster lain). Keluaran: OBS / G / R / Q. Verifikasi parent atas bukti penentu, lalu checkpoint.
+**STEP D-WAVE2 — gelombang 2 berpengetahuan.**
+Koordinator + 2 worker: katalog + cek live, pindai baru **≤10k blok**, tanpa forge.
+Keluaran: QUEUED (urut EV) + DORMAN (hanya bila gagal C10) + disposisi `Q`/RADAR.
+Verifikasi parent → checkpoint.
 
-#### STEP D-WAVE2 — Gelombang 2 berpengetahuan
-Koordinator + 2 worker (katalog + cek live, pindai baru ≤10k blok, tanpa forge). Keluaran: QUEUED (P1–P5) + DORMAN (hanya bila gagal gate C10) + disposisi Q/RADAR. Verifikasi parent, checkpoint.
+**STEP D-LEAD-CARDS — kartu lead + invariant.**
+Koordinator sendiri: kartu 1:1 dari QUEUED (rantai (a)+(b)+(c) per C11) + invariant baru ke registry (**wajib sumber**: field handoff atau docs/NatSpec).
+Gate C10: lead lanjut ke E bila kerugian bisa dibuktikan (mekanisme di fork/test + plafon terukur + pemicu terjangkau tanpa peran istimewa/state eksotis). **Plafon live 0 TIDAK membuat DORMAN.** DORMAN hanya bila gagal C10, dengan syarat buka-ulang.
+Verifikasi parent (subjek kartu identik kata-per-kata) → checkpoint.
 
-#### STEP D-LEAD-CARDS — Kartu lead + invariant
-Koordinator sendiri: kartu 1:1 dari QUEUED + invariant baru ke registry (wajib sumber: field handoff atau docs/NatSpec). Gate finansial (C10): lead lanjut ke E bila kerugian yang bisa dibuktikan (mekanisme jalan di fork/test + plafon terukur + pemicu terjangkau tanpa peran istimewa/state eksotis); plafon live 0 TIDAK membuat DORMAN; DORMAN hanya bila gagal C10, dengan syarat buka-ulang. Verifikasi parent (subjek kartu identik kata-per-kata), checkpoint.
+**STEP E-BATCH — uji test (loop, maks 3 per batch).**
+Koordinator + 3 worker, fork blok pin. Tiap batch **maks 3 kartu**. Parent **menjalankan ulang semua forge** dan mencocokkan gas (**harus IDENTIK**) sebelum batch dinyatakan selesai.
+Ulangi sampai QUEUED == 0 **dan** ACTIVE == 0 untuk jalur itu.
+Kartu yang spawn-nya ditolak kebijakan keamanan **TIDAK** diulang/diparafrase/diputar — parkir, invariant-nya tetap dirumuskan.
 
-#### STEP E-BATCH — Uji test (loop, maks 3 per batch)
-Koordinator + 3 worker, fork blok pin. Tiap batch maks 3 kartu. Parent menjalankan ulang semua forge dan mencocokkan gas (harus IDENTIK) sebelum batch dinyatakan selesai. Ulangi sampai QUEUED == 0 DAN ACTIVE == 0 untuk jalur itu. Kartu yang spawn-nya ditolak kebijakan keamanan TIDAK diulang/diparafrase/diputar — parkir, invariant-nya tetap dirumuskan.
+**STEP F — komposisi (bersyarat).**
+Hanya bila **penting dan urgent** DAN lead **multi-segmen**. Uji F **tanpa fork/PoC ulang** — pakai data terbaru (`flow-f-compose`). Lead satu segmen **lewati** F.
 
-#### STEP F — Komposisi (bersyarat)
-Hanya bila penting dan urgent DAN lead-nya multi-segmen. Uji F tanpa fork/PoC ulang — pakai data terbaru (skill `flow-f-compose`). Lead satu segmen lewati F.
-
-#### STEP G — Verdict jalur
-Adili tiap kartu (06/07/08/09; tiga verdict terpisah; severity dari plafon teramati) — skill `flow-g-verdict`. Perbarui ledger + D00. Kembali ke STEP PROJECT (jalur berikut atau klaster berikut).
+**STEP G — verdict jalur.**
+Adili tiap kartu: 06/07/08/09, **tiga verdict terpisah**, severity dari **plafon teramati** (`flow-g-verdict`). Perbarui ledger + `D00`. Kembali ke STEP PROJECT.
 
 ## 6. Protokol Delegasi ke Subagent
 
-1. Parent memegang kendali eksklusif atas berkas kanonik + ledger + registry. Parent satu-satunya penulis berkas kanonik.
-2. Sebelum mendelegasikan, parent menyusun brief berdiri sendiri (membawa semua konteks yang dibutuhkan — subagent mewarisi konteks, tapi brief tetap lengkap).
-3. Subagent menulis HANYA ke `notes/staging-<jalur>-<tahap>-<item>.md`, diawali blok `## STAGING MANIFEST` maks 16 baris.
-4. Parent memeriksa staging (bebas token kompresi, berjangkar verbatim), menggabungkannya ke berkas kanonik, lalu menjalankan gate tahap terkait.
-5. Brief Tahap E memakai bahasa verifikasi invariant, bukan bahasa serangan.
+1. **Parent memegang kendali eksklusif** atas berkas kanonik + ledger + registry. Parent satu-satunya penulis berkas kanonik.
+2. Sebelum mendelegasikan, parent menyusun **brief berdiri sendiri** — membawa semua konteks yang dibutuhkan.
+3. Subagent menulis **HANYA** ke `notes/staging-<jalur>-<tahap>-<item>.md`, diawali blok `## STAGING MANIFEST` **maks 16 baris**.
+4. Parent memeriksa staging (bebas token kompresi, berjangkar verbatim), menggabungkannya ke berkas kanonik, lalu **menjalankan gate tahap terkait**.
+5. Brief Tahap E memakai **bahasa verifikasi invariant**, bukan bahasa serangan.
+
+## 7. Syarat penutupan proyek (COMPLETED)
+
+Semua ini benar sebelum menyatakan selesai:
+
+- [ ] semua klaster: QUEUED == 0 **dan** ACTIVE == 0 di tiap jalur
+- [ ] ledger sisa kosong atau hanya berisi `TUNDA-LIVE` + DORMAN dengan syarat buka-ulang
+- [ ] sapuan akhir dijalankan (enumerasi independen kedua)
+- [ ] distribusi akhir konsisten dengan isi wadah
+- [ ] nol submisi / kontak program (HOLD dipatuhi)
+- [ ] ringkasan akhir disajikan ke user: distribusi + temuan 09 + sisa 07 beserta pemicunya

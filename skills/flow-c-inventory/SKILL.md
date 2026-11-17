@@ -1,42 +1,90 @@
 ---
 name: flow-c-inventory
-description: Tahap C — Pemetaan mendalam per klaster. Inventaris alur + segmentasi + kontrak handoff deskriptif per klaster (C01-Kn), tanpa invariant, tanpa buruan, tanpa PoC. Dipakai saat memetakan klaster, atau saat user menyebut tahap C, pemetaan mendalam, inventaris alur.
+description: Tahap C — Pemetaan mendalam per klaster. Inventaris alur + segmentasi + kontrak handoff deskriptif per klaster (C01-Kn) dengan format segmen/handoff/simpul lengkap, tanpa invariant, tanpa buruan, tanpa PoC. Skill ini memuat format dan aturan sampai Tahap C selesai. Dipakai saat memetakan klaster, atau saat user menyebut tahap C, pemetaan mendalam, inventaris alur.
 ---
 
 # Skill flow-c-inventory — Tahap C (Pemetaan mendalam per klaster)
 
-Tahap C membangun yang riil/teramati per klaster: inventaris alur + segmentasi + kontrak handoff DESKRIPTIF. Sumber kebenaran: `methodology/aturan-alur-first.md` (seksi D — Tahap C). Skill ini menuntun eksekusi; aturan ada di berkas itu.
+Tahap C membangun **yang riil/teramati** per klaster: inventaris alur + segmentasi + kontrak handoff **deskriptif** (apa kata kode, bukan apa yang seharusnya).
+Skill ini memuat format dan aturan sampai Tahap C selesai. `methodology/aturan-alur-first.md` (seksi D — Tahap C) hanya rujukan sengketa.
+
+## Satu klaster per round — dan hanya itu
+
+- Kerja **satu klaster (K) saja** per round. Bukan dua, bukan "sekalian".
+- Urutan default = **EV live** (B2) — prioritas, **bukan pagar**. Kalau user memerintah urutan lain, catat alasannya di `B04-CLUSTERS.md`.
+- **Jahitan adalah batas.** Jangan baca badan fungsi klaster lain. Sisi produsen/konsumen yang klasternya belum dipetakan **dicatat terbuka**, dilengkapi di round klaster itu.
+- **Tarikan just-in-time lintas klaster adalah milik Tahap D**, bukan C. Alasannya: kebutuhan tarik lintas klaster muncul saat memburu alur (alur tidak mengenal batas klaster); di C, tarikan dini menyeret penilaian ("apakah handoff cocok?") ke kerja deskriptif.
 
 ## Keluaran
 
-- `C01-Kn-FLOW-INVENTORY.md` per klaster — inventaris alur klaster itu (segmen + handoff + simpul + EV).
-- `C08-K8-PRIMITIVES.md` untuk klaster primitif (bukan inventaris alur).
+| Berkas | Isi |
+| :--- | :--- |
+| `C<NN>-K<n>-FLOW-INVENTORY.md` | inventaris alur klaster itu (segmen + handoff + simpul + EV) |
+| `C<NN>-K8-PRIMITIVES.md` | khusus klaster primitif — inventaris **primitif**, bukan alur |
 
-## Langkah
+## Format wajib: 4 bagian per klaster
 
-### 1. Satu klaster per round
+### 1. Segmen (S1..Sn)
 
-Kerja per klaster (K SAJA). Urutan default = EV live (B2) — prioritas, bukan pagar. Tarikan just-in-time lintas-klaster dibutuhkan di **Tahap D**; di Tahap C, jahitan adalah batas — jangan baca badan fungsi klaster lain.
+Tiap segmen = potongan alur yang **bisa diamati** di handoff. Untuk tiap segmen tulis:
 
-### 2. Isi inventaris alur
+| Kolom | Isi |
+| :--- | :--- |
+| ID | `S1`, `S2`, … |
+| Nama segmen | ringkas, 1 baris |
+| Fungsi + berkas | `Path/File.ext:Lxx-Lyy` — satu baris per fungsi yang terlibat |
+| Batas masuk | apa yang menandai segmen mulai (event, perubahan state, pesan, waktu) |
+| Batas keluar | apa yang menandai segmen selesai |
+| Aktor | siapa yang bisa memicu (user / keeper / relayer / admin / otomatis) |
 
-- Segmen-segmen alur (S1..Sn) + fungsi/berkas tiap segmen.
-- Kontrak handoff antar-segmen (produsen, konsumen, field nama+tipe+satuan, jaminan produsen, asumsi konsumen — sebagaimana teramati di kode).
-- Simpul fork/join.
-- EV klaster (jejak event live bila ada).
+Segmen harus **bersambung**: keluaran S1 = masukan S2. Bila tidak bersambung, itu **handoff terbuka**, bukan segmen baru.
 
-### 3. Klaster khusus
+### 2. Kontrak handoff (B11)
 
-- **K8 (primitif):** inventaris PRIMITIF, bukan inventaris alur — jaminan produsen tiap primitif (mis. wrap/unwrap 1:1, peran, cap, event).
-- **K9:** DILEWATI — mock test, bukan kode live.
+Dienumerasi **dari batas unit** — rantai linear N segmen → **N−1 handoff**. Jangan dilabeli tangan.
 
-## Yang tidak dilakukan di Tahap C
+| Kolom | Isi |
+| :--- | :--- |
+| ID | `H1`, `H2`, … |
+| Produsen | segmen + fungsi yang menulis |
+| Konsumen | segmen + fungsi yang membaca |
+| Field | **nama + tipe + satuan/desimal** (mis. `uint128 amount`, 18 desimal) |
+| Jaminan produsen | apa yang produsen pastikan (mis. "amount sudah dikurangi fee") — **apa adanya di kode** |
+| Asumsi konsumen | apa yang konsumen anggap benar (mis. "amount ≤ saldo kontrak") — **apa adanya di kode** |
+| Status | `TERTUTUP` / `TERBUKA` |
 
-- Menulis invariant (itu Tahap D — B12).
-- Buruan saat memetakan.
-- PoC / verifikasi / verdict.
-- Menutup jahitan yang konsumennya di luar kode (mis. TokenMessenger eksternal) tanpa keputusan Kim — jahitan seperti itu tetap dienumerasi dan dibuka saat alur yang diburu menyentuhnya (SM-05: tetap dieksplorasi ketika terkait, diputus 22:33 WIB 16 Nov 2026).
+Handoff `TERBUKA` = konsumennya di luar kode yang dipetakan (mis. messenger eksternal). Tetap **dienumerasi**, jangan dihapus, jangan ditutup sepihak — dibuka saat alur yang diburu menyentuhnya.
 
-## Bukti bentuk (pilot Across)
+### 3. Simpul (fork/join)
 
-8 round (K1–K8) selesai ~3–8 menit per round; masuk alur 145/169; SM 11/12 TERTUTUP.
+- **Fork** = percabangan aliran. Uji: Σkeluaran = masukan − fee.
+- **Join** = penggabungan. Uji: konsumsi tepat sekali (tidak dobel, tidak hilang).
+- Simpul adalah **unit sendiri** dengan prioritas tinggi — bukan catatan kaki segmen.
+
+### 4. EV klaster
+
+Angka nilai live klaster itu (jejak event live bila ada). Dipakai mengurutkan klaster, bukan menilai klaster.
+
+## Klaster khusus
+
+- **K8 (primitif):** inventaris **primitif**, bukan inventaris alur. Tiap primitif: jaminan produsen (mis. wrap/unwrap 1:1), peran yang dipegang, cap/batas, event yang diemisikan. Diinventarisasi **sekali**, dirujuk semua konsumen.
+- **K9:** **DILEWATI** — mock/fixture test, bukan kode live.
+
+## Yang TIDAK dilakukan di Tahap C
+
+1. **Menulis invariant** — itu Tahap D (B12). Invariant = klaim asumsi tentang apa yang *seharusnya* berlaku, bukan fakta teramati.
+2. **Buruan** saat memetakan.
+3. **PoC / verifikasi / verdict.**
+4. **Menutup handoff** yang konsumennya di luar kode tanpa keputusan user.
+5. **Menilai klaster** ("ini bersih", "ini berbahaya") — itu Tahap G.
+6. **Filter di dalam klaster** (hanya mengambil data yang dibutuhkan alur live) — dinilai berisiko, tidak diadopsi. Filter yang aman hanya utuh per klaster/alur.
+7. **Membaca badan fungsi klaster lain** — jahitan adalah batas.
+
+## Definition of done Tahap C (per klaster)
+
+- [ ] semua segmen punya batas masuk/keluar dan bersambung (atau tercatat sebagai handoff terbuka)
+- [ ] handoff berjumlah **N−1** untuk N segmen, tiap handoff punya field + jaminan produsen + asumsi konsumen
+- [ ] simpul fork/join terdaftar sebagai unit sendiri
+- [ ] handoff terbuka dicatat, tidak ditutup sepihak
+- [ ] nol invariant, nol buruan, nol PoC
+- [ ] ledger sisa diperbarui (klaster ini: sisa menyusut)

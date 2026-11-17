@@ -1,57 +1,123 @@
 ---
 name: flow-a-intel
-description: Tahap A — INTEL proyek baru. Susun brief 9 butir (nama, lingkup, stage, repo, website, docs, audit, bugbounty, severity), jalankan tangga penemuan A4 (maks 3 cek per butir, status DITEMUKAN / TIDAK ADA / TIDAK KETEMU), kunci pin commit + blok referensi (A5). Dipakai saat memulai proyek audit baru atau saat user menyebut INTEL, brief proyek, penemuan proyek.
+description: Tahap A — INTEL proyek baru. Brief 9 butir (nama, lingkup, stage, repo, website, docs, audit, bugbounty, severity) + tangga penemuan A4 lengkap per butir (maks 3 cek/butir, status DITEMUKAN / TIDAK ADA / TIDAK KETEMU) + pin A5. Skill ini memuat tangga dan aturan penulisan sampai Tahap A selesai. Dipakai saat memulai proyek audit baru atau saat user menyebut INTEL, brief proyek, penemuan proyek.
 ---
 
 # Skill flow-a-intel — Tahap A (INTEL)
 
-Tahap A = brief proyek, bukan dokumen teknis. Sumber kebenaran: `methodology/aturan-alur-first.md` (A1–A5). Skill ini menuntun eksekusi; aturan ada di berkas itu.
+Tahap A = **brief proyek**, bukan dokumen teknis. Keluarannya tipis dan harus cepat.
+Skill ini memuat tangga penemuan dan aturan penulisan sampai Tahap A selesai. `methodology/aturan-alur-first.md` (A1–A5) hanya rujukan sengketa.
+
+## Batas keras (baca dulu sebelum mulai)
+
+| Dikerjakan di A | BUKAN di A |
+| :--- | :--- |
+| 9 butir brief + statusnya | cek onchain (`cast code`, saldo, blok) |
+| daftar docs pendukung (Pre-0) | verifikasi teknis atas isi docs |
+| pin commit + stage | menentukan blok referensi (itu Tahap B) |
+| jejak apa yang sudah dicoba | menyimpulkan kerentanan |
+
+**A2 mengikat:** Pre-0 = **daftar docs pendukung saja**, bukan verifikasi teknis. Kalau Anda tergoda menjalankan `cast` di Tahap A, itu Tahap B (B7) — berhenti.
 
 ## Keluaran
 
-- `A01-INTEL.md` — brief 9 butir (A1) + status tiap butir + tabel Catatan Ketiadaan bila PARTIAL.
-- Pin: commit + blok referensi + stage (A5).
+| Berkas | Isi |
+| :--- | :--- |
+| `INTEL.md` | brief 9 butir + pin (A5) + Catatan Ketiadaan |
+| `A01-INTEL.md` | penunjuk kanonik ke `INTEL.md` + status + sifat berkas (jangan duplikasi isi) |
+| `A02-INTEL-discovery.md` | jejak tangga penemuan per butir + bukti URL hidup + daftar docs Pre-0 |
 
-## Langkah
+## 9 butir brief (A1)
 
-### 1. INTEL = brief 9 butir (A1)
-
-1. Nama proyek (singkat).
-2. Deskripsi lingkup proyek (bridge/swap/LP dll, singkat).
-3. Deployment stage (MAINNET / TESTNET / DEVNET).
+1. Nama proyek (singkat) — sertakan nama internal/protokol bila ada.
+2. Deskripsi lingkup (bridge/swap/LP/AI/dst, singkat) — **satu paragraf**.
+3. Deployment stage: **MAINNET / TESTNET / DEVNET**.
 4. Repo (alamat github atau setara).
-5. Website (tempat user akses dan interaksi UI aktif).
+5. Website (tempat user mengakses & berinteraksi dengan UI aktif).
 6. Docs (link).
 7. Audit (singkat: siapa + link).
 8. Bugbounty (URL).
 9. Brief severity (singkat bila ada).
 
-INTEL = brief, bukan dokumen teknis. Pre-0 (A2) = daftar docs pendukung saja, BUKAN verifikasi teknis.
+Tidak ada butir ke-10. Materi uang/kontrak/saldo **bukan** isi Tahap A.
 
-### 2. Tangga penemuan A4
+## Tangga penemuan (A4) — maks 3 cek per butir
 
-Mulai hanya dari nama proyek (+ tautan yang user beri). Tiap butir dicari lewat tangga sumber berurutan, **maks 3 cek per butir**; tangga habis tanpa hasil → **TIDAK KETEMU** (bukan bukti tidak ada). Tiga status:
+Mulai **hanya** dari nama proyek (+ tautan yang user beri, bila ada). Tiap butir punya tangga sumber berurutan. Berhenti di cek pertama yang memberi hasil.
 
-- **DITEMUKAN** (dengan tautan).
-- **TIDAK ADA** (sumber resmi menyatakan tidak ada).
-- **TIDAK KETEMU** (wajib catat apa yang sudah dicoba).
+| # | Butir | Cek 1 | Cek 2 | Cek 3 |
+| :-: | :--- | :--- | :--- | :--- |
+| 1 | Nama | dari user, **tanpa pencarian** | — | bila ambigu: satu putaran klarifikasi, lalu catat apa adanya |
+| 2 | Lingkup | docs intro | README repo | deskripsi repo GitHub |
+| 3 | Stage | docs (apakah mainnet live?) | app UI (apakah hidup?) | repo (`deployments/`, README) |
+| 4 | Repo | tautan di docs | GitHub search nama proyek | tautan di website |
+| 5 | Website | tautan di docs | tautan di README repo | web search `<proyek> app` |
+| 6 | Docs | tautan di README | tautan di website | web search `<proyek> docs` |
+| 7 | Audit | halaman audit/security di docs | folder `audits/` di repo | web search `<proyek> audit report` (1 pencarian, 3 hasil teratas) |
+| 8 | Bugbounty | halaman bug bounty di docs | `SECURITY.md`/README repo | web search `<proyek> bug bounty` (1 pencarian) |
+| 9 | Severity | **diturunkan dari halaman bounty butir 8** | — | **tidak ada pencarian terpisah** |
 
-Dua butir penahan beban: **stage (3) dan repo (4)** — bila salah satunya TIDAK KETEMU, Tahap A berhenti dan eskalasi ke Kim (tidak ditebak). Anggaran total penemuan **maks 30 menit**; bila habis, berhenti dengan hasil yang ada.
+### Aturan tangga yang sering dilanggar
 
-**INTEL COMPLETE** hanya bila semua butir DITEMUKAN (atau TIDAK ADA dengan sumber); bila ada TIDAK KETEMU → **PARTIAL + tabel Catatan Ketiadaan**.
+- **Butir 3 (stage)** di Tahap A = **klaim** docs/app/repo saja. Bukan verifikasi teknis. Konfirmasi teknis di Tahap B (B7).
+- **Butir 4 (repo)**: hanya pilih bila **jelas resmi** — org cocok dan ditaut dari docs. Beberapa kandidat tanpa kejelasan → `TIDAK KETEMU (ambigu)` + eskalasi. **JANGAN menebak URL dari nama proyek.**
+- **Butir 5 & 6**: URL ketemu tapi **tidak merespons** → **catat kodenya** (mis. `HTTP 403`), **bukan** `TIDAK KETEMU`. "Gagal diakses" ≠ "tidak ada".
+- **Butir 9**: bila bounty `TIDAK KETEMU`, severity ikut `TIDAK KETEMU`. Jangan cari terpisah, jangan karang angka.
 
-### 3. Stage = filter pertama (A3)
+## Tiga status (jangan dicampur)
 
-Stage (MAINNET/TESTNET/DEVNET) menentukan Mode Uji di Tahap E (FORK LIVE_MATCH). HEAD bisa lebih lama atau lebih baru dari live — bukan patokan kebenaran.
+| Status | Arti | Wajib |
+| :--- | :--- | :--- |
+| **DITEMUKAN** | ada, dengan tautan | tulis tautannya |
+| **TIDAK ADA** | sumber resmi menyatakan tidak ada | tulis sumber yang menyatakan |
+| **TIDAK KETEMU** | tangga habis tanpa hasil | **wajib catat apa yang sudah dicoba** (sumber + hasil) |
 
-### 4. Kunci pin (A5)
+`TIDAK KETEMU` **bukan** bukti tidak ada. Menulis `TIDAK KETEMU` tanpa daftar percobaan = brief tidak jujur.
 
-INTEL dikunci dengan pin (commit + blok referensi + stage); kanonik read-only selama audit. Bila Tahap D menemukan INTEL salah, koreksi dicatat eksplisit dan terbuka, tidak diam-diam.
+## Butir penahan beban (stage + repo)
 
-Diputus 22:33 WIB 16 Nov 2026: (a) commit yang dipin di run dari-0 = **HEAD saat penemuan**; (b) blok referensi ditentukan di **Tahap B** (sensus live).
+**Stage (3) dan Repo (4)** adalah penahan beban. Bila salah satunya `TIDAK KETEMU`:
 
-## Yang tidak dilakukan di Tahap A
+- Tahap A **BERHENTI**
+- eskalasi ke user
+- **jangan menebak** untuk melanjutkan
 
-- Cek onchain (itu Tahap B, B7/B8).
-- Verifikasi teknis atas docs (pre-0 hanya daftar).
-- Menebak butir penahan beban (stage/repo) bila tidak ketemu.
+Alasan: stage menentukan seluruh Mode Uji; repo menentukan seluruh scope. Salah di salah satunya = seluruh audit salah arah.
+
+## Anggaran
+
+Total penemuan **maks 30 menit**. Habis → berhenti dengan hasil yang ada + `TIDAK KETEMU` untuk sisanya.
+
+## Status INTEL
+
+- **COMPLETE** — hanya bila **semua 9 butir** `DITEMUKAN` (atau `TIDAK ADA` dengan sumber).
+- **PARTIAL** — bila ada satu saja `TIDAK KETEMU`. Wajib disertai **tabel Catatan Ketiadaan**.
+
+Tabel Catatan Ketiadaan: satu baris per butir yang tidak lengkap, berisi status + alasan + sumber yang dicoba + dampak bila tak ditemukan.
+
+## Pin (A5)
+
+INTEL dikunci dengan pin: **commit + blok referensi + stage**. Kanonik read-only selama audit.
+
+- Commit yang dipin di run dari-0 = **HEAD saat penemuan** (hasil `git rev-parse`, bukan `main`/`latest`).
+- **Blok referensi ditentukan di Tahap B** (sensus live B7) — di Tahap A tulis `belum ditetapkan`.
+- Bila Tahap B/D menemukan INTEL salah, koreksi **dicatat eksplisit dan terbuka**, tidak diam-diam ditimpa.
+
+## Cara membuktikan URL hidup (tanpa keluar dari Tahap A)
+
+Cukup cek murah, satu perintah per URL, dan catat hasilnya di `A02`:
+
+```bash
+curl -sIL -o /dev/null -w '%{http_code}' <url>     # 200 / 30x = hidup
+```
+
+Simpan **semua** kode status apa adanya (termasuk 403/429) — itu bukti, bukan kegagalan.
+
+## Definition of done Tahap A
+
+- [ ] `INTEL.md` memuat 9 butir, tiap butir berstatus
+- [ ] stage dan repo keduanya `DITEMUKAN` (bila tidak → berhenti + eskalasi, bukan lanjut)
+- [ ] pin commit tercatat sebagai hash nyata; blok referensi ditandai `belum ditetapkan`
+- [ ] `A02` memuat tangga per butir + kode HTTP tiap URL + daftar docs Pre-0
+- [ ] nol `cast`/cek onchain di Tahap A
+- [ ] nol hipotesis kerentanan di INTEL
