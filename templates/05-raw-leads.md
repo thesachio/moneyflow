@@ -1,4 +1,9 @@
 # 05-RAW-LEADS — Antrean Kandidat [QUEUED] & Meja Operasi Batch Aktif [ACTIVE] (theadvers v2.0)
+
+> ⚠️ **BERKAS LEGACY — METODE SEGITIGA v2.0, BUKAN FLOW MONEY FIRST.**
+> Tahap A–G **tidak** memakai berkas ini. Kolom "EV Rank (P1–P5)" di bawah adalah kosakata Segitiga
+> yang **sudah tidak berlaku**: urutan kerja metode aktif = **pintu masuk pertama kali (B2a)**,
+> bukan EV. Jangan jadikan berkas ini acuan urutan. Disimpan hanya sebagai arsip rujukan.
 > ATURAN BESI KAPASITAS & ROLLING BATCH:
 > 1. Bagian 2 (Tabel Antrean `[QUEUED]`): Menampung seluruh kandidat yang lolos saringan kualitas Segitiga pada `STAGE-C2` tanpa batas plafon total. Jangan pernah membuang kandidat valid hanya karena jumlahnya banyak. Urutkan berdasarkan Prioritas EV (`SOUL.md §3`: `P1` s/d `P5`) dan pasangkan dengan M-xxx serta AF-xx.
 > 2. **Formasi Batch 3 + Sisa, TERIKAT PER WILAYAH.** Bagian 3 (Blok Meja Operasi `[ACTIVE-BATCH]`) hanya boleh berisi **maksimal 3** kandidat `[ACTIVE]` dalam satu siklus STAGE-D -> STAGE-E. Jika sisa `[QUEUED]` wilayah itu kurang dari 3, batch terakhir boleh berisi 1–2 kartu (contoh: 7 lead → batch 3 + 3 + 1).
