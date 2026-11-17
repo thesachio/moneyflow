@@ -37,7 +37,7 @@
 
 ## 2. TABEL ANTREAN KANDIDAT BERKUALITAS ([QUEUED]) — TANPA PLAFON TOTAL
 
-*Seluruh kandidat yang lolos saringan Segitiga di Wilayah Aktif wajib masuk ke tabel ini dan diurutkan dari EV tertinggi (P1) ke terendah (P5). Saat wilayah ditutup (--close-region), tidak boleh ada lagi baris yang berstatus [QUEUED].*
+*[LEGACY] Seluruh kandidat yang lolos saringan Segitiga di Wilayah Aktif wajib masuk ke tabel ini dan diurutkan dari EV tertinggi (P1) ke terendah (P5). — **urutan ini SUDAH TIDAK BERLAKU**; metode aktif memakai pintu masuk pertama kali (B2a). Saat wilayah ditutup (--close-region), tidak boleh ada lagi baris yang berstatus [QUEUED].*
 
 | Lead ID | Region (R_i) | EV Rank (P1`–`P5) | Verbatim Anchor (Path/File.ext:Lxx-Lyy) | Titik Masuk & Target (NamaModul.namaFungsi) | Ringkasan Mekanisme & Dampak L-VALUE | Assigned Method (M-xxx) | Assigned Attack Form (AF-xx) | Plugin Tambahan (DOM/POV/CHAIN) | Status Antrean ([QUEUED] / [ACTIVE] / [MOVED-TO-06..09]) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
