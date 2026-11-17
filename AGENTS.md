@@ -18,7 +18,7 @@ Repo ini adalah MESIN/METODE, bukan proyek audit. Tidak memuat kode kontrak targ
 | F | Komposisi (bersyarat — hanya bila penting dan urgent) | Lemma dari data terbaru (tanpa fork/PoC ulang) | Hanya lead multi-segmen |
 | G | Verdict | Verdict 06/07/08/09 per kandidat + distribusi akhir | Tiga verdict terpisah |
 
-Rolling per klaster: C → D → E. Tahap F lintas-klaster + Tahap G di akhir. Deep-run per jalur (diputus 22:33 WIB 16 Nov 2026): satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah; berlaku mulai jalur berikut (P4). Acuan kerja Tahap B: `methodology/acuan-workflow-tahap-B.md`. Aturan hemat Fase D + prinsip efisiensi + lantai bawah: `methodology/rancangan-hemat-fase-d.md`.
+Rolling per klaster: C → D → E. Tahap F lintas-klaster + Tahap G di akhir. **Urutan klaster/alur = pintu masuk pertama kali (B2a, diputus 17 Nov 2026) — entrypoint paling awal yang dilalui pengguna, BUKAN EV.** Deep-run per jalur (diputus 22:33 WIB 16 Nov 2026): satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah; berlaku mulai jalur berikut (P4). Acuan kerja Tahap B: `methodology/acuan-workflow-tahap-B.md`. Aturan hemat Fase D + prinsip efisiensi + lantai bawah: `methodology/rancangan-hemat-fase-d.md`.
 
 ## 2. Delegasi (keras)
 

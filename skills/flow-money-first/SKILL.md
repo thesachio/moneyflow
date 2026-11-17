@@ -78,7 +78,7 @@ Katalog 52 plugin: `references/` (CHAIN 10 + M 10 + POV 15) + `methodology/attac
 A  INTEL            → brief 9 butir + pin commit          (skill flow-a-intel)
 B  Mapping          → scope lock → sensus 100% → live B7
                       → klaster + handoff → ledger → registry   (flow-b-map)
-   ↓ per klaster, urut EV live:
+   ↓ per klaster, urut pintu masuk pertama kali (B2a):
 C  Inventaris alur  → segmen + handoff + simpul            (flow-c-inventory)
 D  Eksplorasi       → gelombang 1 buta → gelombang 2 katalog
                       → kartu lead + invariant            (flow-d-explore)

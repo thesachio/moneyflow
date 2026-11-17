@@ -88,11 +88,26 @@ PDA + langkah off-chain (dilabeli asumsi). Fungsi = unit sensus
 B2. Scope menyeluruh diketahui di awal; pemetaan mendalam +
 eksplorasi round per round per klaster alur, diurutkan EV live;
 rolling Tahap C → Tahap D → Tahap E per klaster. Urutan
-EV live = default, bukan gerbang. Bila EV tidak dipakai (data live
+EV live = default, bukan gerbang. **DIGANTI oleh B2a di bawah** untuk
+penentuan urutan (17 Nov 2026); kalimat ini disimpan sebagai riwayat.
+Bila EV tidak dipakai (data live
 tidak ada — lihat B15 — atau Kim memerintah urutan lain), pakai
 urutan lain yang dicatat alasannya (mis. hulu→hilir dari peta alur,
 atau pilihan Kim). Cakupan tetap dijamin B9/B10; yang hilang hanya
 prioritas uang-dulu.
+
+B2a. URUTAN DEFAULT DIGANTI (diputus 17 Nov 2026, perintah Kim):
+urutan kerja = **pintu masuk pertama kali** — entrypoint paling awal
+yang dilalui pengguna — bukan EV live. EV live TIDAK dipakai sebagai
+penentu urutan klaster, alur, maupun penarikan kartu di Tahap E;
+EV boleh tetap dicatat sebagai data, tetapi bukan penentu urutan.
+Cara menentukan: susun klaster/alur menurut urutan entrypoint pada
+alur pengguna (pintu masuk pertama yang dijumpai → berikutnya →
+seterusnya); klaster/alur yang entrypoint-nya lebih awal dikerjakan
+lebih dulu. Alasan perubahan dicatat di B04-CLUSTERS.md per proyek.
+Konsekuensi: prioritas uang-dulu hilang (sama seperti B2); cakupan
+tetap dijamin B9/B10, dan urutan tidak boleh dipakai menunda klaster
+mana pun — semua klaster tetap wajib dikerjakan sampai selesai.
 
 B3. Yang TETAP UTUH: sensus (statis + live), daftar scope, inventaris
 alamat live, cek penutupan graf akhir, registry invariant (satu penomoran —

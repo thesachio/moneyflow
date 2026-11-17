@@ -70,7 +70,7 @@ live; rolling Tahap C → Tahap D → Tahap E per klaster (Tahap B
 sensus utuh → Tahap C klaster 1 → Tahap D klaster 1 → Tahap E klaster 1
 → Tahap C klaster 2 → …).
 Cara pakai: jangan mulai buruan sebelum sensus utuh selesai; jangan
-kerjakan semua klaster sekaligus. Urutan EV live = default, bukan
+kerjakan semua klaster sekaligus. Urutan pintu masuk pertama kali (B2a) = default, bukan
 gerbang: bila EV tidak dipakai (data live tidak ada — B15 — atau Kim
 memerintah urutan lain), pakai urutan lain yang dicatat alasannya
 (mis. hulu→hilir dari peta alur, atau pilihan Kim); cakupan tetap
@@ -85,7 +85,7 @@ untuk seluruh protokol.
 
 ### B4. Yang BISA DIPECAH per klaster
 Definisi: inventaris alur + segmentasi, kontrak handoff (Tahap C); penulisan invariant (Tahap D) + uji invariant (Tahap E); komposisi (Tahap F); verdict (Tahap G).
-Cara pakai: pecah kerja mendalam per klaster (diurutkan EV live);
+Cara pakai: pecah kerja mendalam per klaster (diurutkan pintu masuk pertama kali — B2a);
 sensus dan aturan tetap utuh (B3).
 
 ### B5. Peta utuh, bukti just-in-time
@@ -258,7 +258,7 @@ yang wajib selesai' di aturan-alur-first.md.
   diselesaikan transitif di inventaris alur, bukan temuan.
 - **EP+VM**: entrypoint DAN value_moves yes — angka yang mengikat
   untuk inventaris alur (bukan EP total).
-- **Klaster alur**: kelompok alur ujung-ke-ujung, diurutkan EV live
+- **Klaster alur**: kelompok alur ujung-ke-ujung, diurutkan pintu masuk pertama kali (B2a)
   (pilot Across: K1 deposit→fill, K2 bundle→relay, K3 refund, K4
   periphery, K5 mintburn/HyperCore, K6 counterfactual, K7 klaim
   Merkle, K8 primitif eksternal, K9 mock bukan-live).

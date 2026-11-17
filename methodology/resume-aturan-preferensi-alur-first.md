@@ -60,7 +60,7 @@ workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
   SOL/SPL ke PDA + langkah off-chain dilabeli asumsi). Fungsi = unit
   sensus; segmen = unit buruan.
 - B2: scope menyeluruh di awal; pemetaan + eksplorasi round per round per
-  klaster diurutkan EV live; rolling C → D → E. Urutan EV = default, bukan
+  klaster diurutkan **pintu masuk pertama kali** (B2a, diputus 17 Nov 2026 — entrypoint paling awal yang dilalui pengguna, BUKAN EV); rolling C → D → E. Urutan bukan gerbang,
   gerbang.
 - B3: TETAP UTUH — sensus (statis + live), daftar scope, inventaris alamat
   live, cek penutupan graf akhir, registry invariant (satu penomoran, diisi

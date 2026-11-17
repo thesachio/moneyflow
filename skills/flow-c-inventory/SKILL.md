@@ -11,7 +11,7 @@ Skill ini memuat format dan aturan sampai Tahap C selesai. `methodology/aturan-a
 ## Satu klaster per round — dan hanya itu
 
 - Kerja **satu klaster (K) saja** per round. Bukan dua, bukan "sekalian".
-- Urutan default = **EV live** (B2) — prioritas, **bukan pagar**. Kalau user memerintah urutan lain, catat alasannya di `B04-CLUSTERS.md`.
+- Urutan kerja = **pintu masuk pertama kali** (B2a, diputus 17 Nov 2026): entrypoint paling awal yang dilalui pengguna dikerjakan lebih dulu, bukan EV live. Kalau user memerintah urutan lain lagi, catat alasannya di `B04-CLUSTERS.md`.
 - **Jahitan adalah batas.** Jangan baca badan fungsi klaster lain. Sisi produsen/konsumen yang klasternya belum dipetakan **dicatat terbuka**, dilengkapi di round klaster itu.
 - **Tarikan just-in-time lintas klaster adalah milik Tahap D**, bukan C. Alasannya: kebutuhan tarik lintas klaster muncul saat memburu alur (alur tidak mengenal batas klaster); di C, tarikan dini menyeret penilaian ("apakah handoff cocok?") ke kerja deskriptif.
 
@@ -19,7 +19,7 @@ Skill ini memuat format dan aturan sampai Tahap C selesai. `methodology/aturan-a
 
 | Berkas | Isi |
 | :--- | :--- |
-| `C<NN>-K<n>-FLOW-INVENTORY.md` | inventaris alur klaster itu (segmen + handoff + simpul + EV) |
+| `C<NN>-K<n>-FLOW-INVENTORY.md` | inventaris alur klaster itu (segmen + handoff + simpul + pintu masuk) |
 | `C<NN>-K8-PRIMITIVES.md` | khusus klaster primitif — inventaris **primitif**, bukan alur |
 
 ## Format wajib: 4 bagian per klaster
@@ -61,9 +61,11 @@ Handoff `TERBUKA` = konsumennya di luar kode yang dipetakan (mis. messenger ekst
 - **Join** = penggabungan. Uji: konsumsi tepat sekali (tidak dobel, tidak hilang).
 - Simpul adalah **unit sendiri** dengan prioritas tinggi — bukan catatan kaki segmen.
 
-### 4. EV klaster
+### 4. Pintu masuk klaster + data nilai (opsional)
 
-Angka nilai live klaster itu (jejak event live bila ada). Dipakai mengurutkan klaster, bukan menilai klaster.
+**Pintu masuk klaster** = entrypoint paling awal yang dilalui pengguna untuk klaster ini (`Path/File.ext:Lxx`). Inilah yang menentukan urutan kerja (B2a), bukan nilai.
+
+Data nilai live (jejak event live bila ada) boleh dicatat sebagai konteks, tetapi **bukan penentu urutan** dan **bukan penilaian** klaster.
 
 ## Klaster khusus
 

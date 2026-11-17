@@ -15,10 +15,10 @@ Mesin otonom metode flow money first. Tugas: menjalankan **SELURUH proyek** — 
 
 ## 1. Cakupan
 
-- **Semua klaster, semua jalur**, urut EV, sampai tidak ada jalur yang belum selesai.
+- **Semua klaster, semua jalur**, urut **pintu masuk pertama kali** (B2a — entrypoint paling awal yang dilalui pengguna, bukan EV), sampai tidak ada jalur yang belum selesai.
 - **Selesaikan satu jalur sebelum pindah jalur; selesaikan satu klaster sebelum pindah klaster.** Dilarang menyentuh berkas jalur/klaster berikut selama yang aktif masih punya QUEUED > 0 atau ACTIVE > 0.
 - **Resume, bukan mulai ulang.** Klaster yang Tahap D selesai tapi E sebagian → lanjutkan dari kartu tersisa. Kursor mencatat klaster + jalur + tahap + batch.
-- **Klaster tanpa daftar alur** → buat daftarnya dulu (enumerasi + EV dari `B02` + `B04`) sebelum deep-run.
+- **Klaster tanpa daftar alur** → buat daftarnya dulu (enumerasi + entrypoint pertama tiap alur, dari `B02` + `B04`) sebelum deep-run.
 - **Jalur selesai penuh tidak diulang.** Jalur yang tidak live-match → `TUNDA-LIVE` (nol waktu eksekusi) dan dilewati.
 
 ## 2. Tujuh Iron Law (tidak boleh dilanggar)
@@ -33,7 +33,7 @@ Mesin otonom metode flow money first. Tugas: menjalankan **SELURUH proyek** — 
 
    Gate gagal → perbaiki di berkas kerja saat itu juga, jalankan ulang gate.
 3. **Satu jalur, satu klaster, sampai selesai.**
-4. **Kuras antrean dengan rolling batch maks 3 ACTIVE di E.** Tarik maks 3 kartu QUEUED EV tertinggi → buktikan di E → adili di G → ulangi sampai QUEUED == 0 **dan** ACTIVE == 0, per jalur, lalu jalur berikut.
+4. **Kuras antrean dengan rolling batch maks 3 ACTIVE di E.** Tarik maks 3 kartu QUEUED yang menyentuh entrypoint paling awal → buktikan di E → adili di G → ulangi sampai QUEUED == 0 **dan** ACTIVE == 0, per jalur, lalu jalur berikut.
 5. **Larangan mutlak token kompresi malas.** Jangan pernah menulis `...`, `dll.`, `dst.`, `etc.`, `and so on`, `rest of logic`, `rest of code` di berkas audit mana pun. Setiap klaim wajib punya jangkar verbatim `Path/File.ext:Lxx-Lyy`, dan batas fungsi diperiksa via `grep -n` (**satu baris yang ada ≠ jangkar yang benar**).
 6. **Write-ahead checkpoint di ledger.** Perbarui kursor (klaster aktif, jalur aktif, tahap aktif, batch aktif, QUEUED/ACTIVE count) **SEBELUM** memulai tahap dan **SEGERA** setelah gate tahap itu lulus.
 7. **`/stop` mencabut otorisasi seketika.** Hentikan subagent, tulis nol berkas, jangan promosi, jangan jalankan close-region. Lanjut hanya atas perintah eksplisit baru yang menyebut wilayah/batch-nya.
@@ -57,7 +57,7 @@ Baca kode, ukur live, verifikasi parent atas bukti penentu.
 ### Lapis proyek
 
 **STEP PROJECT — pilih pekerjaan berikut.**
-Baca ledger sisa + semua `D00`. Cari klaster/jalur pertama yang belum selesai (urut EV). Tidak ada → **STEP FINAL-SWEEP**. Tentukan posisi kursor:
+Baca ledger sisa + semua `D00`. Cari klaster/jalur pertama yang belum selesai (urut pintu masuk pertama kali, B2a). Tidak ada → **STEP FINAL-SWEEP**. Tentukan posisi kursor:
 
 | Kondisi | Langkah |
 | :--- | :--- |
@@ -67,7 +67,7 @@ Baca ledger sisa + semua `D00`. Cari klaster/jalur pertama yang belum selesai (u
 | E selesai, verdict belum | STEP PATH-RUN dari G |
 
 **STEP PATH-BUILD — daftar alur klaster.**
-Enumerasi alur klaster (dari `B02` + `B04`) + EV per alur → tulis `D00-<KLASTER>-PATHS.md` → urut EV → checkpoint → STEP PATH-RUN jalur pertama.
+Enumerasi alur klaster (dari `B02` + `B04`) + entrypoint pertama tiap alur → tulis `D00-<KLASTER>-PATHS.md` → urut pintu masuk pertama kali → checkpoint → STEP PATH-RUN jalur pertama.
 
 **STEP CLUSTER-CLOSE — tutup klaster.**
 Semua jalur klaster selesai (QUEUED == 0 **dan** ACTIVE == 0 di tiap jalur) → perbarui ledger + `D00` → checkpoint → STEP PROJECT untuk klaster berikut.
@@ -88,7 +88,7 @@ Verifikasi parent → checkpoint.
 
 **STEP D-WAVE2 — gelombang 2 berpengetahuan.**
 Koordinator + 2 worker: katalog + cek live, pindai baru **≤10k blok**, tanpa forge.
-Keluaran: QUEUED (urut EV) + DORMAN (hanya bila gagal C10) + disposisi `Q`/RADAR.
+Keluaran: QUEUED (urut pintu masuk) + DORMAN (hanya bila gagal C10) + disposisi `Q`/RADAR.
 Verifikasi parent → checkpoint.
 
 **STEP D-LEAD-CARDS — kartu lead + invariant.**

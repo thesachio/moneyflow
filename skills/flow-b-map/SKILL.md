@@ -138,7 +138,7 @@ Tidak live-match → wadah **TUNDA-LIVE**:
 
 ## Langkah 5 — B04 Klaster + B11 Handoff
 
-- **Klaster** = kelompok alur ujung-ke-ujung. Urutan default = **EV live** (prioritas, bukan pagar). Bila EV tidak dipakai (data live tidak ada, atau user memerintah urutan lain), pakai urutan lain **dan catat alasannya**.
+- **Klaster** = kelompok alur ujung-ke-ujung. Urutan kerja = **pintu masuk pertama kali** (B2a, diputus 17 Nov 2026): susun klaster menurut entrypoint paling awal yang dilalui pengguna, bukan EV live. EV boleh dicatat sebagai data, tetapi **bukan penentu urutan**. Catat urutan + alasan perubahannya di `B04-CLUSTERS.md`.
 - **Handoff (B11)**: dienumerasi **dari batas unit** — rantai linear N unit → **N−1 handoff**. Jangan dilabeli tangan.
 - Tiap handoff memuat: **produsen, konsumen, field (nama + tipe + satuan/desimal), jaminan produsen, asumsi konsumen**.
 - **Simpul fork/join jadi unit sendiri** — prioritas tinggi (fork → cek konservasi Σkeluaran = masukan − fee; join → cek konsumsi tepat sekali).
@@ -169,7 +169,7 @@ Buat struktur + penomoran global. **Isi kosong.** Invariant dirumuskan di Tahap 
 
 ## B16 — TIDAK DIPAKAI
 
-Field `keluar` per fungsi EP+VM **tidak wajib**; daftar jahitan `SM-xx` lengkap **tidak wajib**. Urutan klaster tetap EV live (B2). Jangan bangun pass enumerasi jahitan terpisah.
+Field `keluar` per fungsi EP+VM **tidak wajib**; daftar jahitan `SM-xx` lengkap **tidak wajib**. Urutan klaster = **pintu masuk pertama kali** (B2a), bukan EV. Jangan bangun pass enumerasi jahitan terpisah.
 
 ## Penutupan graf + sapuan akhir (B9) — dicatat di sini, dieksekusi di akhir
 

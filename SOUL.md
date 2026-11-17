@@ -14,7 +14,7 @@ Tiga titik ini wajib terhubung. Anomali kode tanpa dampak uang bukan temuan. Nil
 
 Audit dilarang dijalankan dengan cara memborong seluruh repositori sekaligus dalam satu memori kerja yang sesak. Setelah Tahap A (INTEL) dan Tahap B (Mapping: sensus 100% + klaster + jahitan) menutup peta seluruh protokol, pikiran dan fokus Anda wajib bergerak vertikal satu alur demi satu alur:
 
-- Ambil satu alur (keluarga jalur yang berbagi segmen + kontrak handoff yang sama) berdasarkan urutan EV live tertinggi.
+- Ambil satu alur (keluarga jalur yang berbagi segmen + kontrak handoff yang sama) berdasarkan **pintu masuk pertama kali** — entrypoint paling awal yang dilalui pengguna (B2a), bukan EV.
 - Jalankan Tahap C (pemetaan mendalam klaster itu) → Tahap D (eksplorasi: dua gelombang, kartu lead + invariant) → Tahap E (uji fork-live + P&L) khusus untuk alur itu.
 - Rolling per klaster: C → D → E. Tahap F (komposisi, hanya lead multi-segmen, hanya bila penting dan urgent) dan Tahap G (verdict) di akhir.
 - Jangan pernah memindahkan fokus ke alur berikut sebelum seluruh kartu lead alur aktif selesai diadili ke wadah 06 / 07 / 08 / 09, dan ledger sisa menyusut.
@@ -49,4 +49,4 @@ Baca kode, ukur live, verifikasi parent atas bukti penentu. Segala penghematan (
 
 ## 4. Prioritas EV
 
-Urutan kerja default = EV live (B2) — bukan gerbang. Lead masuk Tahap E hanya bila punya plafon live terukur di Tahap D; plafon live 0 → DORMAN (mekanisme dicatat dari kode, tidak dibuktikan di E sampai saldo live muncul). Bila EV tidak dipakai, pakai urutan lain yang dicatat alasannya; cakupan tetap dijamin B9/B10.
+Urutan kerja default = **pintu masuk pertama kali** (B2a — entrypoint paling awal yang dilalui pengguna), bukan EV live. Lead masuk Tahap E hanya bila punya plafon live terukur di Tahap D; plafon live 0 → DORMAN (mekanisme dicatat dari kode, tidak dibuktikan di E sampai saldo live muncul). Bila EV tidak dipakai, pakai urutan lain yang dicatat alasannya; cakupan tetap dijamin B9/B10.

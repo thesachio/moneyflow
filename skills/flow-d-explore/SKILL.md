@@ -10,7 +10,7 @@ Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-a
 
 ## Prasyarat (tanpa ini D tidak mulai)
 
-- Daftar alur klaster: enumerasi + EV per alur, dari `B02` + `B04`.
+- Daftar alur klaster: enumerasi per alur + entrypoint pertama tiap alur, dari `B02` + `B04`.
 - Inventaris alur klaster (`C<NN>-K<n>-FLOW-INVENTORY.md`).
 - Registry invariant (`B06`) sudah punya struktur penomoran.
 
@@ -50,9 +50,11 @@ Keluaran gelombang 2: kandidat `QUEUED` (`QD..`) + `DORMAN` (hanya bila gagal ga
 
 ### Urutan prioritas QUEUED
 
-Aturan operasional yang **terdefinisi** di repo ini: urutkan menurut **EV live** (nilai harapan dari data live — volume/saldo per entrypoint), tertinggi dulu.
+Urutkan menurut **pintu masuk pertama kali** (B2a, diputus 17 Nov 2026): kandidat yang menyentuh **entrypoint paling awal** pada alur pengguna dikerjakan lebih dulu; bila beberapa kandidat menyentuh entrypoint yang sama, urutkan menurut urutan segmen (S1 sebelum S2).
 
-> Catatan jujur: label `P1–P5` yang dipakai di beberapa berkas adalah kosakata warisan katalog dan **tidak punya definisi di methodology repo ini**. Jangan mengarang definisinya. Kalau butuh label prioritas, tulis angka EV + alasannya; kalau butuh `P1–P5`, minta user mendefinisikannya lebih dulu.
+EV live **tidak** dipakai sebagai penentu urutan. Boleh dicatat sebagai data pendukung, bukan penentu.
+
+> Catatan jujur: label `P1–P5` yang dipakai di beberapa berkas adalah kosakata warisan katalog dan **tidak punya definisi di methodology repo ini**. Jangan mengarang definisinya. Kalau user meminta label prioritas, minta definisinya lebih dulu.
 
 ## Kartu lead + invariant
 
@@ -116,7 +118,7 @@ Konsekuensi yang sering dilanggar:
 ## Keluaran
 
 - `D<nn>-<JALUR>-WAVE1-BLIND.md` — OBS / G / R / Q, semua berlabel `DIANALISIS`.
-- `D<nn>-<JALUR>-WAVE2-QUEUED.md` — QUEUED berurut EV + DORMAN (dengan syarat buka-ulang) + disposisi.
+- `D<nn>-<JALUR>-WAVE2-QUEUED.md` — QUEUED berurut pintu masuk + DORMAN (dengan syarat buka-ulang) + disposisi.
 - `D<nn>-<JALUR>-LEAD-CARDS.md` — kartu 1:1 dengan rantai (a)+(b)+(c) + klaim finansial.
 - Registry invariant (`B06`) terisi dengan sumber tiap invariant.
 
