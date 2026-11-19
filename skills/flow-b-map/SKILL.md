@@ -172,7 +172,13 @@ Tidak live-match → wadah **TUNDA-LIVE**:
 **Bagian 2 — Katalog Awal Stream & Urutan Kerja `B2a`.**
 
 - Definisikan daftar `Stream` (`STR-01`, `STR-02`, dan seterusnya sesuai jumlah Stream) berdasarkan titik masuk nilai/aksi pengguna pada `CORE-FLOW`.
+- **Tiap Stream di katalog wajib punya tiga field jangkar dampak** (dari kode + `deployments/`, tanpa cek onchain di Tahap B):
+  - `Value_Holder` — kontrak yang memegang dana yang dialirkan Stream ini (vault/pool/escrow/brankas) + alamat deployed-nya;
+  - `Sink` — ke mana nilai akhirnya keluar (`USER` / `FEE_RECIPIENT` / `BRIDGE_OUT:<chain>` / `HB-x → <STR-yy>` bila berhenti di State-Bridge dan dicairkan Stream lain);
+  - `Live_Balance@pin` — tulis `DIISI_B8`; diisi di B8 (saldo `Value_Holder` di blok pin, satu `cast` per token).
+  Stream yang `Sink`-nya tidak bisa ditentukan dari kode ditandai `SINK_BELUM_JELAS`; Tahap C wajib menyelesaikannya sebelum Stream itu masuk Tahap D.
 - Urutkan daftar Stream memakai `B2a` (entrypoint paling awal yang dilalui pengguna dalam siklus hidup protokol, diikuti alur berikutnya secara kausal); EV live boleh dicatat sebagai data, **bukan penentu urutan**. Catat urutan + alasannya di `B04`.
+- **`Flow Family`** — kelompok Stream yang menjalankan satu siklus hidup nilai yang sama lewat beberapa transaksi terpisah (mis. bridge: deposit → fill → settlement → refund; antrean: request → execute → claim), tersambung lewat `Sink: HB-x → STR-yy`. Tulis di `B04` sebagai `FAM-01: STR-01, STR-03, STR-04`. Aturan urutan: Stream dalam satu family dikerjakan **berurutan tanpa disela** Stream dari family lain; `B2a` berlaku untuk urutan antar-family (pintu masuk pertama family) dan di dalam family. Tier `B2a-PostAudit` memindahkan **seluruh family** bila salah satu anggotanya ber-tag `[DELTA]`/`[SCAR]`/`[SEAM]`. Relasi family di Tahap B bersifat kasar; dikoreksi eksplisit di `B04` bila Tahap C menemukan `HB-x` baru.
 - **Penandaan 3 tag pasca-audit (`B2a-PostAudit`, revisi 19 Nov 2026 — hanya bila metadata audit tersedia dari Tahap A):** di `B01-SCOPE.md` dan `B04`, tandai mekanis per berkas/Stream:
   - `[DELTA]` — berkas/fungsi yang ditambah/dimodifikasi pada `git diff <latest_audited_commit>..<pinned_commit>`;
   - `[SCAR]` — fungsi berjejak commit perbaikan (`fix`/`mitigation`/`audit`/pengetatan guard) di riwayat git;
@@ -239,7 +245,7 @@ Semua ini ada dan bisa ditunjuk:
 - [ ] `B01-SCOPE.md` + scope lock empat syarat lulus (termasuk tabel pemetaan tiga arah)
 - [ ] `B02-CENSUS-STATIC.md` + JSONL; kontrol positif **9/9**; nol mekanis terpecahkan; EP+VM(yes) dan EP+SM(state_mutator) dihitung; nol baris `no` melanggar B14-v2 (dicek `check-b`)
 - [ ] `B03-CENSUS-LIVE.md`; B7 ≤5 menit; blok referensi ditetapkan; kegagalan RPC tercatat
-- [ ] `B04-STREAMS-AND-CLUSTERS.md`; klaster 4 tipe + katalog Stream terurut B2a + Twin-Path Group + relasi kasar antar-klaster
+- [ ] `B04-STREAMS-AND-CLUSTERS.md`; klaster 4 tipe + katalog Stream terurut B2a (tiap Stream punya `Value_Holder` + `Sink` + `Live_Balance@pin: DIISI_B8`) + `Flow Family` + Twin-Path Group + relasi kasar antar-klaster
 - [ ] `B05-LEDGER-SISA.md` seed lengkap (EP+VM `BELUM_MASUK_STREAM` + EP+SM `BELUM_TERCAKUP`, `STR` `PENDING`, `HANDOFF_TERBUKA`, `TUNDA-LIVE`, `DORMAN`)
 - [ ] `B06-REGISTRY-INVARIANT.md` struktur kosong
 - [ ] `B07-STATE-BRIDGES.md` kerangka + header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption | Sync_Status`

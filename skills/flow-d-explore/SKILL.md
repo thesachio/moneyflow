@@ -14,6 +14,7 @@ Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-a
 - Registry invariant (`B06`) sudah punya struktur penomoran.
 - **B8 Live-Match Stream** dijalankan sebelum Gelombang 1 dimulai: cek cepat atas kontrak pada koridor Stream aktif — **utamakan desain kode + `cast code`/view di blok pin**; DILARANG memindai log sejarah panjang (pindai log = verifikator terakhir, Tahap G/sapuan akhir). Bila kontrak target belum live-match: masukkan Stream ke `TUNDA-LIVE` di `B05-LEDGER-SISA.md` dan **hentikan putaran Stream tersebut** (nol waktu eksekusi).
 - **B8 mengisi Lembar Parameter Live** (`C<NN>-<STREAM_ID>-INVENTORY.md` Bagian 6): untuk tiap `LP-x`, baca nilai di blok pin (`cast call` / `cast storage`), isi kolom `Nilai @ blok pin` dan `Status Cabang` (`LIVE` / `DEAD-CONFIG` / `TIDAK-TERBACA`). Ini pembacaan state blok pin, bukan pindai log — tetap dalam batas B8. Perubahan pada berkas C ini adalah pengisian kolom yang memang disediakan untuk B8, bukan revisi inventaris.
+- **B8 mengisi `Live_Balance@pin`** Stream aktif di `B04` (saldo `Value_Holder` per token pada blok pin). Nilai ini menjadi masukan `Observed Live Ceiling` (C10-v2) di Tahap E. Stream berstatus `SINK_BELUM_JELAS` tidak boleh memulai Gelombang 1.
 
 ## Mode Eksekusi Tahap D: AUTO vs PAIR (Co-Audit)
 
