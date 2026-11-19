@@ -2,6 +2,12 @@
 
 Status: acuan untuk proyek berikut. Disusun 15 Nov 2026 dari aturan
 yang sudah diputus (`aturan-alur-first.md`) + bukti pilot Across.
+Diperbarui 18 Nov 2026 (moneyflow v2.0 — Lapis Konstitusi): unit
+rolling C→D→E = **per-Stream** (Klaster = papan kontrol indeks Tahap
+B, bukan pagar analisis); klasifikasi klaster 4 tipe generik
+(CORE-FLOW / SHARED-PRIMITIVE / EXTERNAL-BOUNDARY / NON-PROD-SKIP);
+artefak baru `B07-STATE-BRIDGES.md`; Aturan Koridor Stream
+(`Corridor-Bound Cross-Cluster`); B7 WAJIB untuk proyek ter-deploy.
 Yang ada di sini hanya yang sudah diputus; yang belum diputus
 tercatat di bagian akhir — bukan rule.
 
@@ -22,20 +28,27 @@ A. Sekali, untuk seluruh protokol (bagian depan):
 3. B03-CENSUS-LIVE.md — inventaris alamat live (daftar) + sensus live
    ringan B7 (WAJIB, B15); sensus live penuh opsional, sisanya
    just-in-time per klaster (B8).
-4. B04-CLUSTERS.md — identifikasi klaster + daftar handoff (B11).
+4. B04-CLUSTERS.md — identifikasi klaster + daftar handoff (B11) +
+   klasifikasi 4 tipe (moneyflow v2.0): CORE-FLOW / SHARED-PRIMITIVE /
+   EXTERNAL-BOUNDARY / NON-PROD-SKIP.
    (Daftar jahitan SM-xx lengkap TIDAK wajib — B16 tidak dipakai,
    diputus 22:33 WIB 16 Nov 2026.)
-5. Ledger sisa (B10) — seed: entrypoint belum masuk alur, handoff
-   terbuka, klaster belum dikerjakan.
-6. Registry invariant (B3) — struktur + penomoran (kosong; diisi
+5. B07-STATE-BRIDGES.md — seed tabel State-Bridge antar-Stream
+   (kolom: `Bridge_ID | Storage_Var | Writer_Stream_&_Guarantee |
+   Reader_Stream_&_Assumption | Sync_Status`); diperbarui di C/D.
+6. Ledger sisa (B10) — seed: entrypoint belum masuk alur, handoff
+   terbuka, Stream belum dikerjakan.
+7. Registry invariant (B3) — struktur + penomoran (kosong; diisi
    Tahap D).
-Per klaster (Tahap C — pemetaan mendalam, bukan Tahap B): inventaris
-alur klaster + segmentasi + kontrak handoff klaster (deskriptif) —
-jaminan produsen + asumsi konsumen sebagaimana teramati di kode
-(nama+tipe+satuan field). Invariant TIDAK dibuat di Tahap B atau
-Tahap C (B12) — dirumuskan di Tahap D.
+Per-Stream (Tahap C — pemetaan mendalam, bukan Tahap B):
+`C00-SHARED-PRIMITIVES` sekali di awal Tahap C + inventaris alur +
+segmentasi + kontrak handoff (deskriptif) — jaminan produsen + asumsi
+konsumen sebagaimana teramati di kode (nama+tipe+satuan field); ikut
+Aturan Koridor Stream (`Corridor-Bound Cross-Cluster`, moneyflow
+v2.0). Invariant TIDAK dibuat di Tahap B atau Tahap C (B12) —
+dirumuskan di Tahap D.
 
-TIDAK di Tahap B: pemetaan mendalam per klaster (Tahap C), buruan
+TIDAK di Tahap B: pemetaan mendalam per-Stream (Tahap C), buruan
 kandidat, PoC, verdict (06/07/08/09), komposisi jalur serangan,
 submisi, kontak program, transaksi mainnet/testnet.
 
@@ -123,15 +136,18 @@ Tes ringan = (1) getCode alamat kontrak inti (1–3 alamat) pada blok
 referensi; (2) bila ada kode, satu panggilan view murah (mis.
 liveness()/owner()). TIDAK termasuk: jejak event, hitung log,
 verifikasi seluruh inventaris alamat, cek rantai lain — itu kerja B8
-per klaster. Anggaran maks 5 menit untuk seluruh B7 (target, belum
+per Stream. Anggaran maks 5 menit untuk seluruh B7 (target, belum
 terukur); bila habis, berhenti dengan hasil yang ada + catatan.
-Cara pakai: B7 tetap OPSIONAL (lihat B15): bila dilewati, sensus
+Cara pakai: B7 WAJIB untuk proyek Mainnet/Testnet (selaras B15,
+moneyflow v2.0): ringan — maks 5 menit (getCode 1–3 alamat inti +
+satu view murah + penetapan blok pin referensi). Hanya dilewati bila
+proyek murni belum di-deploy (`repo-only`) — bila repo-only, sensus
 live di Tahap B tinggal inventaris alamat klaim-repo (statis) +
 catatan verifikasi ditunda ke B8.
 
-### B8. Cek live-match diulang per klaster; TUNDA-LIVE
-Definisi: cek live-match diulang di awal fase uji per klaster,
-sebelum PoC ditulis. Yang tidak live-match masuk wadah TUNDA-LIVE.
+### B8. Cek live-match diulang per Stream; TUNDA-LIVE
+Definisi: cek live-match diulang di awal fase uji per Stream
+(moneyflow v2.0), sebelum PoC ditulis. Yang tidak live-match masuk wadah TUNDA-LIVE.
 Cara pakai: TUNDA-LIVE = tercatat di ledger sisa (tetap terhitung,
 bukan hilang); nol waktu eksekusi (tanpa PoC, tanpa fork); dibuka
 lagi hanya bila deployment live muncul atau Kim memerintah cek ulang;
@@ -171,9 +187,10 @@ input N+1.
 ### B12. Invariant TIDAK dinyatakan di Tahap B
 Definisi: Tahap B hanya membangun yang riil/teramati untuk
 seluruh protokol — sensus, klaster, daftar handoff (B11). (B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.) Tahap C
-membangun yang riil/teramati per klaster — inventaris alur,
-segmentasi, kontrak handoff deskriptif (jaminan produsen + asumsi
-konsumen sebagaimana teramati di kode). Invariant adalah klaim asumsi
+membangun yang riil/teramati per-Stream — `C00-SHARED-PRIMITIVES`
+sekali di awal Tahap C + inventaris alur, segmentasi, kontrak handoff
+deskriptif (jaminan produsen + asumsi konsumen sebagaimana teramati
+di kode); ikut Aturan Koridor Stream (moneyflow v2.0). Invariant adalah klaim asumsi
 agen tentang apa yang SEHARUSNYA berlaku — bukan fakta teramati —
 jadi dirumuskan di Tahap D (eksplorasi), bersama kartu leadnya, dan
 diuji di Tahap E. (Direvisi 15 Nov 2026 atas perintah Kim —
@@ -230,7 +247,7 @@ view murah, rantai utama (fallback rantai utama kedua), anggaran
 5 menit — sebagai konfirmasi live bahwa klaim INTEL/deployment
 benar, sumber data EV, dan sinyal live untuk identifikasi klaster.
 Sensus live PENUH (semua rantai, jejak event lengkap) tetap OPSIONAL
-di Tahap B. Cek onchain mendalam WAJIB di B8: live-match per klaster
+di Tahap B. Cek onchain mendalam WAJIB di B8: live-match per Stream
 sebelum PoC ditulis; yang tidak live-match masuk TUNDA-LIVE; PoC
 klaster itu TERBLOKIR sampai cek live-match ada. (Direvisi 15 Nov
 2026 atas perintah Kim 'perlu sensus live ringan' — menggantikan
@@ -258,11 +275,23 @@ yang wajib selesai' di aturan-alur-first.md.
   diselesaikan transitif di inventaris alur, bukan temuan.
 - **EP+VM**: entrypoint DAN value_moves yes — angka yang mengikat
   untuk inventaris alur (bukan EP total).
-- **Klaster alur**: kelompok alur ujung-ke-ujung, diurutkan pintu masuk pertama kali (B2a)
-  (pilot Across: K1 deposit→fill, K2 bundle→relay, K3 refund, K4
-  periphery, K5 mintburn/HyperCore, K6 counterfactual, K7 klaim
-  Merkle, K8 primitif eksternal, K9 mock bukan-live).
-- **Unit / segmen**: unit = satu aliran uang ujung-ke-ujung;
+- **Klaster alur**: pengelompokan indeks cakupan di Tahap B (papan
+  kontrol kelengkapan, bukan pagar analisis), diklasifikasi 4 tipe
+  generik (moneyflow v2.0): `CORE-FLOW` (alur nilai utama) /
+  `SHARED-PRIMITIVE` (kontrak/library dasar bersama) /
+  `EXTERNAL-BOUNDARY` (integrasi di luar scope) / `NON-PROD-SKIP`
+  (mock/test harness/script mati — dilewati utuh); diurutkan pintu
+  masuk pertama kali (B2a).
+  [ARSIP RIWAYAT PILOT: pilot Across K1 deposit→fill, K2 bundle→relay,
+  K3 refund, K4 periphery, K5 mintburn/HyperCore, K6 counterfactual,
+  K7 klaim Merkle, K8 primitif eksternal, K9 mock bukan-live.]
+- **Stream** (moneyflow v2.0): satu aliran nilai ujung-ke-ujung —
+  titik masuk nilai (`Ingress`) → pemrosesan/pencatatan hak
+  (`State/Share Accounting`) → titik keluar/klaim (`Egress`); unit
+  rolling C→D→E = per-Stream (B2a-v2); garis aliran menembus batas
+  klaster (Aturan Koridor Stream); jeda nilai pada storage =
+  State-Bridge (`HB-x`, B07).
+- **Unit / segmen**: unit = Stream (aliran nilai ujung-ke-ujung);
   segmen = potongan alur di handoff yang bisa diamati (event,
   perubahan state, pesan lintas-chain, batas waktu, langkah
   off-chain); segmen = unit buruan.
@@ -289,7 +318,9 @@ yang wajib selesai' di aturan-alur-first.md.
 - **Unresolved**: butir belum terjawab di sensus (unknown + catatan
   lain) — daftar kerja inventaris alur, bukan temuan.
 - **EV live**: nilai harapan per alur dari data live (volume/saldo
-  per entrypoint) — penentu urutan klaster.
+  per entrypoint) — BUKAN penentu urutan (urutan antar-Stream = pintu
+  masuk pertama kali, B2a; di dalam Stream = bobot struktural,
+  B2a-v2).
 - **Mode Uji**: diturunkan dari stage (A3); MAINNET → FORK
   LIVE_MATCH.
 
@@ -301,8 +332,11 @@ yang wajib selesai' di aturan-alur-first.md.
 - `B02-CENSUS-STATIC.md` — hasil sensus statis (hitungan, kontrol,
   nol terpecahkan, batasan).
 - `B03-CENSUS-LIVE.md` — hasil sensus live (inventaris alamat,
-  kehadiran kode + jejak event (bila B7 dijalankan; bila B7 dilewati,
-  verifikasi ditunda ke B8 per klaster), batasan RPC, koreksi).
+  kehadiran kode + jejak event (bila B7 dijalankan; bila `repo-only`,
+  verifikasi ditunda ke B8), batasan RPC, koreksi).
+- `B07-STATE-BRIDGES.md` (moneyflow v2.0) — tabel State-Bridge
+  antar-Stream: `Bridge_ID | Storage_Var | Writer_Stream_&_Guarantee |
+  Reader_Stream_&_Assumption | Sync_Status`.
 - `notes/staging-G01..G10-*.md` — staging per kelompok (baris JSON
   per fungsi) + `notes/staging-synthesis.md`.
 - `notes/clusters-draft.md` — draf klaster + ledger sisa benih
@@ -326,7 +360,7 @@ Rule ini tinggal di `aturan-alur-first.md`; yang dipakai di Tahap B:
 - C7 — bahasa Indonesia ringan dan sederhana.
 - C9 — /stop mencabut otorisasi round seketika.
 
-## 7. Biaya terukur (pilot Across, 15 Nov 2026)
+## 7. Biaya terukur (pilot Across, 15 Nov 2026) [ARSIP RIWAYAT PILOT]
 
 - Tahap A: 32 detik (merangkum INTEL kanonik COMPLETE); 62 detik
   (penemuan dari across.to, 9/9 DITEMUKAN, tangga A4).
@@ -348,7 +382,7 @@ Rule ini tinggal di `aturan-alur-first.md`; yang dipakai di Tahap B:
 - Aturan pin commit di run dari-0 + blok referensi (A5) — Kim
   menunda untuk fase ini (15 Nov 2026).
 - Urutan klaster + bentuk rinci Tahap C–G — keputusan per proyek (struktur modular A–G di aturan-alur-first.md seksi D)
-  (pilot Across: tiga keputusan klaster masih menunggu Kim).
+  (pilot Across: tiga keputusan klaster masih menunggu Kim) [ARSIP RIWAYAT PILOT].
 - Arah metode (terima/tolak sebagai pengganti Segitiga) — pilot
   adalah buktinya, bukan keputusannya.
 

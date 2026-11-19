@@ -30,8 +30,8 @@ Skill ini memuat tangga penemuan dan aturan penulisan sampai Tahap A selesai. `m
 ## 9 butir brief (A1)
 
 1. Nama proyek (singkat) — sertakan nama internal/protokol bila ada.
-2. Deskripsi lingkup (bridge/swap/LP/AI/dst, singkat) — **satu paragraf**.
-3. Deployment stage: **MAINNET / TESTNET / DEVNET**.
+2. Deskripsi lingkup (misal: pertukaran aset, pinjaman, jembatan lintas-rantai, brankas nilai, derivatif, atau infrastruktur pembayaran), singkat — **satu paragraf**.
+3. Deployment stage: **MAINNET / TESTNET / DEVNET / PRE-DEPLOY (REPO-ONLY)** — status ke-4 hanya bila sumber resmi menyatakan proyek belum live di jaringan mana pun; stage ini memberi tahu Tahap B bahwa B7 tidak punya target on-chain (repo-only), tanpa mengubah definisi MAINNET / TESTNET / DEVNET.
 4. Repo (alamat github atau setara).
 5. Website (tempat user mengakses & berinteraksi dengan UI aktif).
 6. Docs (link).

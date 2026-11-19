@@ -14,14 +14,14 @@ Repo ini **bukan** proyek audit: tidak memuat kode kontrak target dan tidak memu
 | Tahap | Nama | Keluaran | Batas |
 | :--- | :--- | :--- | :--- |
 | A | INTEL | `INTEL.md` (brief 9 butir), `A01-INTEL.md`, `A02-INTEL-discovery.md` | Brief saja; **tanpa cek onchain**, tanpa verifikasi teknis (A2) |
-| B | Mapping | `B01-SCOPE`, `B02-CENSUS-STATIC`, `B03-CENSUS-LIVE`, `B04-CLUSTERS`, `B05-LEDGER-SISA`, `B06-REGISTRY-INVARIANT` | Tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
-| C | Pemetaan mendalam per klaster | `C<NN>-<KLASTER>-FLOW-INVENTORY` | Deskriptif saja; jahitan adalah batas |
-| D | Eksplorasi | Kartu lead + invariant (`INV-Sx/Hx/Jx/Fx`) | Dua gelombang (buta → berpengetahuan + katalog); tanpa PoC |
-| E | Uji test | PoC fork-live + P&L per kandidat | Fork blok pin; P&L terukur; batch maks 3 |
-| F | Komposisi (bersyarat) | Lemma dari data terbaru | Hanya lead multi-segmen; tanpa fork/PoC ulang |
-| G | Verdict | Verdict 06/07/08/09 per kandidat + distribusi akhir | Tiga verdict terpisah |
+| B | Mapping | `B01-SCOPE` s.d. `B07`: incl. `B04-STREAMS-AND-CLUSTERS` & `B07-STATE-BRIDGES` | Tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
+| C | Stream-Slice Inventory | `C00-SHARED-PRIMITIVES` (sekali di awal) + `C<NN>-<STREAM_ID>-INVENTORY` per Stream | Deskriptif saja; menembus batas klaster sepanjang koridor aliran nilai (`Corridor-Bound Cross-Cluster`) |
+| D | Eksplorasi | `D<NN>-<STREAM_ID>-WAVE1-BLIND`, `-WAVE2-QUEUED`, `-LEAD-CARDS` + invariant (`INV-Sx/Hx/HBx/Jx/Fx`) | Gelombang 1 bebas katalog (3 Lensa Fisika Nilai + Twin-Path Diff) lalu Gelombang 2 Symptom-Triggered Lazy Skill Loading (2-4 plugin relevan); tanpa PoC |
+| E | Pembuktian fork | `E<NN>-<STREAM_ID>-BATCH<M>-PROOF` + pustaka `FlowFixtures` kumulatif | Fork blok pin; rantai utuh (a)+(b)+(c); batch maks 3; standar C10-v2 (Permissionless + Observed Live Ceiling / Proven Potential Ceiling >= $1) |
+| F | Komposisi Inkremental (bersyarat) | `F<NN>-<COMPOSITION_ID>` + pembaruan `Sync_Status` di `B07` | Dua pemicu: inkremental seusai E per Stream (menyentuh State-Bridge/brankas bersama) + sapuan akhir multi-stream; Lemma 4 Syarat tanpa fork ulang |
+| G | Verdict | Verdict 06/07/08/09 per kandidat + distribusi akhir | Triage per-Stream + rekapitulasi akhir; tiga verdict terpisah |
 
-Rolling per klaster: `C → D → E`. Tahap F lintas-klaster + Tahap G di akhir.
+Rolling **vertikal per Stream ujung-ke-ujung**: `C -> B8 -> D -> E -> F inkremental -> G triage` — satu Stream utuh dikerjakan sebelum Stream berikutnya; sapuan akhir `B9` + rekapitulasi di penutupan proyek. Pra-cek deterministik: `python3 tools/verify_flow.py` (check-staging / check-b / check-c / check-d / check-e / check-final).
 
 ---
 
@@ -35,7 +35,8 @@ Rolling per klaster: `C → D → E`. Tahap F lintas-klaster + Tahap G di akhir.
 | `methodology/rancangan-hemat-fase-d.md` | Aturan hemat Fase D + lantai bawah |
 | `SOUL.md` | Identitas + hukum kognitif metode flow |
 | `AGENTS.md` | Konstitusi operasional: tahap, delegasi, gerbang, preferensi, lantai bawah |
-| `verify/VERDICT.md`, `verify/SEVERITY-RUBRIC.md` | Standar verdict + severity (dipakai Tahap G) |
+| `verify/VERDICT.md`, `verify/SEVERITY-RUBRIC.md` | Standar verdict + severity (dipakai Tahap G) + blok penyetaraan metode Flow Money First v2.0 |
+| `tools/verify_flow.py` | Pemeriksa gerbang deterministik (exit 0 lulus / 1 gagal): check-staging, check-b, check-c, check-d, check-e, check-final |
 | `skills/flow-*` | Skill per tahap + autopilot |
 
 ---

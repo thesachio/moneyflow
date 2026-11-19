@@ -1,6 +1,6 @@
 ---
 name: flow-e-test
-description: Tahap E — Uji test. PoC fork-live + P&L terukur per kandidat, batch maks 3, kontrol positif, parent menjalankan ulang forge dan mencocokkan gas, rantai (a)+(b)+(c) diuji utuh (C11), tiga verdict terpisah. Skill ini memuat aturan dan format sampai Tahap E selesai. Dipakai saat menguji lead, atau saat user menyebut tahap E, uji, proof, fork.
+description: Tahap E — Pembuktian Fork Pin (moneyflow v2.0): pustaka Cumulative Normal-Path Fixtures (FlowFixtures) + dua metrik plafon C10-v2 (Observed Live Ceiling / Proven Potential Ceiling + victim seeding), batch maks 3 per Stream, kontrol positif, rerun forge gas IDENTIK, rantai (a)+(b)+(c) utuh (C11), tiga verdict terpisah. Dipakai saat menguji lead, atau saat user menyebut tahap E, uji, proof, fork.
 ---
 
 # Skill flow-e-test — Tahap E (Uji test)
@@ -10,7 +10,7 @@ Skill ini memuat aturan dan format sampai Tahap E selesai. `methodology/aturan-a
 
 ## Gerbang masuk (tanpa ini, PoC TERBLOKIR)
 
-1. **B8 live-match klaster lulus.** Belum live-match → `TUNDA-LIVE`, nol waktu eksekusi, jangan tulis PoC.
+1. **B8 live-match Stream lulus** (cek dilakukan di awal Tahap D per Stream). Belum live-match → `TUNDA-LIVE` di `B05`, nol waktu eksekusi, jangan tulis PoC.
 2. **Kartu lead ada** dengan rantai (a)+(b)+(c) dan klaim finansial (dari Tahap D).
 3. **Gate C10 lulus** di Tahap D (mekanisme + plafon terukur + pemicu terjangkau).
 
@@ -24,7 +24,7 @@ Skill ini memuat aturan dan format sampai Tahap E selesai. `methodology/aturan-a
 ### Sumber RPC (mengikat)
 
 - **ALCHEMY utama**: `rpc-env.sh <rantai>` memilih key alchemy per-rantai dari `.env` / `.env.rpc.secret` lebih dulu.
-- **Fallback public RPC** (publicnode dsb. di `.env.rpc`) hanya bila: rantai tidak punya key alchemy, ATAU alchemy gagal/limit.
+- **Fallback public RPC** (endpoint publik di `.env.rpc`) hanya bila: rantai tidak punya key alchemy, ATAU alchemy gagal/limit.
 - Free-tier alchemy ETH: `eth_getLogs` rentangnya dibatasi → **chunking wajib**.
 
 ### Aturan hemat yang diizinkan
@@ -35,9 +35,9 @@ Skill ini memuat aturan dan format sampai Tahap E selesai. `methodology/aturan-a
 - Triase fork-testability di awal.
 - Bila satu tes penentu sudah bisa mengonfirmasi, jangan jalankan pindai sejarah panjang dulu.
 
-## Langkah 2 — Batch maks 3 kartu
+## Langkah 2 — Penarikan batch maks 3 kartu per Stream
 
-Tiap batch **maksimal 3 kartu**. Untuk tiap kartu wajib ada:
+Tarik **maksimal 3 kartu teratas** dari `QUEUED` Stream aktif sesuai **urutan ketajaman struktural** B2a-v2 Lapis 2 (INV-Jx/INV-Fx > INV-Hx/INV-HBx > INV-Sx, ini lokal S1->Sn) — ulangi sampai `QUEUED == 0` dan `ACTIVE == 0` (anti-kuota: tak ada target jumlah; kartu habis = Stream selesai diuji). Untuk tiap kartu wajib ada:
 
 | Komponen | Isi |
 | :--- | :--- |
@@ -46,7 +46,21 @@ Tiap batch **maksimal 3 kartu**. Untuk tiap kartu wajib ada:
 | P&L | modal masuk, uang keluar, selisih — dalam satuan token dan USD bila ada harga |
 | Mode kegagalan | apa yang terjadi bila prasyarat tidak terpenuhi |
 
+### Cumulative Normal-Path Fixtures (FlowFixtures) — wajib
+
+Direktori `poc/FlowFixtures` (atau setara bahasa target):
+
+- Gunakan kembali **satu instance fork blok pin per rantai** — jangan spin-up fork baru per kartu.
+- Simpan **fungsi pembantu transaksi normal pengguna** dari setiap Stream yang diuji (mis. penyetoran normal, pertukaran normal, pembukaan posisi normal) ke **berkas fixture bersama** agar Stream hilir membangun prasyarat state 100% melalui rangkaian panggilan transaksi resmi pengguna.
+- **DILARANG** memalsukan slot storage protokol (`vm.store`) **atau** `deal` langsung ke saldo kontrak protokol.
+
 **Brief memakai bahasa verifikasi invariant, bukan bahasa serangan.**
+
+## Dua Mode Pengukuran Plafon (C10-v2)
+
+**Mode 1 (`Observed Live Ceiling`):** bila kontrak pada blok pin sudah menyimpan saldo/likuiditas `> 0`, jalankan rantai (a)+(b)+(c) langsung terhadap state blok pin dan catat nilai kerugian aktual dalam satuan aset & USD.
+
+**Mode 2 (`Proven Potential Ceiling`):** bila kontrak pada blok pin memiliki saldo/aktivitas `== 0` tetapi terbuka bagi operasi pengguna normal, langkah pertama PoC wajib mensimulasikan transaksi pengguna korban (`victim`) secara wajar lewat **entrypoint resmi** pada fork blok pin (*Victim Seeding* rasional sesuai Pernyataan #3 dan #4 `verify/VERDICT.md`), diikuti transaksi akun penguji tanpa hak istimewa (`attacker`) yang mengeksekusi rantai (a)+(b)+(c); lalu ukur selisih P&L bersih — wajib **>= $1**.
 
 ## Langkah 3 — Verifikasi parent atas bukti penentu (lantai bawah)
 
@@ -55,6 +69,7 @@ Tidak boleh dipangkas. Parent:
 1. **Menjalankan ulang semua tes forge sendiri** dan mencocokkan **gas** — harus **IDENTIK**. Gas beda = tes tidak reproducible = bukti belum sah.
 2. Memeriksa jangkar dari **kode bernomor**: batas fungsi via `grep -n`. **Satu baris yang ada ≠ jangkar yang benar** — periksa fungsinya, bukan hanya nomor barisnya.
 3. Bila ada rantai koreksi: **tiap langkah berikut wajib memeriksa ulang jangkar yang dikoreksi**. Rantai koreksi bukan bukti.
+4. Pemeriksaan batas fungsi lewat **`grep -n`** dijalankan parent (fungsi, bukan baris).
 
 ## Langkah 4 — C11: uji rantai, bukan satu fungsi
 
@@ -90,7 +105,7 @@ Kerugian = yang **BISA DIBUKTIKAN** merugikan:
 
 1. mekanisme jalan di fork/test atas **kode + state nyata**;
 2. **plafon terukur**;
-3. pemicu **terjangkau lewat jalur operasi normal** — tanpa peran istimewa, tanpa state eksotis.
+3. pemicu **terjangkau oleh siapa pun (permissionless)** — tanpa peran istimewa. "Keanehan" susunan transaksi **BUKAN** alasan gugur; yang menggugurkan hanya ketergantungan pada kunci admin/governance/oracle tepercaya atau state mustahil dicapai permissionless.
 
 **TIDAK HARUS LIVE.** P&L live 0 tidak membuat lead DORMAN atau gugur.
 Ambang: potensi kerugian **≥ $1 = bukan debu** (kandidat sah, disimpan). Hanya **< $1** yang gugur DUST.
@@ -104,14 +119,16 @@ Ambang: potensi kerugian **≥ $1 = bukan debu** (kandidat sah, disimpan). Hanya
 
 ## Keluaran
 
-- `E<nn>-<JALUR>-BATCH<n>-PROOF.md` — PoC + kontrol + P&L + tiga verdict + label bukti.
-- `poc/e<nn>-batch<n>/` — berkas tes forge + log eksekusi lengkap (gas tercatat).
+- `E<NN>-<STREAM_ID>-BATCH<M>-PROOF.md` — PoC + kontrol + P&L (kedua metrik plafon dicatat: mana yang dipakai dan angkanya) + tiga verdict + label bukti.
+- `poc/<stream_id>/` — berkas tes forge + log eksekusi lengkap (gas tercatat); helper transaksi normal ditambahkan ke `poc/FlowFixtures`.
 
-## Definition of done Tahap E (per batch)
+## Definition of done Tahap E (per batch per Stream)
 
-- [ ] fork dibangun di blok pin; live ≠ HEAD tercatat
+- [ ] fork dibangun di blok pin; live != HEAD tercatat; fixture dibangun via `Cumulative Normal-Path Fixtures` (victim seeding lewat entrypoint resmi, nol `vm.store`/`deal` ke saldo kontrak protokol)
+- [ ] penarikan batch mengikuti urutan ketajaman struktural B2a-v2; berhenti saat `QUEUED == 0` dan `ACTIVE == 0`
 - [ ] maks 3 kartu per batch
 - [ ] tiap kartu: PoC + kontrol positif + P&L terukur + mode kegagalan
+- [ ] kedua metrik plafon C10-v2 diterapkan: `Observed Live Ceiling` (saldo > 0, langsung ke state blok pin) atau `Proven Potential Ceiling` (saldo == 0 tapi terbuka, victim seeding + attacker, P&L bersih >= $1)
 - [ ] parent rerun forge; gas **IDENTIK**
 - [ ] jangkar diperiksa via `grep -n` (fungsi, bukan baris)
 - [ ] rantai (a)+(b)+(c) diuji utuh (C11); yang berhenti di satu fungsi = TIDAK KONKLUSIF

@@ -9,6 +9,20 @@ Penilai **tidak** menyisir kode untuk mencari bug baru — itu tugas hulu. Tugas
 
 ---
 
+## BLOK PENYETARAAN METODE AKTIF (`Flow Money First v2.0 Mapping`)
+
+Dokumen ini ditulis dengan kosakata fase lama (Fase 1–4). Pada proyek yang dijalankan dengan metode **Flow Money First v2.0**, padankan istilah berikut — **substansi seluruh 11 Pernyataan, aturan anti-cheatcode, anti-fantasy-mock, anti-false-negative, tangga bukti, dan kelas penolakan TIDAK BERUBAH**:
+
+| Istilah dokumen ini | Padanan di Flow Money First v2.0 |
+| :--- | :--- |
+| `Fase 1 / Fase 2` | **Tahap B / Tahap C / Tahap D** (mapping & census = B; inventaris = C; eksplorasi = D) |
+| `Fase 3` | **Tahap E / Tahap F** (pembuktian fork = E; komposisi inkremental = F) |
+| `Fase 4` | **Tahap G** (triage per-Stream + rekapitulasi & gate akhir) |
+
+Seluruh rujukan "Fase 3 dilarang / Hakim Fase 4 / Gerbang Eksklusif Fase 4" di dokumen ini dibaca sebagai padanannya di atas. Substansi pengujian (live-match, tanpa cheatcode, victim seeding, tangga bukti A/A-HEAD/B/C/D, PAPER_REFUTATION, LAZY_BAILOUT) berlaku identik pada kedua metode.
+
+---
+
 
 ## CAKUPAN BERLAKU (keputusan 2026-10-31)
 
@@ -92,6 +106,8 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 
 Sebelum menyentuh `0.3`, Hakim **WAJIB** membaca `audit/FACTS.md` —
 khususnya `MEKANISME`, `INVARIAN`, dan `LINGKUNGAN`.
+
+> **Padanan Flow Money First v2.0 (mengikat):** proyek `Flow Money First v2.0` **tidak memakai** `audit/FACTS.md` warisan Segitiga. Bila proyek dijalankan dengan metode itu, Hakim memeriksa fakta otoritas/lingkungan dari **`B03-CENSUS-LIVE.md`, `C00-SHARED-PRIMITIVES.md`, `C<NN>-<STREAM_ID>-INVENTORY.md`**, dan **`audit/notes/deploy-parity-*.json`** — dengan **hukum pengikatan `(chain, alamat, blok)` yang sama ketatnya**: fakta hanya berlaku untuk triple `(chain, alamat, blok)` tertulis di sumbernya, drift apa pun (chain/alamat/lingkungan/waktu) menjatuhkan `UNVERIFIED_ASSUMPTION` / `STALE` persis seperti aturan di bawah.
 
 **Alasannya:** `SEVERITY` dan `ELIGIBILITY` bergantung pada siapa pemegang otoritas, apakah
 asumsi kepercayaan wajar, dan apakah invarian benar-benar ditegakkan. Semua itu ada di FACTS —
@@ -232,6 +248,8 @@ Baca **hanya** rentang baris yang diklaim beserta fungsi penjaga di sekitarnya.
 ---
 
 ## LANGKAH 4a — Gate Cakupan (WAJIB SEBELUM LANGKAH 4)
+
+> **Padanan Flow Money First v2.0 (mengikat, untuk LANGKAH 4a ini dan Pernyataan #11d):** proyek `Flow Money First v2.0` **tidak memakai** `00b-file-inventory.md` dan `03-attack-surface-queue.md`. Cakupan 100% dihitung **mekanis oleh Hakim** dari **`B01-SCOPE.md` x `B02-CENSUS-STATIC.jsonl` x `B05-LEDGER-SISA.md`**: wajib 100% baris `EP+VM` pada klaster `CORE-FLOW` dan `SHARED-PRIMITIVE` telah berstatus **terpetakan & selesai dieksplorasi di dalam `Stream`** (`QUEUED == 0`, `ACTIVE == 0`, nol `EP+VM` tertinggal `BELUM_MASUK_STREAM`), **ditambah sapuan akhir independen `B9` telah dijalankan**. Pelanggaran atas syarat ini tetap menjatuhkan vonis **`AUDIT_INCOMPLETE_COVERAGE_BIAS`** — dilarang menyimpulkan laporan selesai tanpa kondisi 0-sisa ini. Aturan anti-kuota (banyaknya lead bukan metrik kelulusan) berlaku identik.
 
 **Kualitas PoC hanya bermakna untuk permukaan yang benar-benar diperiksa.** Satu PoC sempurna di atas cakupan 2% tetap merupakan audit yang **gagal**. Karena itu gerbang ini dijalankan **lebih dulu**: Hakim DILARANG memeriksa 11 Pernyataan sebelum cakupan dinyatakan sah.
 

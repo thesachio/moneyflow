@@ -1,19 +1,31 @@
 ---
 name: flow-f-compose
-description: Tahap F — Komposisi (bersyarat). Hanya lead multi-segmen, hanya bila penting dan urgent; uji pakai data terbaru, tanpa fork/PoC ulang; bukti = lemma dengan format 4 syarat. Skill ini memuat gerbang dan format sampai Tahap F selesai. Dipakai saat merangkai jalur ujung-ke-ujung, atau saat user menyebut tahap F, komposisi.
+description: Tahap F — Komposisi Inkremental Lintas-Stream (moneyflow v2.0). Dua titik pemicu bersyarat: inkremental seusai Tahap E satu Stream (menyentuh State-Bridge/brankas bersama) + sapuan akhir sebelum penutupan proyek; Lemma 4 Syarat tanpa fork ulang; pengecualian presisi = 1 kartu gabungan ke FlowFixtures Tahap E. Dipakai saat merangkai jalur ujung-ke-ujung, atau saat user menyebut tahap F, komposisi.
 ---
 
 # Skill flow-f-compose — Tahap F (Komposisi)
 
-Tahap F = merangkai segmen/handoff/simpul yang **sudah terbukti** jadi jalur ujung-ke-ujung.
-**DITERIMA BERSYARAT** — bukan tahap wajib. Skill ini memuat gerbang dan format sampai Tahap F selesai. `methodology/aturan-alur-first.md` (seksi D — Tahap F) hanya rujukan sengketa.
+Tahap F = merangkai segmen/handoff/simpul/Stream yang **sudah terbukti** jadi jalur ujung-ke-ujung.
+**DITERIMA BERSYARAT** — bukan tahap wajib, tapi berjalan di **dua titik pemicu** (lihat di bawah), bukan hanya di akhir proyek. Skill ini memuat gerbang dan format sampai Tahap F selesai. `methodology/aturan-alur-first.md` (seksi D — Tahap F) hanya rujukan sengketa.
 
-## Gerbang masuk (dua syarat, keduanya harus benar)
+## Dua Titik Pemicu Bersyarat
+
+**1. Pemicu Inkremental (Segera seusai Tahap E satu Stream).** Dijalankan langsung apabila Stream yang baru selesai diuji:
+- menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **atau**
+- berbagi brankas dana yang sama dengan Stream yang sudah selesai sebelumnya,
+
+**dan** gabungan keduanya membentuk dampak finansial baru atau melipatgandakan plafon dampak yang tidak terlihat pada satu Stream tunggal.
+
+**2. Pemicu Sapuan Akhir (Sebelum penutupan proyek).** Merangkai siklus multi-stream (3+ stream atau loop umpan-balik nilai) setelah seluruh `STR` selesai.
+
+Di luar dua pemicu ini, Tahap F tidak dijalankan — jangan mengadakan fork/PoC baru tanpa pemicu.
+
+## Gerbang masuk (dua syarat, keduanya harus benar — setelah pemicu menyala)
 
 | Syarat | Cara memutuskan |
 | :--- | :--- |
-| **Multi-segmen** | lead melewati **≥2 segmen** atau **≥1 handoff** yang masing-masing sudah punya bukti Tahap E |
-| **Penting dan urgent** | rangkaian ini mengubah keputusan: tanpa F, dampak tidak bisa dinyatakan utuh (mis. dampak hanya muncul saat dua segmen dirangkai) |
+| **Multi-segmen** | lead melewati **>=2 segmen** atau **>=1 handoff** (atau >=1 `State-Bridge HB-x`) yang masing-masing sudah punya bukti Tahap E |
+| **Penting dan urgent** | rangkaian ini mengubah keputusan: tanpa F, dampak tidak bisa dinyatakan utuh (mis. dampak hanya muncul saat dua Stream dirangkai) |
 
 Bila salah satu tidak terpenuhi:
 
@@ -22,9 +34,9 @@ Bila salah satu tidak terpenuhi:
 
 ## Langkah 1 — Rangkai, jangan ulang
 
-- Per klaster dulu; lintas klaster di akhir.
-- Bahan rangkaian: **hasil Tahap E yang sudah ada** (segmen terbukti, handoff cocok, simpul terbukti).
-- Urutan rangkaian mengikuti alur: S1 → H1 → S2 → H2 → S3 …
+- Per Stream dulu; lintas Stream pada sapuan akhir.
+- Bahan rangkaian: **hasil Tahap E yang sudah ada** (segmen terbukti, handoff cocok, simpul terbukti, State-Bridge tertutup).
+- Urutan rangkaian mengikuti alur: S1 → H1 → S2 → H2 → S3 dan seterusnya sesuai inventaris Stream aktif.
 
 ## Langkah 2 — TIDAK fork ulang, TIDAK PoC ulang
 
@@ -32,12 +44,16 @@ Uji F **memakai data terbaru** (hasil Tahap E). Alasannya: bukti segmen sudah **
 
 Yang masih **boleh** di F: membaca state live terbaru untuk memastikan angka masih berlaku, dan menghitung ulang aritmetika rangkaian dari angka E. Yang **dilarang**: menjalankan fork baru, menulis PoC baru, mengulang skenario E.
 
+### Pengecualian presisi (satu-satunya jalur eksekusi gabungan)
+
+Apabila dampak finansial komposisi **hanya menyala** ketika transaksi Stream A dan Stream B dieksekusi **berurutan dalam satu skenario gabungan** pada fork yang sama (sementara masing-masing segmen sendiri tampak normal/tidak merugikan), kirimkan **tepat 1 kartu komposisi gabungan** (`INV-Fx`) kembali ke harness bersama Tahap E (`FlowFixtures`) untuk **satu eksekusi gabungan utuh** — agar memenuhi standar `DIEKSEKUSI` Tingkat A pada `verify/VERDICT.md`, bukan dibiarkan menggantung sebagai hipotesis kertas.
+
 ## Langkah 3 — Lemma: 4 syarat wajib
 
 Sebuah lemma sah **hanya bila keempatnya ada**:
 
 1. **Segmen terbukti** — tiap segmen punya bukti Tahap E (DIEKSEKUSI, bukan DIANALISIS).
-2. **Handoff cocok** — keluaran segmen N memenuhi masukan segmen N+1: nama field, tipe, satuan/desimal, dan rentang nilai.
+2. **Handoff cocok** — keluaran segmen N memenuhi masukan segmen N+1: nama field, tipe, satuan/desimal, dan rentang nilai; untuk `State-Bridge` keluaran-vs-masukan lintas Stream (jeda asinkron) juga ditutup dari `B07-STATE-BRIDGES.md`.
 3. **Simpul terbukti** — fork: Σkeluaran = masukan − fee; join: konsumsi tepat sekali.
 4. **Jalur gabungan dirangkai dari data terbaru** — angka dirantai secara eksplisit (nilai keluar S1 = nilai masuk S2), bukan "kira-kira cukup".
 
@@ -64,15 +80,17 @@ maka:
 
 ## Keluaran
 
-`F<nn>-<JALUR>-COMPOSITION.md` (atau seksi komposisi di berkas verdict) memuat:
+`F<NN>-<COMPOSITION_ID>.md` (atau seksi komposisi di berkas verdict) memuat:
 
 | Bagian | Isi |
 | :--- | :--- |
-| Rangkaian | S1 → H1 → S2 → … dengan jangkar `Path/File.ext:Lxx-Lyy` per simpul |
+| Rangkaian | S1 → H1 → S2 → H2 → Sn dengan jangkar `Path/File.ext:Lxx-Lyy` per simpul |
 | Lemma | pernyataan lemma + 4 syarat terpenuhi (satu per satu) |
 | Aritmetika | angka dirantai eksplisit: masuk → keluar → masuk berikutnya |
 | Ketidakcocokan | daftar temuan + ke mana dikembalikan |
 | Status | `LEMMA TERBUKTI` / `HIPOTESIS` (+ syarat yang kurang) |
+
+**Wajib setiap pemicu inkremental:** perbarui kolom `Sync_Status` di `B07-STATE-BRIDGES.md` untuk setiap `HB-x` yang dirangkai (nilai: `OPEN` / `COMPOSED` / `CONSUMED` — sesuai keadaan jembatan setelah komposisi).
 
 ## Definition of done Tahap F
 
@@ -81,6 +99,8 @@ maka:
 - [ ] handoff dicek per field (nama, tipe, satuan, rentang)
 - [ ] simpul dicek konservasi / konsumsi-sekali
 - [ ] angka dirantai eksplisit, bukan disimpulkan
-- [ ] nol fork baru, nol PoC baru
+- [ ] nol fork baru, nol PoC baru (pengecualian tunggal: 1 eksekusi gabungan via FlowFixtures bila pengecualian presisi menyala)
 - [ ] ketidakcocokan dicatat + dikembalikan, bukan ditambal
 - [ ] status akhir jelas: LEMMA TERBUKTI atau HIPOTESIS
+- [ ] pemicu inkremental yang menyala sudah dijalankan seusai Tahap E Stream terkait (bukan ditunda ke akhir proyek)
+- [ ] `Sync_Status` kolom `HB-x` terkait di `B07` diperbarui tiap komposisi

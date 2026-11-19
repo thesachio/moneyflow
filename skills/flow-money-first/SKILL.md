@@ -7,9 +7,9 @@ description: Pintu masuk metode Flow Money First — audit smart contract yang m
 
 Audit keamanan smart contract yang mempartisi pekerjaan berdasarkan **aliran uang**, bukan wadahnya (berkas).
 
-**Unit kerja = satu aliran uang ujung-ke-ujung.** Tiap aliran diukur nilai live-nya sejak awal, diburu per segmen dan handoff, dibuktikan di fork live dengan P&L terukur.
+**Unit kerja = satu Stream — aliran nilai ujung-ke-ujung** (`Ingress` → `State/Share Accounting` → `Egress`). Tiap Stream menurut urutan `B2a` / `B2a-v2`; klaster = papan kontrol cakupan Tahap B (moneyflow v2.0 — Lapis Konstitusi). Diburu per segmen dan handoff, dibuktikan di fork blok pin dengan P&L terukur.
 
-Skill ini adalah **peta dan aturan gerbang**. Kerja tiap tahap mengikuti skill tahapnya (`flow-a-intel` … `flow-g-verdict`), bukan berkas ini.
+Skill ini adalah **peta dan aturan gerbang**. Kerja tiap tahap mengikuti skill tahapnya (`flow-a-intel` sampai `flow-g-verdict`), bukan berkas ini.
 
 ## Bootloader — baca sebelum kerja apa pun
 
@@ -31,22 +31,22 @@ Skill ini adalah **peta dan aturan gerbang**. Kerja tiap tahap mengikuti skill t
 | Tahap | Nama | Keluaran | Batas keras (jangan dilanggar) |
 | :-: | :--- | :--- | :--- |
 | **A** | INTEL | `INTEL.md`, `A01-INTEL.md`, `A02-INTEL-discovery.md` | brief 9 butir saja; **tanpa cek onchain**; blok referensi belum ditetapkan |
-| **B** | Mapping | `B01`–`B06` + `scripts/out/*.jsonl` | tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
-| **C** | Pemetaan mendalam per klaster | `C<nn>-K<n>-FLOW-INVENTORY.md` | deskriptif saja; **jahitan adalah batas**; tanpa invariant/buruan/PoC |
-| **D** | Eksplorasi per alur | `D<nn>-…-WAVE1/WAVE2/LEAD-CARDS` | dua gelombang; gelombang 1 **dilarang** buka katalog; tanpa PoC; gelombang 1/2 **tidak** memberi TERBUKTI |
-| **E** | Uji test | `E<nn>-…-BATCH<n>-PROOF.md` + `poc/` | fork blok pin; P&L terukur; **batch maks 3**; parent rerun forge |
-| **F** | Komposisi (bersyarat) | `F<nn>-…-COMPOSITION.md` | hanya multi-segmen **dan** penting-urgent; **tanpa fork/PoC ulang** |
+| **B** | Mapping | `B01`–`B07` (`B04-STREAMS-AND-CLUSTERS` + `B07-STATE-BRIDGES`) + `scripts/out/*.jsonl` | tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
+| **C** | Pemetaan mendalam per-Stream | `C00-SHARED-PRIMITIVES.md` (sekali di depan) + `C<NN>-<STREAM_ID>-INVENTORY.md` per-Stream | deskriptif saja; **`Corridor-Bound Cross-Cluster`** (wajib menembus batas klaster sepanjang koridor aliran dana aktif; dilarang melebar horizontal ke cabang luar stream; jeda asinkron dicatat ke `B07-STATE-BRIDGES.md`); tanpa invariant/buruan/PoC |
+| **D** | Eksplorasi per-Stream | `D<nn>-<TOPIK>-WAVE1/WAVE2/LEAD-CARDS` | Gelombang 1 bebas/buta katalog (3 Lensa Fisika Nilai + Twin-Path Diff); Gelombang 2 = **Symptom-Triggered Lazy Skill Loading** (maks 2–4 plugin relevan) + `1-hop peek` pada `State-Bridge`; tanpa PoC; gelombang 1/2 **tidak** memberi TERBUKTI |
+| **E** | Uji test | `E<nn>-<TOPIK>-BATCH<n>-PROOF.md` + `poc/` | satu fork blok pin + pustaka kumulatif transaksi normal; batch maks 3 kartu diurutkan bobot struktural (**Simpul/Komposisi > Handoff/State-Bridge > Segmen Lokal**); mengukur `Observed Live Ceiling` atau `Proven Potential Ceiling`; parent rerun forge |
+| **F** | Komposisi Inkremental & Akhir | `F<nn>-<TOPIK>-COMPOSITION.md` | Inkremental: langsung jalan begitu Stream aktif menyentuh `State-Bridge`/brankas Stream sebelumnya; sapuan komposisi akhir bila multi-stream; **tanpa fork/PoC ulang** |
 | **G** | Verdict | `G01-VERDICT.md` + draf 09 | tiga verdict terpisah; severity dari plafon teramati; **HOLD** |
 
-**Rolling:** per klaster `C → D → E`; Tahap F lintas-klaster + Tahap G di akhir.
+**Rolling vertikal per Stream** (moneyflow v2.0, B2a-v2): setelah Tahap B selesai + `C00-SHARED-PRIMITIVES.md` dipetakan sekali di awal, siklus berjalan per satu Stream — `C (Stream Inventory) → B8 (Live-Match Stream) → D (Dual-Wave Stream Hunt) → E (Shared-State Proof) → F (Incremental Composition bila bersinggungan) → G (Triage Kartu Stream)`; Tahap G akhir memutakhirkan wadah 06/07/08/09.
 
-**Satu klaster/alur diselesaikan dulu.** Dilarang menyentuh klaster/alur berikut selama yang aktif masih punya antrean > 0.
+**Satu Stream diselesaikan dulu (anti-kuota mutlak).** Dilarang menyentuh Stream berikut selama Stream aktif masih punya `QUEUED > 0` atau `ACTIVE > 0`.
 
 ## Gerbang keras (tidak boleh dilewati)
 
 1. **B13 — scope lock sebelum sensus.** Daftar berkas cocok **persis** inventaris kanonik (diff kosong), commit terverifikasi, `contracts/` bersih.
-2. **B8 — live-match per klaster sebelum PoC.** Tidak live-match → wadah `TUNDA-LIVE` (tercatat di ledger, **nol waktu eksekusi**). Tanpa B8, PoC klaster itu **terblokir**.
-3. **Gate finansial C10 di Tahap D.** Lead masuk E bila kerugian **bisa dibuktikan**: mekanisme jalan di fork/test atas kode+state nyata + plafon terukur + pemicu terjangkau lewat operasi normal (tanpa peran istimewa, tanpa state eksotis). **Plafon live 0 TIDAK membuat lead DORMAN.**
+2. **B8 — live-match per Stream sebelum PoC.** Tidak live-match → wadah `TUNDA-LIVE` (tercatat di ledger, **nol waktu eksekusi**). Tanpa B8, PoC Stream itu **terblokir**.
+3. **Gate finansial C10-v2 (Permissionless & Reachable Potential Ceiling, moneyflow v2.0).** Syarat kandidat sah naik D → E dan layak 09 bila terbukti di E: **Permissionless + Reachable Action/State lewat operasi normal + Measurable Potential Ceiling ≥ $1**. Tegas terpisah: **Gate D = statis/desain** (verifikasi dari kode + bacaan state blok pin: pemicu permissionless, state reachable, B8 live-match, rumus plafon ≥ $1 terdefinisi); **Gate E = eksekusi fork** (PoC + P&L aktual). `DORMAN` HANYA bila jalur diblokir keras saklar konfigurasi admin aktif di live (`paused == true`, `cap == 0` terkunci, modul belum terdaftar) + syarat buka-ulang konkret.
 4. **Batch E maksimal 3 kartu.**
 5. **Lantai bawah — tidak boleh dipangkas:** baca kode, ukur live, verifikasi parent atas bukti penentu.
 6. **HOLD.** Nol submisi / kontak program / draf kirim tanpa persetujuan eksplisit **per kandidat**. Tersimpan ≠ tersubmit.
@@ -66,24 +66,28 @@ Katalog 52 plugin: `references/` (CHAIN 10 + M 10 + POV 15) + `methodology/attac
 
 - **Brief berdiri sendiri** — tiap brief membawa semua konteks yang dibutuhkan; subagent tidak mewarisi konteks parent.
 - **Sekuensial** — satu anak aktif per antrean.
+- **Stream Context Capsule (keras):** tiap brief delegasi subagent Tahap C/D/E wajib **mandiri, bersih dari riwayat chat**, dan hanya memuat artefak yang terikat Stream aktif — `C00-SHARED-PRIMITIVES.md`, inventaris koridor `C<NN>-<STREAM_ID>-INVENTORY.md` berikut potongan kode bernomor `File:Lxx-Lyy`, baris relevan `B07-STATE-BRIDGES.md`, maks 1 tabel Twin-Path bila relevan, maks 2–4 plugin katalog (khusus Gelombang 2).
 - **Induk satu-satunya penulis berkas kanonik + ledger sisa.** Subagent menulis **hanya** ke `notes/staging-<jalur>-<tahap>-<item>.md`, diawali `## STAGING MANIFEST` maks 16 baris.
 - **Koordinator memverifikasi verdict dari berkas bukti** sebelum menerapkannya ke antrean bersama.
 - **Brief Tahap E memakai bahasa verifikasi invariant**, bukan bahasa serangan.
 - **Penolakan safety classifier tidak boleh diulang, diparafrase, atau diputar lewat jalur lain.** Pivot saja.
-- **Verifikasi jangkar:** periksa **fungsinya** lewat `grep -n`, bukan hanya nomor baris. Baris yang ada ≠ jangkar yang benar. Rantai koreksi bukan bukti.
+- **Verifikasi jangkar + pra-cek deterministik:** periksa **fungsinya** lewat `grep -n`, bukan hanya nomor baris. Jalankan pra-cek format staging **deterministik** (`tools/verify_flow.py` bila sudah tersedia + pemeriksaan fungsi via `grep -n`) — bukan pemeriksaan manual pembaca penuh. Baris yang ada ≠ jangkar yang benar. Rantai koreksi bukan bukti.
 
 ## Alur kerja yang benar (urutan operasional)
 
 ```
 A  INTEL            → brief 9 butir + pin commit          (skill flow-a-intel)
-B  Mapping          → scope lock → sensus 100% → live B7
-                      → klaster + handoff → ledger → registry   (flow-b-map)
-   ↓ per klaster, urut pintu masuk pertama kali (B2a):
-C  Inventaris alur  → segmen + handoff + simpul            (flow-c-inventory)
-D  Eksplorasi       → gelombang 1 buta → gelombang 2 katalog
+B  Mapping          → scope lock → sensus 100% → live B7 → klaster 4 tipe
+                      + katalog Stream + B07 → ledger → registry (flow-b-map)
+   ↓ per-Stream, urut pintu masuk pertama kali (B2a); C00 sekali di awal:
+C  Stream Inventory → segmen + handoff + simpul, ikut Koridor  (flow-c-inventory)
+D  Eksplorasi       → gelombang 1 buta (lensa + twin-path)
+                      → gelombang 2 lazy-load 2–4 plugin + 1-hop peek
                       → kartu lead + invariant            (flow-d-explore)
 E  Uji test         → fork blok pin → PoC + P&L, batch ≤3  (flow-e-test)
-F  Komposisi        → hanya bila multi-segmen & urgent     (flow-f-compose)
+F  Komposisi Inkrem.→ segera bila Stream sentuh State-Bridge/
+                      brankas Stream selesai; sapuan akhir bila
+                      multi-stream                          (flow-f-compose)
 G  Verdict          → 06/07/08/09 + distribusi akhir       (flow-g-verdict)
 ```
 
@@ -101,3 +105,5 @@ Deep-run per jalur: satu perintah berdiri hulu→hilir sampai verdict per lead, 
 | Menjalankan fork/PoC ulang di F | F merangkai bukti E, bukan mengulang |
 | Memindahkan lead belum terbukti ke 08 lalu melabelinya Low | pelarian wadah |
 | Menolak lead jadi 06 tanpa log eksekusi | penolakan kertas, laporan ditolak |
+| Mengurutkan kartu `QUEUED` di dalam Stream berdasar EV | B2a-v2 Lapis 2: bobot struktural P1 Simpul/Komposisi → P2 Handoff/State-Bridge → P3 Segmen Lokal |
+| Melebar horizontal ke fungsi lain klaster seberang | melanggar Koridor Stream; yang di luar garis aliran = Stream lain |

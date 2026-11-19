@@ -1,6 +1,6 @@
 ---
 name: flow-b-map
-description: Tahap B — Mapping. Sensus statis 100% peristiwa pemindah nilai (B1/B6, 7 konvensi B14 lengkap, tanpa AST), sensus live ringan B7 wajib, cek live-match B8 + TUNDA-LIVE, ledger sisa (B10), handoff dari batas unit (B11), scope lock (B13). Skill ini memuat aturan yang dibutuhkan sampai Tahap B selesai. Dipakai saat memetakan scope proyek, sensus, atau saat user menyebut tahap B, mapping, sensus, scope.
+description: Tahap B — Mapping. Sensus statis 100% peristiwa pemindah nilai (B1/B6, 7 konvensi B14 lengkap, tanpa AST), sensus live ringan B7 wajib, B04-STREAMS-AND-CLUSTERS (klaster 4 tipe + katalog Stream + Twin-Path) + B07-STATE-BRIDGES, cek live-match B8 + TUNDA-LIVE, ledger sisa (B10), handoff dari batas unit (B11), scope lock (B13). Skill ini memuat aturan yang dibutuhkan sampai Tahap B selesai. Dipakai saat memetakan scope proyek, sensus, atau saat user menyebut tahap B, mapping, sensus, scope.
 ---
 
 # Skill flow-b-map — Tahap B (Mapping)
@@ -11,18 +11,21 @@ Skill ini memuat aturan yang dibutuhkan untuk menjalankan Tahap B sampai selesai
 ## Uji pemisah (pakai ini untuk memutuskan "ini pekerjaan B atau bukan")
 
 Tahap B mengerjakan **hanya** yang butuh pandangan seluruh protokol dan **tidak bisa direkonstruksi** tahap berikut tanpa baca ulang seluruh protokol.
-Butuh konteks satu klaster saja → bukan Tahap B; kerjakan di giliran klaster itu (C/D/E).
+Butuh konteks satu klaster/Stream saja → bukan Tahap B; kerjakan di giliran Stream itu (C/D/E).
 
 ## Keluaran (sekali, untuk seluruh protokol)
+
+7 berkas kanonik, semua wajib ada:
 
 | Artefak | Isi |
 | :--- | :--- |
 | `B01-SCOPE.md` | daftar scope + scope lock (B13) |
 | `B02-CENSUS-STATIC.md` + `scripts/out/*.jsonl` | sensus statis 100% (satu baris JSON per fungsi) |
-| `B03-CENSUS-LIVE.md` | inventaris alamat live (daftar) + sensus live ringan B7 |
-| `B04-CLUSTERS.md` | identifikasi klaster + daftar handoff (B11) |
+| `B03-CENSUS-LIVE.md` | inventaris alamat live (daftar) + sensus live ringan B7 — **wajib ≤5 menit untuk MAINNET/TESTNET**; hanya ditandai `REPO-ONLY` bila stage Tahap A adalah `PRE-DEPLOY / REPO-ONLY` |
+| `B04-STREAMS-AND-CLUSTERS.md` (menggantikan nama lama `B04-CLUSTERS.md`) | indeks klaster universal 4 tipe + katalog awal Stream + urutan B2a + Twin-Path Group + relasi handoff kasar |
 | `B05-LEDGER-SISA.md` | ledger sisa seed (B10) |
 | `B06-REGISTRY-INVARIANT.md` | struktur + penomoran, **isi kosong** (diisi Tahap D) |
+| `B07-STATE-BRIDGES.md` (**BARU — moneyflow v2.0**) | kerangka tabel jembatan state lintas-Stream; diinisialisasi dengan header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption | Sync_Status` |
 
 ## Langkah 1 — B13 Scope lock (gerbang masuk; sebelum sensus)
 
@@ -65,7 +68,7 @@ Sensus = **100% peristiwa pemindah nilai**, bukan hanya fungsi:
 | :-: | :--- | :--- |
 | 1 | **Getter publik = entrypoint (ya).** Entrypoint = bisa dipanggil dari luar (literal, mekanis); filter nilai lewat `value_moves`. | getter → `entrypoint: true` |
 | 2 | **`receive` badan kosong = `value_moves: no`.** Menerima saja bukan memindahkan. Nilai dinilai dari **badan**: ada perpindahan lanjutan (transfer keluar / perubahan saldo pihak lain) → `yes`; hanya menerima → `no`; tidak bisa dipastikan → `unknown`. | `receive` kosong → `no` |
-| 3 | **Fungsi payable yang memanggil sistem eksternal yang diketahui** (relayMessage adapter → messenger bridge, dsb.) = `value_moves: yes`. Tahap alur **WAJIB** verifikasi penerusan value per adapter dari badan — bila ternyata tidak meneruskan, **turunkan ke `no`**. | `yes` sementara, wajib dikonfirmasi |
+| 3 | **Fungsi payable yang memanggil sistem eksternal yang diketahui** (misal: relayMessage adapter → messenger bridge, liveness toggle, fee splitter) = `value_moves: yes`. Tahap alur **WAJIB** verifikasi penerusan value per adapter dari badan — bila ternyata tidak meneruskan, **turunkan ke `no`**. | `yes` sementara, wajib dikonfirmasi |
 | 4 | **Dispatcher dengan target/calldata arbitrer** (Multicall3 `aggregate*`, `deployAndExecute`, `directWithdraw`, metarouter generik) = `value_moves: unknown`. Diselesaikan **transitif di inventaris alur** (ikuti ke implementasi/target), bukan di sensus. | `unknown` + catat target |
 | 5 | **Getter auto-generated DIBARISKAN** (konsisten dengan butir 1): semua getter publik punya baris sendiri. | satu baris per getter |
 | 6 | **Entrypoint warisan TIDAK dibariskan** — satu baris per **definisi**, di berkas pendefinisi. Tahap alur **WAJIB** punya langkah perluasan permukaan lewat implementasi/warisan sebelum segmentasi. | jangan duplikasi baris warisan |
@@ -81,7 +84,7 @@ external_calls, notes
 
 - `entrypoint`: `true` bila public/external (termasuk getter, `receive`, `fallback`).
 - `value_moves`: `yes` / `no` / `unknown` — **hanya** menurut B14.
-- `mechanisms`: mekanisme yang terlihat di badan (transfer, mint, burn, delegatecall, assembly, dsb.).
+- `mechanisms`: mekanisme yang terlihat di badan (transfer, mint, burn, delegatecall, assembly, selfdestruct).
 - `notes`: alasan verdict bila tidak obvious; **wajib** untuk `unknown`.
 
 **EP+VM** (entrypoint DAN `value_moves: yes`) = angka yang **mengikat** untuk inventaris alur. Bukan EP total.
@@ -101,7 +104,7 @@ Hitungan mekanis yang menghasilkan **0** untuk sesuatu yang seharusnya ada = **w
 - Menyelesaikan semua `unknown` — `unknown` **dicatat sebagai unknown**, diselesaikan di Tahap C saat konteks alurnya ada.
 - Rerun sensus penuh sebagai syarat.
 
-## Langkah 3 — B03 Sensus live ringan (B7 — WAJIB, bukan opsional)
+## Langkah 3 — B03 Sensus live ringan (B7 — WAJIB untuk MAINNET/TESTNET; hanya dilewati bila stage = `PRE-DEPLOY / REPO-ONLY`)
 
 Anggaran **maks 5 menit** untuk seluruh B7. Isi:
 
@@ -115,13 +118,13 @@ Aturan rantai:
 - Satu rantai tidak merespons (timeout/403/429) → **jangan tunggu, langsung pindah**.
 - Keduanya gagal → B7 selesai **dengan catatan** (apa yang dicoba + hasil); verifikasi pindah ke B8.
 
-**TIDAK termasuk B7:** jejak event, hitung log, verifikasi seluruh inventaris alamat, cek rantai lain — itu B8 per klaster.
+**TIDAK termasuk B7:** jejak event, hitung log, verifikasi seluruh inventaris alamat, cek rantai lain — itu B8 per-Stream.
 
 **Blok referensi ditetapkan di sini** (A5) dan dicatat sebagai koreksi eksplisit bila berbeda dari dugaan Tahap A.
 
-## Langkah 4 — B8 Cek live-match per klaster + TUNDA-LIVE
+## Langkah 4 — B8 Cek live-match per Stream + TUNDA-LIVE
 
-B8 **diulang di awal fase uji tiap klaster**, sebelum PoC ditulis. Tanpa B8, PoC klaster itu **TERBLOKIR**.
+B8 **diulang di awal fase uji tiap Stream**, sebelum PoC ditulis. Tanpa B8, PoC Stream itu **TERBLOKIR**.
 
 Tidak live-match → wadah **TUNDA-LIVE**:
 
@@ -136,18 +139,37 @@ Tidak live-match → wadah **TUNDA-LIVE**:
 2. **Pindai log = verifikator terakhir.** Hanya untuk Tahap G / sapuan akhir. Preseden buruk: satu B8 memakan ~8,5 jam memindai event per rantai — jangan diulang.
 3. **Cek desain kode dulu** untuk memutuskan "nilai ini 0 atau bukan": apakah kode **men-set 0** atau **bisa memuat**? Nilai yang di-set dari parameter input tanpa `require`/validasi = **bisa memuat non-zero by design**; live 0 berasal dari off-chain, bukan batasan kode.
 
-## Langkah 5 — B04 Klaster + B11 Handoff
+## Langkah 5 — B04-STREAMS-AND-CLUSTERS.md (3 bagian)
 
-- **Klaster** = kelompok alur ujung-ke-ujung. Urutan kerja = **pintu masuk pertama kali** (B2a, diputus 17 Nov 2026): susun klaster menurut entrypoint paling awal yang dilalui pengguna, bukan EV live. EV boleh dicatat sebagai data, tetapi **bukan penentu urutan**. Catat urutan + alasan perubahannya di `B04-CLUSTERS.md`.
-- **Handoff (B11)**: dienumerasi **dari batas unit** — rantai linear N unit → **N−1 handoff**. Jangan dilabeli tangan.
-- Tiap handoff memuat: **produsen, konsumen, field (nama + tipe + satuan/desimal), jaminan produsen, asumsi konsumen**.
-- **Simpul fork/join jadi unit sendiri** — prioritas tinggi (fork → cek konservasi Σkeluaran = masukan − fee; join → cek konsumsi tepat sekali).
+**Bagian 1 — Indeks Klaster Universal.** Kelompokkan kontrak/fungsi EP+VM ke dalam 4 tipe peran universal tanpa bias nama proyek:
+
+| Tipe | Definisi |
+| :--- | :--- |
+| `CORE-FLOW` | kelompok alur nilai utama pengguna/protokol |
+| `SHARED-PRIMITIVE` | token internal, pustaka matematika/share/pembulatan, brankas akuntansi bersama, kontrol akses dasar — **wajib dipetakan lebih dulu ke `C00-SHARED-PRIMITIVES.md` di awal Tahap C** |
+| `EXTERNAL-BOUNDARY` | target eksternal di luar kode scope |
+| `NON-PROD-SKIP` | mock, fixture pengujian, skrip usang — **dicatat lalu dilewati utuh, nol waktu eksekusi** |
+
+**Bagian 2 — Katalog Awal Stream & Urutan Kerja `B2a`.**
+
+- Definisikan daftar `Stream` (`STR-01`, `STR-02`, dan seterusnya sesuai jumlah Stream) berdasarkan titik masuk nilai/aksi pengguna pada `CORE-FLOW`.
+- Urutkan daftar Stream memakai `B2a` (entrypoint paling awal yang dilalui pengguna dalam siklus hidup protokol, diikuti alur berikutnya secara kausal); EV live boleh dicatat sebagai data, **bukan penentu urutan**. Catat urutan + alasannya di `B04`.
+- Tandai pasangan/kelompok **Jalur Kembar (`Twin-Path Group`)** bila proyek punya dua Stream atau lebih yang menjalankan fungsi ekonomi setara lewat varian mekanisme/kontrak berbeda (misal: dua jenis pool, dua jalur router, penarikan instan vs antrean) — agar di Tahap D otomatis memicu pemeriksaan *Twin-Path Differential*.
+
+**Bagian 3 — Aturan Handoff di Tahap B.** Handoff detail (`H1..Hn-1`) dan Simpul (`Fx/Jx`) **dihitung per Stream di Tahap C, BUKAN dirinci penuh semua di Tahap B** (agar Tahap B tetap cepat dan tidak melanggar larangan inventaris mendalam di depan). Di `B04` cukup catat **relasi kasar antar-klaster** bila terlihat dari sensus.
 
 ## Langkah 6 — B05 Ledger sisa (seed)
 
-Seed berisi: semua entrypoint, semua klaster, semua handoff terbuka, klaster yang belum dikerjakan.
+Seed memuat:
 
-Aturan B10: ledger diperbarui **sesudah tiap round**; round selesai **hanya bila sisa menyusut**; round tanpa hasil baru = sinyal berhenti dan periksa. Target buruan **harus ada di sensus** — kalau tidak, di luar scope menurut konstruksi.
+- seluruh baris `EP+VM` berstatus `BELUM_MASUK_STREAM`;
+- daftar `STR-01..STR-k` berstatus `PENDING`;
+- tabel `HANDOFF_TERBUKA`;
+- tabel pantau `TUNDA-LIVE` dan `DORMAN`.
+
+**Aturan penyusutan (moneyflow v2.0):** setiap kali satu `Stream` dipetakan di Tahap C — termasuk fungsi lintas-klaster yang ikut tersapu dalam koridor Stream tersebut — semua `EP+VM` yang dilalui langsung berubah status menjadi `TERPETAKAN_DI_<STREAM_ID>`. Bila saat seluruh `STR` awal habis masih ada `EP+VM` pada `CORE-FLOW` berstatus `BELUM_MASUK_STREAM`, **wajib dibuatkan `Stream` baru** sampai sisa `EP+VM` di `CORE-FLOW` tepat `0`.
+
+Aturan B10 tetap: ledger diperbarui **sesudah tiap round**; round selesai **hanya bila sisa menyusut**; round tanpa hasil baru = sinyal berhenti dan periksa. Target buruan **harus ada di sensus** — kalau tidak, di luar scope menurut konstruksi.
 
 ## Langkah 7 — B06 Registry invariant (struktur saja)
 
@@ -162,20 +184,20 @@ Buat struktur + penomoran global. **Isi kosong.** Invariant dirumuskan di Tahap 
 5. Sensus live penuh (semua rantai, jejak event lengkap).
 6. Baca mendalam semua fungsi saat sensus.
 7. Menyelesaikan semua `unknown` saat sensus.
-8. Menilai/menghakimi klaster saat memetakan ("klaster ini bersih/berbahaya") — itu Tahap G; peta harus netral.
+8. Menilai/menghakimi klaster atau Stream saat memetakan ("ini bersih/berbahaya") — itu Tahap G; peta harus netral.
 9. Rerun sensus penuh sebagai syarat tetap.
 10. Memoles artefak/laporan akhir — artefak B adalah berkas kerja (JSON, daftar, ledger).
-11. **Filter di DALAM klaster saat inventory** (hanya data yang dibutuhkan alur live) — dinilai berisiko, tidak diadopsi. Filter yang aman hanya **utuh per klaster/alur**.
+11. **Filter di DALAM klaster/Stream saat inventory** (hanya data yang dibutuhkan alur live) — dinilai berisiko, tidak diadopsi. Filter yang aman hanya **utuh per Stream**.
 
 ## B16 — TIDAK DIPAKAI
 
-Field `keluar` per fungsi EP+VM **tidak wajib**; daftar jahitan `SM-xx` lengkap **tidak wajib**. Urutan klaster = **pintu masuk pertama kali** (B2a), bukan EV. Jangan bangun pass enumerasi jahitan terpisah.
+Field `keluar` per fungsi EP+VM **tidak wajib**; daftar jahitan `SM-xx` lengkap **tidak wajib**. Urutan Stream = **pintu masuk pertama kali** (B2a), bukan EV. Jangan bangun pass enumerasi jahitan terpisah. Detail handoff per-Stream dihitung di Tahap C; jeda aliran pada variabel storage dicatat ke `B07-STATE-BRIDGES.md` (moneyflow v2.0).
 
 ## Penutupan graf + sapuan akhir (B9) — dicatat di sini, dieksekusi di akhir
 
 Sensus di depan adalah **rencana + daftar periksa, bukan bukti kelengkapan**. Bukti datang dari 4 mekanisme di eksplorasi:
 
-1. baca ulang mendalam per klaster;
+1. baca ulang mendalam per Stream (koridor alirannya);
 2. cek handoff + konservasi (delta tak terjawab diselidiki);
 3. jejak event live sebagai enumerasi independen;
 4. cek penutupan graf.
@@ -191,7 +213,8 @@ Semua ini ada dan bisa ditunjuk:
 - [ ] `B01-SCOPE.md` + scope lock tiga syarat lulus
 - [ ] `B02-CENSUS-STATIC.md` + JSONL; kontrol positif **9/9**; nol mekanis terpecahkan; EP+VM dihitung
 - [ ] `B03-CENSUS-LIVE.md`; B7 ≤5 menit; blok referensi ditetapkan; kegagalan RPC tercatat
-- [ ] `B04-CLUSTERS.md`; klaster + handoff (N−1) + simpul
-- [ ] `B05-LEDGER-SISA.md` seed lengkap
+- [ ] `B04-STREAMS-AND-CLUSTERS.md`; klaster 4 tipe + katalog Stream terurut B2a + Twin-Path Group + relasi kasar antar-klaster
+- [ ] `B05-LEDGER-SISA.md` seed lengkap (EP+VM `BELUM_MASUK_STREAM`, `STR` `PENDING`, `HANDOFF_TERBUKA`, `TUNDA-LIVE`, `DORMAN`)
 - [ ] `B06-REGISTRY-INVARIANT.md` struktur kosong
+- [ ] `B07-STATE-BRIDGES.md` kerangka + header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption | Sync_Status`
 - [ ] nol invariant ditulis; nol buruan; nol PoC
