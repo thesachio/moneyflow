@@ -157,6 +157,7 @@ Tidak live-match → wadah **TUNDA-LIVE**:
 1. **Utamakan alur.** Tahu mekanisme jalan atau tidak dari: baca kode + `cast`/cek live + uji fork di Tahap E. **Bukan** dari memindai log tx orang lain.
 2. **Pindai log = verifikator terakhir.** Hanya untuk Tahap G / sapuan akhir. Preseden buruk: satu B8 memakan ~8,5 jam memindai event per rantai — jangan diulang.
 3. **Cek desain kode dulu** untuk memutuskan "nilai ini 0 atau bukan": apakah kode **men-set 0** atau **bisa memuat**? Nilai yang di-set dari parameter input tanpa `require`/validasi = **bisa memuat non-zero by design**; live 0 berasal dari off-chain, bukan batasan kode.
+4. **Pengecualian sampel input nyata (bukan pindai log):** untuk melihat bentuk input yang dipakai pengguna sungguhan (ukuran nominal, token, bentuk calldata/parameter), boleh mengambil **3–5 transaksi terbaru per entrypoint Stream aktif** dari explorer, dengan batas **5 menit per Stream**. Hasilnya dicatat di Bagian 6 inventaris (`C<NN>`) sebagai contoh `CALLER-INPUT`. Tujuannya hanya contoh input, bukan membuktikan mekanisme jalan atau tidak (itu tetap butir 1 dan 3). Melebihi 5 transaksi atau 5 menit = pindai log, dilarang.
 
 ## Langkah 5 — B04-STREAMS-AND-CLUSTERS.md (3 bagian)
 
