@@ -224,8 +224,8 @@ Konsekuensi yang sering dilanggar:
 
 - [ ] B8 Live-Match Stream lulus (atau Stream masuk `TUNDA-LIVE` di `B05`, nol waktu eksekusi)
 - [ ] Bagian 6 inventaris Stream terisi kolom nilai + status cabang oleh B8; nol `DIISI_B8` tersisa
-- [ ] gelombang 1 dijalankan **tanpa** membuka katalog/_ROUTER/plugin/laporan audit lama
-- [ ] Tiga Lensa dijalankan: konservasi simpul, adu handoff+State-Bridge (1-hop peek bila perlu), Twin-Path bila ada, mengikuti Urutan perhatian Gelombang 1
+- [ ] gelombang 1 dijalankan **tanpa** membuka katalog/_ROUTER/plugin/laporan audit lama, mengikuti Urutan perhatian Gelombang 1
+- [ ] Tiga Lensa dijalankan: konservasi simpul, adu handoff+State-Bridge (1-hop peek bila perlu), Twin-Path bila ada
 - [ ] gelombang 2 memuat maks 2-4 plugin via Lazy Skill Router; 1 CHAIN-\* dan 1 DOM-\* bila relevan
 - [ ] tiap QUEUED punya kartu lead dengan rantai (a)+(b)+(c), rumus plafon >= $1, dan daftar `LP-x` yang dipakai
 - [ ] tiap invariant punya sumber (field handoff/state-bridge atau docs/NatSpec) + akibat finansial + catatan fork-testability
