@@ -54,6 +54,20 @@ Sensus = **100% peristiwa pemindah nilai**, bukan hanya fungsi:
 
 **Fungsi = unit sensus (kelengkapan). Segmen = unit buruan (partisi).**
 
+### B14-v2 — 4 nilai sah `value_moves` (revisi ketat 19 Nov 2026)
+
+| Nilai | Kriteria |
+| :--- | :--- |
+| `yes` | memindahkan aset/token/native langsung ATAU mengubah saldo/share/klaim finansial langsung |
+| `state_mutator` | `entrypoint: true`, tidak memindahkan aset langsung, bukan khusus admin terverifikasi, TETAPI menulis storage — `initialize`/setup, allowance/operator/recipient/delegasi, indeks/snapshot/timestamp/twap/sync/poke, siklus hidup posisi (merge/split/lock), pembuatan pool/rute publik, pembatalan/penguncian antrean |
+| `unknown` | dispatcher target/calldata arbitrer, proxy fallback dinamis, penerusan eksternal belum pasti — diselesaikan transitif di inventaris alur |
+| `no` | HANYA: (i) `view`/`pure`/getter yang sama sekali tidak menulis storage; (ii) `receive` berbadan kosong; (iii) fungsi konfigurasi terkunci rapat modifier peran istimewa murni (`onlyOwner`/`onlyAdmin`/`onlyGovernance`/`onlyTimelock`) tanpa jalur pemicu publik — WAJIB `notes` = `PRIVILEGED_ONLY: <nama_modifier>` |
+
+- Fungsi `initialize` TIDAK BOLEH `PRIVILEGED_ONLY` kecuali terbukti dikunci (konstruktor/`disableInitializers`) dan terverifikasi pada objek live di B8.
+- Getter non-view yang menulis state (`sync`/`poke`/`exchangeRate` yang menyemar state) = `state_mutator`, BUKAN `no`.
+- **Dua populasi yang mengikat cakupan: `EP+VM(yes)` DAN `EP+SM(state_mutator)`** — bukan EP total.
+- Pemverifikasi otomatis (`tools/verify_flow.py check-b`) MENOLAK baris `entrypoint: true` + mutability non-view/pure + `value_moves: "no"` yang tidak membawa tag `PRIVILEGED_ONLY:` / `COSMETIC_NON_ECONOMIC:` / bukan `receive` kosong.
+
 ### Cara membaca (B6 — mengikat)
 
 - **Baca manual penuh**: semua fungsi di semua berkas dibaca dan dapat verdict.
@@ -83,11 +97,11 @@ external_calls, notes
 ```
 
 - `entrypoint`: `true` bila public/external (termasuk getter, `receive`, `fallback`).
-- `value_moves`: `yes` / `no` / `unknown` — **hanya** menurut B14.
+- `value_moves`: `yes` / `state_mutator` / `no` / `unknown` — **hanya** menurut B14-v2.
 - `mechanisms`: mekanisme yang terlihat di badan (transfer, mint, burn, delegatecall, assembly, selfdestruct).
-- `notes`: alasan verdict bila tidak obvious; **wajib** untuk `unknown`.
+- `notes`: alasan verdict bila tidak obvious; **wajib** untuk `unknown`; **wajib format `PRIVILEGED_ONLY: <modifier>`** untuk fungsi admin yang dilabeli `no`; **wajib** menyebut storage yang ditulis untuk `state_mutator`.
 
-**EP+VM** (entrypoint DAN `value_moves: yes`) = angka yang **mengikat** untuk inventaris alur. Bukan EP total.
+**EP+VM** (entrypoint DAN `value_moves: yes`) DAN **EP+SM** (entrypoint DAN `value_moves: state_mutator`) = angka yang **mengikat** untuk inventaris alur. Bukan EP total.
 
 ### Kontrol positif (wajib, bukan opsional)
 
@@ -141,7 +155,7 @@ Tidak live-match → wadah **TUNDA-LIVE**:
 
 ## Langkah 5 — B04-STREAMS-AND-CLUSTERS.md (3 bagian)
 
-**Bagian 1 — Indeks Klaster Universal.** Kelompokkan kontrak/fungsi EP+VM ke dalam 4 tipe peran universal tanpa bias nama proyek:
+**Bagian 1 — Indeks Klaster Universal.** Kelompokkan kontrak/fungsi **EP+VM(yes) dan EP+SM(state_mutator)** (B14-v2) ke dalam 4 tipe peran universal tanpa bias nama proyek:
 
 | Tipe | Definisi |
 | :--- | :--- |
@@ -154,20 +168,27 @@ Tidak live-match → wadah **TUNDA-LIVE**:
 
 - Definisikan daftar `Stream` (`STR-01`, `STR-02`, dan seterusnya sesuai jumlah Stream) berdasarkan titik masuk nilai/aksi pengguna pada `CORE-FLOW`.
 - Urutkan daftar Stream memakai `B2a` (entrypoint paling awal yang dilalui pengguna dalam siklus hidup protokol, diikuti alur berikutnya secara kausal); EV live boleh dicatat sebagai data, **bukan penentu urutan**. Catat urutan + alasannya di `B04`.
-- Tandai pasangan/kelompok **Jalur Kembar (`Twin-Path Group`)** bila proyek punya dua Stream atau lebih yang menjalankan fungsi ekonomi setara lewat varian mekanisme/kontrak berbeda (misal: dua jenis pool, dua jalur router, penarikan instan vs antrean) — agar di Tahap D otomatis memicu pemeriksaan *Twin-Path Differential*.
+- **Penandaan 3 tag pasca-audit (`B2a-PostAudit`, revisi 19 Nov 2026 — hanya bila metadata audit tersedia dari Tahap A):** di `B01-SCOPE.md` dan `B04`, tandai mekanis per berkas/Stream:
+  - `[DELTA]` — berkas/fungsi yang ditambah/dimodifikasi pada `git diff <latest_audited_commit>..<pinned_commit>`;
+  - `[SCAR]` — fungsi berjejak commit perbaikan (`fix`/`mitigation`/`audit`/pengetatan guard) di riwayat git;
+  - `[SEAM]` — handoff/`HB-x` yang mempertemukan kontrak ter-audit dengan tidak-ter-audit atau cakupan audit terpisah.
+  Bila metadata tidak tersedia → semua Stream `[COLD-AUDITED]`-netral dan urutan tetap `B2a` murni.
+- **Urutan eksekusi dua tier (`B2a-PostAudit`)**: bila ada Stream ber-tag `[DELTA]`/`[SCAR]`/`[SEAM]` — Tier 1 (Hot Streams First) dikerjakan lebih dulu (urutan antar-sesamanya tetap `B2a`), dengan `Prerequisite C-Only Pass` untuk Stream hulu dingin yang dibutuhkan state-nya (hanya Tahap C + 1 transaksi normal di `FlowFixtures`), lalu Tier 2 menyapu `D -> E -> G` semua Stream `[COLD-AUDITED]` sampai sisa `0`. Cakupan 100% tetap mutlak — tier adalah pengurutan prioritas, bukan pemangkasan scope.
+- Tandai pasangan/kelompok **Jalur Kembar (`Twin-Path Group`)** bila proyek punya dua Stream atau lebih yang menjalankan fungsi ekonomi setara lewat varian mekanisme/kontrak berbeda (misal: dua jenis pool, dua jalur router, penarikan instan vs antrean) — agar di Tahap D otomatis memicu pemeriksaan *Twin-Path Differential*. Bila salah satu sisi kembar membawa tag `[SCAR]`/`[DELTA]`, tandai eksplisit di grup — memicu Deep-Check pasangan di Tahap D.
 
 **Bagian 3 — Aturan Handoff di Tahap B.** Handoff detail (`H1..Hn-1`) dan Simpul (`Fx/Jx`) **dihitung per Stream di Tahap C, BUKAN dirinci penuh semua di Tahap B** (agar Tahap B tetap cepat dan tidak melanggar larangan inventaris mendalam di depan). Di `B04` cukup catat **relasi kasar antar-klaster** bila terlihat dari sensus.
 
 ## Langkah 6 — B05 Ledger sisa (seed)
 
-Seed memuat:
+Seed memuat **DUA populasi yang mengikat (B14-v2)**:
 
-- seluruh baris `EP+VM` berstatus `BELUM_MASUK_STREAM`;
+- seluruh baris `EP+VM(yes)` berstatus `BELUM_MASUK_STREAM`;
+- seluruh baris `EP+SM(state_mutator)` berstatus `BELUM_TERCAKUP` bila belum masuk koridor Stream dan belum terdaftar sebagai penulis di `B07-STATE-BRIDGES.md`; `EP+SM` yang berdiri sendiri (mis. `initialize` publik) wajib dibuatkan unit pemeriksaan sendiri;
 - daftar `STR-01..STR-k` berstatus `PENDING`;
 - tabel `HANDOFF_TERBUKA`;
 - tabel pantau `TUNDA-LIVE` dan `DORMAN`.
 
-**Aturan penyusutan (moneyflow v2.0):** setiap kali satu `Stream` dipetakan di Tahap C — termasuk fungsi lintas-klaster yang ikut tersapu dalam koridor Stream tersebut — semua `EP+VM` yang dilalui langsung berubah status menjadi `TERPETAKAN_DI_<STREAM_ID>`. Bila saat seluruh `STR` awal habis masih ada `EP+VM` pada `CORE-FLOW` berstatus `BELUM_MASUK_STREAM`, **wajib dibuatkan `Stream` baru** sampai sisa `EP+VM` di `CORE-FLOW` tepat `0`.
+**Aturan penyusutan (moneyflow v2.0):** setiap kali satu `Stream` dipetakan di Tahap C — termasuk fungsi lintas-klaster yang ikut tersapu dalam koridor Stream tersebut — semua `EP+VM` dan `EP+SM` yang dilalui langsung berubah status menjadi `TERPETAKAN_DI_<STREAM_ID>`. Bila saat seluruh `STR` awal habis masih ada `EP+VM(yes)` **atau** `EP+SM(state_mutator)` pada `CORE-FLOW` berstatus belum tercakup, **wajib dibuatkan `Stream` baru** (atau unit pemeriksaan untuk `EP+SM` berdiri sendiri) sampai sisa kedua populasi di `CORE-FLOW` tepat `0`.
 
 Aturan B10 tetap: ledger diperbarui **sesudah tiap round**; round selesai **hanya bila sisa menyusut**; round tanpa hasil baru = sinyal berhenti dan periksa. Target buruan **harus ada di sensus** — kalau tidak, di luar scope menurut konstruksi.
 
@@ -211,10 +232,10 @@ Batasan jujur: cek penutupan tidak bisa menemukan item yang tidak ada di daftarn
 Semua ini ada dan bisa ditunjuk:
 
 - [ ] `B01-SCOPE.md` + scope lock tiga syarat lulus
-- [ ] `B02-CENSUS-STATIC.md` + JSONL; kontrol positif **9/9**; nol mekanis terpecahkan; EP+VM dihitung
+- [ ] `B02-CENSUS-STATIC.md` + JSONL; kontrol positif **9/9**; nol mekanis terpecahkan; EP+VM(yes) dan EP+SM(state_mutator) dihitung; nol baris `no` melanggar B14-v2 (dicek `check-b`)
 - [ ] `B03-CENSUS-LIVE.md`; B7 ≤5 menit; blok referensi ditetapkan; kegagalan RPC tercatat
 - [ ] `B04-STREAMS-AND-CLUSTERS.md`; klaster 4 tipe + katalog Stream terurut B2a + Twin-Path Group + relasi kasar antar-klaster
-- [ ] `B05-LEDGER-SISA.md` seed lengkap (EP+VM `BELUM_MASUK_STREAM`, `STR` `PENDING`, `HANDOFF_TERBUKA`, `TUNDA-LIVE`, `DORMAN`)
+- [ ] `B05-LEDGER-SISA.md` seed lengkap (EP+VM `BELUM_MASUK_STREAM` + EP+SM `BELUM_TERCAKUP`, `STR` `PENDING`, `HANDOFF_TERBUKA`, `TUNDA-LIVE`, `DORMAN`)
 - [ ] `B06-REGISTRY-INVARIANT.md` struktur kosong
 - [ ] `B07-STATE-BRIDGES.md` kerangka + header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption | Sync_Status`
 - [ ] nol invariant ditulis; nol buruan; nol PoC

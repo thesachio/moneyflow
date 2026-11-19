@@ -221,10 +221,29 @@ def cmd_check_b(args):
             if missing:
                 v.append(f"{jf.name}:{i}: field wajib hilang {missing}")
                 continue
-            if row.get("value_moves") not in ("yes", "no", "unknown"):
-                v.append(f"{jf.name}:{i}: value_moves='{row.get('value_moves')}' (harus yes|no|unknown)")
-            elif row["value_moves"] == "unknown" and not str(row.get("notes", "")).strip():
+            if row.get("value_moves") not in ("yes", "state_mutator", "no", "unknown"):
+                v.append(f"{jf.name}:{i}: value_moves='{row.get('value_moves')}' (harus yes|state_mutator|no|unknown — B14-v2)")
+                continue
+            if row["value_moves"] == "unknown" and not str(row.get("notes", "")).strip():
                 v.append(f"{jf.name}:{i}: value_moves='unknown' tanpa notes")
+            if row["value_moves"] == "state_mutator" and row.get("entrypoint") is not True:
+                v.append(f"{jf.name}:{i}: value_moves='state_mutator' hanya sah untuk entrypoint:true (B14-v2)")
+            if row["value_moves"] == "state_mutator" and not str(row.get("notes", "")).strip():
+                v.append(f"{jf.name}:{i}: value_moves='state_mutator' tanpa notes (wajib sebut storage yang ditulis)")
+            # --- B14-v2 strict rule: larangan label 'no' pada entrypoint yang bisa menulis state
+            if (row["value_moves"] == "no" and row.get("entrypoint") is True
+                    and str(row.get("mutability", "")).lower() not in ("view", "pure")):
+                fname_lc = str(row.get("function", "")).lower()
+                notes = str(row.get("notes", ""))
+                is_empty_receive = fname_lc == "receive"
+                has_tag = ("PRIVILEGED_ONLY:" in notes) or ("COSMETIC_NON_ECONOMIC:" in notes)
+                if not (is_empty_receive or has_tag):
+                    v.append(
+                        f"{jf.name}:{i}: B14-v2 pelanggaran — entrypoint:true + mutability="
+                        f"'{row.get('mutability')}' (bisa menulis state) + value_moves='no' "
+                        f"tanpa tag PRIVILEGED_ONLY:/COSMETIC_NON_ECONOMIC: dan bukan receive kosong "
+                        f"(fungsi='{row.get('function')}')"
+                    )
 
     # ---- artefak B bebas token malas
     for name in required:
@@ -378,7 +397,7 @@ def cmd_check_final(args):
         print(f"GAGAL check-final: direktori {ad} tidak ada")
         return 1
 
-    # ---- B05: nol CORE-FLOW BELUM_MASUK_STREAM; nol QUEUED>0 / ACTIVE>0
+    # ---- B05: nol CORE-FLOW BELUM_MASUK_STREAM (EP+VM(yes)) DAN nol EP+SM(state_mutator) tersisa; nol QUEUED>0 / ACTIVE>0
     b05 = ad / "B05-LEDGER-SISA.md"
     if not b05.is_file():
         v.append("B05-LEDGER-SISA.md tidak ada; keberadaan wajib bagi cakupan 100%")
@@ -386,7 +405,13 @@ def cmd_check_final(args):
         text = b05.read_text(encoding="utf-8", errors="replace")
         for i, l in enumerate(text.splitlines(), 1):
             if "BELUM_MASUK_STREAM" in l and "CORE-FLOW" in l:
-                v.append(f"B05:{i}: EP+VM CORE-FLOW tersisa BELUM_MASUK_STREAM: {l.strip()[:100]}")
+                v.append(f"B05:{i}: EP+VM(yes) CORE-FLOW tersisa BELUM_MASUK_STREAM: {l.strip()[:100]}")
+        # --- B14-v2: nol sisa populasi EP+SM(state_mutator) pada CORE-FLOW
+        for i, l in enumerate(text.splitlines(), 1):
+            has_sm = ("EP+SM" in l) or ("state_mutator" in l)
+            uncovered = ("BELUM_TERCAKUP" in l) or ("BELUM_MASUK_STREAM" in l)
+            if has_sm and uncovered and ("CORE-FLOW" in l or "state_mutator" in l):
+                v.append(f"B05:{i}: EP+SM(state_mutator) CORE-FLOW tersisa belum tercakup: {l.strip()[:100]}")
         for i, l in enumerate(text.splitlines(), 1):
             mq = re.search(r"QUEUED\s*=\s*(\d+)", l)
             ma = re.search(r"ACTIVE\s*=\s*(\d+)", l)

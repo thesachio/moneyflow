@@ -62,14 +62,14 @@ Pastikan Tahap A (`INTEL.md`, `A01`, `A02`) dan Tahap B (`B01`–`B07`, termasuk
 **STEP C00-PRIMITIVES — Langkah Wajib Pra-Stream.**
 Bila `C00-SHARED-PRIMITIVES.md` **belum ada**: jalankan satu putaran inventaris atas seluruh unit bertipe `SHARED-PRIMITIVE` di `B04` (jaminan pembulatan, skala desimal, invarian 1:1/share conversion, peran, event), verifikasi dengan `python3 tools/verify_flow.py check-c audit/C00-SHARED-PRIMITIVES.md`, lalu checkpoint di `B05-LEDGER-SISA.md`.
 
-**STEP STREAM-PICK — pemilihan Stream Aktif.**
-Ambil `Stream` (`STR-xx`) pertama yang berstatus `PENDING` atau belum tuntas berdasarkan urutan pintu masuk pengguna paling awal (B2a Lapis 1) → masuk **STEP STREAM-R**.
+**STEP STREAM-PICK — pemilihan Stream Aktif (urutan `B2a-PostAudit`).**
+Ambil `Stream` pertama yang berstatus `PENDING` atau belum tuntas menurut urutan dua tier `B2a-PostAudit`: **bila metadata audit tersedia dan ada Stream ber-tag `[DELTA]`/`[SCAR]`/`[SEAM]`** — kerjakan dulu seluruh **Tier 1 (Hot Streams First)** (urutan antar-sesamanya tetap B2a), dengan **`Prerequisite C-Only Pass`** untuk Stream hulu `[COLD-AUDITED]` yang dibutuhkan state-nya (hanya Tahap C + 1 transaksi normal di `FlowFixtures`, tanpa D/E); setelah Tier 1 tuntas `C -> D -> E -> G`, lanjutkan **Tier 2** menyapu `D -> E -> G` seluruh Stream `[COLD-AUDITED]` tersisa. Bila metadata audit tidak tersedia → urutan murni B2a dari awal. Cakupan 100% tetap mutlak (tier = pengurutan prioritas, bukan pemangkasan scope). Stream aktif diambil dari `B04-STREAMS-AND-CLUSTERS.md` + `B05-LEDGER-SISA.md` → masuk **STEP STREAM-R**.
 
 **STEP DYNAMIC-STREAM-SPAWN — jaring cakupan dinamis.**
-Apabila seluruh `STR-xx` awal telah selesai tetapi di `B05-LEDGER-SISA.md` masih ditemukan baris `EP+VM` bertipe `CORE-FLOW` berstatus `BELUM_MASUK_STREAM`: orkestrator **WAJIB** membentuk `STR` baru dari entrypoint tersisa paling awal, mendaftarkannya di `B04`, dan menjalankannya sampai sisa `EP+VM` pada `CORE-FLOW` tepat **0**. Baru setelah itu boleh ke **STEP FINAL-SWEEP**.
+Apabila seluruh `STR-xx` awal telah selesai tetapi di `B05-LEDGER-SISA.md` masih ditemukan baris `EP+VM(yes)` **atau** `EP+SM(state_mutator)` (B14-v2) bertipe `CORE-FLOW` berstatus belum tercakup (`BELUM_MASUK_STREAM` / `BELUM_TERCAKUP`): orkestrator **WAJIB** membentuk `STR` baru dari entrypoint tersisa paling awal (atau unit pemeriksaan sendiri untuk `EP+SM` berdiri sendiri), mendaftarkannya di `B04`, dan menjalankannya sampai sisa **kedua populasi** pada `CORE-FLOW` tepat **0**. Baru setelah itu boleh ke **STEP FINAL-SWEEP**.
 
 **STEP FINAL-SWEEP — sapuan akhir proyek.**
-Komposisi multi-stream akhir (bila ada siklus 3+ stream atau loop umpan-balik nilai), sapuan akhir enumerasi independen kedua (`B9`), dan `python3 tools/verify_flow.py check-final audit/` untuk memastikan cakupan `EP+VM` 100%, nol antrean menggantung, dan konsistensi angka distribusi `06/07/08/09`. Patuhi `HOLD` (`C5`). Selesai → **COMPLETED** + ringkasan akhir ke user (distribusi + temuan 09 + sisa 07 beserta pemicunya).
+Komposisi multi-stream akhir (bila ada siklus 3+ stream atau loop umpan-balik nilai), sapuan akhir enumerasi independen kedua (`B9`), dan `python3 tools/verify_flow.py check-final audit/` untuk memastikan cakupan `EP+VM(yes)` **dan `EP+SM(state_mutator)`** (B14-v2) 100%, nol antrean menggantung, dan konsistensi angka distribusi `06/07/08/09`. Patuhi `HOLD` (`C5`). Selesai → **COMPLETED** + ringkasan akhir ke user (distribusi + temuan 09 + sisa 07 beserta pemicunya).
 
 ### Lapis Stream (STEP STREAM-R — satu Stream utuh hulu-ke-hilir tanpa putus konteks)
 
@@ -116,7 +116,7 @@ Adili seluruh kartu Stream aktif ke wadah `06 / 07 / 08 / 09` dengan tiga verdic
 Semua ini benar sebelum menyatakan selesai:
 
 - [ ] semua Stream: QUEUED == 0 **dan** ACTIVE == 0
-- [ ] nol baris `EP+VM` `CORE-FLOW` berstatus `BELUM_MASUK_STREAM` di `B05` (ekspansi dinamis sudah dikerjakan)
+- [ ] nol baris `EP+VM(yes)` **dan** nol baris `EP+SM(state_mutator)` (B14-v2) `CORE-FLOW` berstatus belum tercakup di `B05` (ekspansi dinamis sudah dikerjakan)
 - [ ] `check-final` `verify_flow.py` LULUS (cek `06`/`07`/`G01` tuntas)
 - [ ] ledger sisa kosong atau hanya berisi `TUNDA-LIVE` + DORMAN dengan syarat buka-ulang
 - [ ] sapuan akhir dijalankan (komposisi multi-stream bila ada siklus + enumerasi independen kedua `B9`)

@@ -18,7 +18,7 @@ bagian akhir sebagai usulan/belum diputus — bukan rule.
 ## A. INTEL
 
 A1. INTEL = brief, bukan dokumen teknis. Isinya 9 butir: nama project
-(singkat); deskripsi lingkup project (bridge/swap/LP dll, singkat);
+(singkat); deskripsi lingkup project (bridge/swap/LP dan lainnya, singkat);
 deployment stage; Repo (alamat github atau setara); website (tempat user
 akses dan interaksi UI aktif); docs (link); audit (singkat: siapa + link);
 bugbounty (URL); brief severity (singkat bila ada).
@@ -152,6 +152,44 @@ v2.0 — Lapis Konstitusi, diputus 18 Nov 2026, mengikat):
   D, agen diizinkan `1-hop peek` (membaca tepat fungsi pembaca/penulis
   pasangannya) agar kecocokan jaminan penulis vs asumsi pembaca
   langsung diuji saat konteks masih panas.
+- **B2a-PostAudit — Urutan Eksekusi Stream Dua Tier (revisi 19 Nov
+  2026, mengikat; hanya aktif bila metadata audit tersedia):**
+  - Di `B01-SCOPE.md` dan `B04-STREAMS-AND-CLUSTERS.md`, bila proyek
+    punya riwayat audit sebelumnya dengan commit/cakupan yang diketahui
+    (dari `audited_commit`/`audited_files_summary` Tahap A), jalankan
+    penandaan mekanis 3 tag faktual per berkas/Stream:
+    - `[DELTA]` (Post-Audit Commit Delta): berkas/fungsi pada scope
+      aktif yang ditambah atau dimodifikasi pada
+      `git diff <latest_audited_commit>..<pinned_commit>`;
+    - `[SCAR]` (Patch Scar): fungsi berjejak commit perbaikan
+      bug/mitigasi audit (`fix`, `mitigation`, `audit`, atau pengetatan
+      guard spesifik) di riwayat git;
+    - `[SEAM]` (Cross-Audit Scope Seam): kontrak handoff atau
+      `State-Bridge (HB-x)` yang mempertemukan kontrak dari satu
+      cakupan audit dengan kontrak yang tidak diaudit atau diaudit
+      oleh laporan terpisah.
+  - **Bila proyek belum pernah diaudit (atau metadata commit/scope
+    audit tidak tersedia):** jalankan urutan `Stream` murni `B2a` dari
+    awal hingga akhir — tanpa tier.
+  - **Bila ada Stream ber-tag `[DELTA]`, `[SCAR]`, atau `[SEAM]`:**
+    - **Tier 1 (Hot Streams First):** angkat seluruh Stream yang
+      mengandung `[DELTA]`/`[SCAR]`/`[SEAM]` ke gelombang eksekusi
+      pertama (diurutkan di antara sesamanya tetap memakai `B2a`).
+    - **Aturan Prasyarat Hulu Cepat (`Prerequisite C-Only Pass`):**
+      apabila sebuah Hot Stream Tier 1 membutuhkan state hulu atau
+      mengonsumsi jaminan dari Stream hulu yang murni
+      `[COLD-AUDITED]`, jalankan lebih dulu **hanya Tahap C
+      (`C<NN>-INVENTORY.md`) + pembuatan 1 fungsi transaksi normal di
+      `FlowFixtures`** untuk Stream hulu itu (tanpa Tahap D/E pada
+      Stream dingin tersebut), sehingga Hot Stream langsung punya
+      model domain hulu dan fondasi state fork yang sah.
+    - **Tier 2 (Full Coverage Completion):** setelah seluruh Hot
+      Stream Tier 1 selesai melewati `C -> D -> E -> G`, lanjutkan
+      `D -> E -> G` pada seluruh Stream `[COLD-AUDITED]` tersisa
+      hingga `B05-LEDGER-SISA.md` tetap mencapai cakupan mutlak
+      100% (`0` sisa). Dilarang menghentikan proyek hanya setelah
+      Tier 1 selesai — Tier 1 adalah pengurutan prioritas, bukan
+      pemangkasan scope.
 - **2 artefak standar baru:** (1) `B07-STATE-BRIDGES.md` — dibuat di
   Tahap B, diperbarui di C/D: tabel pencatat variabel storage yang
   ditulis satu Stream dan dibaca Stream lain secara asinkron (kolom:
@@ -243,7 +281,11 @@ depan adalah rencana + daftar periksa, bukan bukti kelengkapan;
 buktinya datang dari eksplorasi + sapuan akhir. Diputus 22:33 WIB 16 Nov 2026: rerun sensus manual DITERIMA sebagai enumerasi independen kedua (pilot: rerun menemukan 15 baris yang sensus pertama lewatkan). Cara parser independen tetap terbuka sebagai riset, bukan rule.
 
 B10. Ledger "sisa" sesudah tiap round (entrypoint belum masuk alur,
-handoff terbuka, klaster belum dikerjakan). Round selesai hanya bila
+handoff terbuka, klaster belum dikerjakan; **B14-v2: ledger mengikat
+DUA populasi — semua `EP+VM(yes)` berstatus `BELUM_MASUK_STREAM` dan
+semua `EP+SM(state_mutator)` yang belum masuk koridor Stream /
+`B07-STATE-BRIDGES.md` berstatus `BELUM_TERCAKUP`; keduanya wajib
+habis di `CORE-FLOW` sebelum penutupan**). Round selesai hanya bila
 sisa menyusut. Target buruan harus ada di sensus — kalau tidak, di
 luar scope menurut konstruksi.
 
@@ -275,24 +317,58 @@ persis dengan inventaris kanonik (diff kosong), commit terverifikasi,
 contracts/ bersih.
 
 B14. Konvensi sensus statis (15 Nov 2026, diputus asisten atas
-delegasi Kim — berlaku universal, bukan cuma Across):
+delegasi Kim — berlaku universal, bukan cuma Across; **DIREVISI
+B14-v2 Strict Census 19 Nov 2026 perintah Kim: value_moves = 4 nilai
+sah `yes | state_mutator | no | unknown`; larangan membuang fungsi
+pengubah state berdampak finansial sebagai `no`**):
 - Getter publik = entrypoint (ya). Entrypoint = bisa dipanggil dari
   luar (literal, mekanis); filter nilai lewat value_moves; yang
-  mengikat alur tetap EP+VM.
+  mengikat alur tetap **EP+VM(yes) DAN EP+SM(state_mutator)**.
+- **Definisi ketat value_moves (B14-v2):**
+  - `yes`: fungsi memindahkan aset/token/native secara langsung ATAU
+    mengubah saldo/share/klaim finansial langsung.
+  - `state_mutator`: fungsi `entrypoint: true` yang TIDAK memindahkan
+    aset secara langsung dan BUKAN khusus admin terverifikasi, TETAPI
+    menulis ke storage — termasuk `initialize`/setup, perubahan
+    allowance/operator/recipient/delegasi, pembaruan
+    indeks/snapshot/timestamp/twap/sync/poke, perubahan siklus hidup
+    posisi (merge/split/lock), pembuatan pool/rute publik,
+    pembatalan/penguncian antrean.
+  - `unknown`: dispatcher target/calldata arbitrer, proxy fallback
+    dinamis, atau penerusan eksternal yang belum pasti; diselesaikan
+    transitif di inventaris alur (ikuti ke implementasi/target).
+  - `no`: HANYA untuk (i) fungsi `view`/`pure`/getter publik yang
+    sama sekali tidak menulis storage; (ii) `receive` berbadan
+    kosong pada kontrak yang tidak memakai `address(this).balance`
+    dalam rumus akuntansinya; (iii) fungsi konfigurasi yang TERBUKTI
+    di kode dikunci rapat modifier peran istimewa murni (`onlyOwner`,
+    `onlyAdmin`, `onlyGovernance`, `onlyTimelock`) TANPA jalur
+    pemicu publik — WAJIB mengisi `notes` dengan format
+    `PRIVILEGED_ONLY: <nama_modifier_atau_guard>`. Fungsi
+    `initialize` TIDAK BOLEH diberi `PRIVILEGED_ONLY` kecuali sudah
+    dikunci konstruktor/`disableInitializers` dan terverifikasi
+    pada objek live di B8.
 - Receive badan kosong = value_moves no. Menerima saja bukan
   memindahkan; value_moves dinilai dari badan — ada perpindahan
   lanjutan (transfer keluar / perubahan saldo pihak lain) → yes;
-  hanya menerima → no; tidak bisa dipastikan → unknown.
+  hanya menerima → no; tidak bisa dipastikan → unknown. Pengecualian
+  B14-v2: bila kontrak memakai `address(this).balance` dalam rumus
+  akuntansinya, `receive` kosong tetap tercatat no tetapi catat di
+  `notes` bahwa donasi ETH mengubah basis akuntansi.
 - Fungsi payable yang memanggil sistem eksternal yang diketahui
   (mis. relayMessage adapter → messenger bridge) = value_moves yes;
   tahap alur WAJIB verifikasi penerusan value per adapter dari badan
-  — bila tidak meneruskan, turunkan ke no.
+  — bila tidak meneruskan, turunkan ke `state_mutator` bila fungsi
+  itu masih menulis storage, atau `no` bila murni view.
 - Dispatcher dengan target/calldata arbitrer (Multicall3 aggregate*,
-  deployAndExecute, directWithdraw, dsb.) = value_moves unknown;
+  deployAndExecute, directWithdraw dan sejenisnya) = value_moves unknown;
   diselesaikan transitif di inventaris alur (ikuti ke
   implementasi/target).
 - Getter auto-generated DIBARISKAN (konsisten dengan butir pertama):
-  semua getter publik dibariskan (entrypoint yes, value_moves no).
+  semua getter publik dibariskan (entrypoint yes; value_moves `no`
+  bila view murni tanpa efek samping, `state_mutator` bila menulis
+  storage — getter non-view seperti `sync`/`poke`/`exchangeRate`
+  yang menyemar state = state_mutator).
 - Entrypoint warisan TIDAK dibariskan (satu baris per definisi, di
   berkas pendefinisi). Tahap alur WAJIB punya langkah perluasan
   permukaan lewat implementasi/warisan sebelum segmentasi.
@@ -300,6 +376,15 @@ delegasi Kim — berlaku universal, bukan cuma Across):
   milik-sendiri + permukaan warisan. Inventaris alur memakai lapis
   warisan untuk permukaan deployed, lapis milik-sendiri untuk lokasi
   kode.
+- **Ikatan cakupan ledger (B14-v2):** sensus mengikat dua populasi —
+  `EP+VM(yes)` dan `EP+SM(state_mutator)`. Semua `EP+VM(yes)` wajib
+  masuk koridor `Stream` (`STR-xx`). Semua `EP+SM(state_mutator)`
+  wajib masuk koridor Stream terkait ATAU terdaftar sebagai penulis
+  di `B07-STATE-BRIDGES.md` dan diaudit berpasangan saat Stream
+  pembaca storage-nya masuk Tahap C/D. `EP+SM` yang berdiri sendiri
+  (mis. `initialize` publik) wajib dibuatkan unit pemeriksaan
+  sendiri sampai sisa `BELUM_TERCAKUP` di `B05-LEDGER-SISA.md`
+  tepat 0.
 
 B15. Cek onchain: sensus live ringan B7 WAJIB di Tahap B; cek
 onchain mendalam WAJIB di B8 (15 Nov 2026, direvisi atas perintah Kim
@@ -443,7 +528,7 @@ Mekanisme penentu wajib diuji ulang di fork live bila fork-testable;
 bila tidak fork-testable, catat eksplisit. Sumber RPC (diputus Kim
 17 Nov 2026, mengikat): ALCHEMY UTAMA — key per-rantai dari .env /
 .env.rpc.secret dipakai lebih dulu lewat `rpc-env.sh <rantai>`;
-fallback ke public RPC (publicnode/dll di .env.rpc) hanya bila rantai
+fallback ke public RPC (publicnode dan lainnya di .env.rpc) hanya bila rantai
 itu tidak punya key alchemy ATAU alchemy gagal/limit.
 
 C2. Kejujuran bukti: label DIEKSEKUSI vs DIANALISIS vs
@@ -554,12 +639,12 @@ Pemetaan huruf (15 Nov 2026, perintah Kim 'ubah tahap jadi huruf saja'): Tahap A
 
 - Tahap B — Mapping: sensus + klaster (4 tipe, B4) + daftar handoff + `B07-STATE-BRIDGES` + ledger sisa + registry (B1–B16). Tanpa invariant (B12), tanpa pemetaan mendalam, tanpa buruan/PoC/verdict.
 - Tahap C — Pemetaan mendalam per klaster (rolling per-Stream): `C00-SHARED-PRIMITIVES.md` sekali di awal Tahap C sebelum Stream pertama; inventaris alur + segmentasi + kontrak handoff deskriptif per Stream (`C<NN>-STREAM-INVENTORY`) mengikuti Aturan Koridor Stream (`Corridor-Bound Cross-Cluster`, B2a-v2). Tanpa invariant, tanpa buruan/PoC/verdict.
-- Tahap D — Eksplorasi: buruan per segmen/handoff/simpul; merumuskan invariant tiap kandidat (wajib cantumkan sumber: field handoff atau docs/NatSpec) + kartu lead (tiap kartu lead wajib klaim finansial sendiri). Tanpa PoC. Diputus 22:33 WIB 16 Nov 2026: unit round = per-alur, dua gelombang (buta → berpengetahuan + katalog 52 plugin); daftar alur (enumerasi + EV, dari B02+B04) adalah prasyarat sebelum D. Diputus 17 Nov 2026: gate finansial — plafon live 0 TIDAK lagi membuat lead DORMAN; yang menentukan kerugian yang bisa dibuktikan (C10). Diputus 17 Nov 2026: standar TERBUKTI — kartu E yang buktinya cuma satu fungsi pendek harus dinilai ulang; Gelombang 1/2 tidak memberi verdict TERBUKTI (C11). Diputus 18 Nov 2026 (moneyflow v2.0): unit round = per-Stream (B2a-v2); urutan kartu QUEUED di dalam Stream menurut bobot struktural — P1 konservasi (INV-Jx, INV-Fx), P2 handoff/state-bridge (INV-Hx, INV-HBx), P3 anomali segmen (INV-Sx, S1→Sn); anti-kuota mutlak sampai QUEUED == 0 dan ACTIVE == 0; Koridor Stream berlaku + 1-hop peek State-Bridge (HB-x).
-- Tahap E — Uji test: PoC fork-live + P&L terukur per kandidat; membuktikan/membantah mekanisme. Diputus 22:33 WIB 16 Nov 2026: bentuk rinci = yang sudah dipraktikkan (batch maks 3, fork blok pin + P&L terukur); verdict mengikuti bentuk yang sekarang (06/07/08/09). Diputus 17 Nov 2026: Tahap E membuktikan rantai (a)+(b)+(c) sebagai satu rantai, bukan hanya satu fungsi (C11). Diputus 18 Nov 2026 (moneyflow v2.0): Gate E mengukur plafon di fork blok pin dua mode — `Observed Live Ceiling` (saldo/likuiditas live > 0 → ukur langsung) dan `Proven Potential Ceiling` (saldo live 0 tapi kontrak terbuka menerima aktivitas pengguna normal → simulasi transaksi penyetoran/aktivitas korban secara sah lewat entrypoint normal lebih dulu di atas fork blok pin, lalu eksekusi transaksi akun penguji terpisah tanpa hak istimewa; plafon ≥ $1).
+- Tahap D — Eksplorasi: buruan per segmen/handoff/simpul; merumuskan invariant tiap kandidat (wajib cantumkan sumber: field handoff atau docs/NatSpec) + kartu lead (tiap kartu lead wajib klaim finansial sendiri). Tanpa PoC. Diputus 22:33 WIB 16 Nov 2026: unit round = per-alur, dua gelombang (buta → berpengetahuan + katalog 52 plugin); daftar alur (enumerasi + EV, dari B02+B04) adalah prasyarat sebelum D. Diputus 17 Nov 2026: gate finansial — plafon live 0 TIDAK lagi membuat lead DORMAN; yang menentukan kerugian yang bisa dibuktikan (C10). Diputus 17 Nov 2026: standar TERBUKTI — kartu E yang buktinya cuma satu fungsi pendek harus dinilai ulang; Gelombang 1/2 tidak memberi verdict TERBUKTI (C11). Diputus 18 Nov 2026 (moneyflow v2.0): unit round = per-Stream (B2a-v2); urutan kartu QUEUED di dalam Stream menurut bobot struktural — P1 konservasi (INV-Jx, INV-Fx), P2 handoff/state-bridge (INV-Hx, INV-HBx), P3 anomali segmen (INV-Sx, S1→Sn); anti-kuota mutlak sampai QUEUED == 0 dan ACTIVE == 0; Koridor Stream berlaku + 1-hop peek State-Bridge (HB-x). Diputus 19 Nov 2026 (Post-Audit Hot-Zone): urutan Stream mengikuti `B2a-PostAudit` dua tier (Hot Streams `[DELTA]`/`[SCAR]`/`[SEAM]` dulu + `Prerequisite C-Only Pass`, lalu Tier 2 sampai sisa 0); Gelombang 1/2 wajib menjalankan **Tiga Deep-Check** (Handoff & State-Bridge: batas ekstrem input + state interleaving EP+SM; Simpul Fork/Join: pembulatan insolvensi/mengendap + kelabu-klaim via transfer/merge/split; Twin-Path & Patch-Scar: selisih penjaga antar-jalur kembar) — dilarang sekadar merangkum tabel Tahap C; `[SCAR]` memicu `M-004`, `[SEAM]` memicu `M-008` di Lazy Skill Router.
+- Tahap E — Uji test: PoC fork-live + P&L terukur per kandidat; membuktikan/membantah mekanisme. Diputus 22:33 WIB 16 Nov 2026: bentuk rinci = yang sudah dipraktikkan (batch maks 3, fork blok pin + P&L terukur); verdict mengikuti bentuk yang sekarang (06/07/08/09). Diputus 17 Nov 2026: Tahap E membuktikan rantai (a)+(b)+(c) sebagai satu rantai, bukan hanya satu fungsi (C11). Diputus 18 Nov 2026 (moneyflow v2.0): Gate E mengukur plafon di fork blok pin dua mode — `Observed Live Ceiling` (saldo/likuiditas live > 0 → ukur langsung) dan `Proven Potential Ceiling` (saldo live 0 tapi kontrak terbuka menerima aktivitas pengguna normal → simulasi transaksi penyetoran/aktivitas korban secara sah lewat entrypoint normal lebih dulu di atas fork blok pin, lalu eksekusi transaksi akun penguji terpisah tanpa hak istimewa; plafon ≥ $1). Diputus 19 Nov 2026 (fork multi-chain): fork mengikuti chain kontrak koridor kartu; kartu yang menyentuh override/behavior per-chain (admin sender verification, leaf hooks, unwrap fork, gas-token, light client) **wajib diuji di fork chain tersebut** (bukan selalu Ethereum); multi-chain fork diizinkan dan dicatat di `E-PROOF`; dasar pengetahuan per-chain = implementasi yang sudah dibaca di Tahap B/C — fork mengonfirmasi eksekusi.
 - Tahap F — Komposisi Inkremental & Akhir (moneyflow v2.0, 18 Nov 2026; meneruskan penerimaan bersyarat 22:33 WIB 16 Nov 2026): bila Stream aktif berbagi `State-Bridge` (`B07`) atau brankas saldo yang sama dengan Stream yang sudah selesai dan keduanya membentuk rantai dampak multi-stream, evaluasi komposisi dijalankan SEGERA setelah Tahap E Stream aktif selesai (selagi konteks segar), tanpa menunggu seluruh proyek; komposisi lintas-Stream akhir tetap di penutupan. Tetap HANYA untuk lead multi-segmen. Uji F TIDAK menjalankan fork ulang dan TIDAK menjalankan PoC ulang — pakai data terbaru (hasil Tahap E); bukti komposisi = lemma (segmen terbukti + handoff cocok + simpul terbukti + jalur gabungan dirangkai dari data terbaru). Lead satu segmen LEWATI Tahap F (PoC Tahap E sudah final).
 - Tahap G — Verdict: verdict per kandidat (06/07/08/09; tiga verdict terpisah; severity dari plafon teramati); distribusi akhir dihitung di seluruh protokol. Diputus 22:33 WIB 16 Nov 2026: bentuk rinci = yang sudah dipraktikkan (verdict mengikuti bentuk yang sekarang). Diputus 17 Nov 2026: verdict 09 TIDAK lagi mensyaratkan P&L live > 0; syaratnya kerugian yang bisa dibuktikan (C10). Diputus 17 Nov 2026: verdict memakai standar TERBUKTI (C11) bersama C10.
 
-Rolling per-Stream (moneyflow v2.0): Tahap C Stream → Tahap D Stream → Tahap E Stream → …; klaster = papan kontrol kelengkapan Tahap B (B2a-v2), bukan pagar. Tahap F komposisi inkremental + lintas-Stream akhir + Tahap G di akhir. Bentuk rinci Tahap D/E/G sudah diputus 22:33 WIB 16 Nov 2026 (lihat butir di atas); bentuk rinci Tahap C sudah terbukti di pilot (8 round). Deep-run per jalur (diputus Kim 22:33 WIB 16 Nov 2026): satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah; berlaku mulai jalur berikut (P4 — P3 sudah jalan step-by-step).
+Rolling per-Stream (moneyflow v2.0): Tahap C Stream → Tahap D Stream → Tahap E Stream, dan seterusnya berulang; klaster = papan kontrol kelengkapan Tahap B (B2a-v2), bukan pagar. Tahap F komposisi inkremental + lintas-Stream akhir + Tahap G di akhir. Bentuk rinci Tahap D/E/G sudah diputus 22:33 WIB 16 Nov 2026 (lihat butir di atas); bentuk rinci Tahap C sudah terbukti di pilot (8 round). Deep-run per jalur (diputus Kim 22:33 WIB 16 Nov 2026): satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah; berlaku mulai jalur berikut (P4 — P3 sudah jalan step-by-step).
 
 Just-in-time lintas-klaster (15 Nov 2026, perintah Kim; KOREKSI 15 Nov 2026 — dipindah dari Tahap C ke Tahap D atas pertanyaan Kim 'bukankah ini harusnya pas eksplorasi?'): materi terkait dan urgent dari klaster lain ditarik just-in-time di Tahap D (eksplorasi) — saat memburu satu alur, pemburu mengikuti alur itu melewati klaster, hanya yang dilewati alur itu. DIGANTI moneyflow v2.0 (18 Nov 2026) oleh **Aturan Koridor Stream (`Corridor-Bound Cross-Cluster`, B2a-v2)** — berlaku di Tahap C dan Tahap D Gelombang 1: ikuti garis aliran nilai Stream aktif menembus batas klaster (fungsi penerima = `S(k+1)`, tandai EP+VM selesai di `B05-LEDGER-SISA.md`), tanpa melebar horizontal ke fungsi lain di klaster seberang; jeda aliran pada variabel storage dicatat sebagai `HB-x` di `B07-STATE-BRIDGES.md` dengan `1-hop peek` di Tahap D. [ARSIP RIWAYAT PILOT] Keputusan klaster era pilot yang dipenuhi: (2) round 1 Tahap C = K1 SAJA (loop K1+K2 diburu bersama di Tahap D, dirangkai di Tahap F); (3) K8 = round sendiri di Tahap C (diinventarisasi sekali, dirujuk konsumen). Urutan EV (K1 dulu) tetap sebagai prioritas, bukan pagar.
 

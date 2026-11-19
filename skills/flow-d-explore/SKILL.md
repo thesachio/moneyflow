@@ -14,6 +14,38 @@ Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-a
 - Registry invariant (`B06`) sudah punya struktur penomoran.
 - **B8 Live-Match Stream** dijalankan sebelum Gelombang 1 dimulai: cek cepat atas kontrak pada koridor Stream aktif — **utamakan desain kode + `cast code`/view di blok pin**; DILARANG memindai log sejarah panjang (pindai log = verifikator terakhir, Tahap G/sapuan akhir). Bila kontrak target belum live-match: masukkan Stream ke `TUNDA-LIVE` di `B05-LEDGER-SISA.md` dan **hentikan putaran Stream tersebut** (nol waktu eksekusi).
 
+## Mode Eksekusi Tahap D: AUTO vs PAIR (Co-Audit)
+
+Tahap D mendukung **dua mode eksekusi**. Pemilihan mode hanya dilakukan oleh user:
+
+- **`MODE: AUTO`** (default — dipakai `flow-autopilot` dan bila user tidak meminta partisipasi interaktif): agen menyelesaikan Gelombang 1, Gelombang 2, Kartu Lead, dan Invariant untuk satu Stream secara penuh seperti aturan standar di bawah — tanpa berhenti menunggu input manusia.
+- **`MODE: PAIR`** (Co-Audit — **hanya aktif bila user secara eksplisit meminta**: menyebut `pair`, `bareng`, `co-audit`, `interaktif`, atau `pandu per fungsi`; perintah autopilot proyek penuh TIDAK mengaktifkan PAIR): peneliti manusia berpartisipasi membaca kode fungsi demi fungsi bersama agen utama. Aturan rinci:
+
+### PAIR — Gelombang 1 (Tanpa Katalog)
+
+- DILARANG mendelegasikan pembacaan ke subagent tertutup di belakang layar lalu hanya menyodorkan berkas jadi. Agen utama memandu user berjalan **satu Segmen + Handoff keluarnya (`Sk` + `Hk`) per giliran percakapan** sepanjang `S1 -> Sn`.
+- Pada setiap pemberhentian fungsi, agen WAJIB menyajikan 5 komponen berurutan di chat:
+  1. **Kode Asli Bernomor (`Path/File.ext:Lxx-Lyy`)** — blok kode sumber fungsi pada segmen `Sk` secara utuh (tanpa pemotongan barisan kode) agar user membaca kode asli.
+  2. **Aliran Nilai & Mutasi State Lokal** — ringkasan faktual apa yang masuk, variabel storage apa yang berubah, dan nilai/field apa yang dikirim ke `Hk` atau `State-Bridge (HB-x)`.
+  3. **Titik Sensitif Kode Ini (Code Sensitivity Hotspots)** — nomor baris eksak yang wajib diwaspadai beserta alasannya dari kacamata fisika nilai (urutan baca-tulis-panggilan eksternal, arah pembulatan/pembagian, pengakuan nilai masuk `RAW_PARAM` vs `BALANCE_DELTA`, parameter tujuan/kontrak yang dikendalikan pemanggil, asimetri terhadap Twin-Path, atau kondisi `revert`/loop pengunci dana).
+  4. **Panduan Invariant & Cara Cek (Candidate Invariant & Mental Check)** — (a) syarat sehat/invariant apa yang harus terjaga pada segmen/handoff ini agar nilai tidak bocor atau terkunci; (b) pertanyaan uji bagaimana mematahkannya lewat input permissionless. Status tetap kandidat analisis; penomoran `INV-` resmi dikunci di akhir D.
+  5. **Draf Observasi (`OBS` / `G` / `Q`) & Kontrol Giliran User** — tampilkan pengamatan awal agen lalu berhenti menunggu input user:
+     - `lanjut` -> pindah ke segmen `S(k+1)` berikutnya;
+     - `cek: <pertanyaan>` -> bedah baris kode terkait atau lakukan `1-hop peek` untuk menjawab pertanyaan user sebelum pindah segmen;
+     - `obs: <catatan user>` -> catat temuan/kecurigaan user sebagai `OBS` berlabel `[USER-INSIGHT]` yang wajib dikawal hingga disposisi akhir (dilarang digugurkan tanpa bukti kode penjaga eksak atau uji fork);
+     - `auto` -> beralih ke `MODE: AUTO` untuk menyelesaikan sisa segmen pada gelombang/stream aktif secara langsung.
+
+### PAIR — Gelombang 2 (Lazy Skill Augmentation & Perumusan Kartu)
+
+1. Tampilkan rekap `OBS`, `Q` (termasuk `[USER-INSIGHT]`), dan `SYMPTOM-TAGS`, lalu sebutkan 2-4 plugin katalog yang dimuat oleh *Lazy Skill Router*.
+2. Terjemahkan poin pemeriksaan dari ke-2 s.d. ke-4 plugin tersebut langsung menunjuk nomor baris kode `S1..Sn` yang baru saja dibaca bersama (bukan kutipan teori abstrak).
+3. Diskusikan dan kunci bersama user daftar Invariant resmi (`INV-Sx / Hx / HBx / Jx / Fx` ke `B06-REGISTRY-INVARIANT.md`) dan Kartu Lead rantai `(a)+(b)+(c)` sebelum menulis berkas kanonik `D<NN>-<STREAM_ID>-WAVE1-BLIND.md`, `WAVE2-QUEUED.md`, dan `LEAD-CARDS.md`.
+
+### Aturan keras yang tetap berlaku penuh di PAIR
+
+- Dilarang membuka katalog pada Gelombang 1; dilarang memberi vonis `TERBUKTI` di Tahap D (semua tetap `DIANALISIS` sampai diuji di Tahap E); hasil akhir berkas `D<NN>-*` tetap wajib lulus `python3 tools/verify_flow.py check-d`.
+- `[USER-INSIGHT]` adalah observasi berstatus sama dengan `OBS` agen — wajib terdisposisi di Gelombang 2, tidak boleh hilang saat transisi mode.
+
 ## Gelombang 1 — Eksplorasi Bebas Murni (Tanpa Katalog)
 
 Bekal: inventaris Stream aktif (`C<NN>-<STREAM_ID>-INVENTORY.md`), `C00-SHARED-PRIMITIVES.md`, baris `B07-STATE-BRIDGES.md` yang bersinggungan, premis parent.
@@ -31,6 +63,19 @@ Ikuti kode sepanjang `S1 -> H1 -> S2 -> Sn` berikut rentetan handoffnya dengan *
 **Lensa 2 (Adu Kontrak Handoff & State-Bridge):** adu kolom `Jaminan Faktual Produsen` melawan `Asumsi Faktual Konsumen` pada setiap `H1..Hn-1`. Bila Stream menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **`1-hop peek`** diizinkan (baca tepat satu lapis fungsi pasangan penulis/pembaca di stream seberang) agar ketidaksinkronan skala desimal, urutan pembaruan state, atau nilai basi langsung tertangkap selagi konteks panas.
 
 **Lensa 3 (Twin-Path Differential — bila Stream punya pasangan di `Twin-Path Group` pada `B04` yang sudah punya inventaris `C`):** sandingkan tabel Handoff, Simpul, urutan pembaruan state, dan arah pembulatan Stream aktif terhadap Stream kembarnya; catat setiap asimetri yang tidak dijelaskan oleh perbedaan rumus dasar.
+
+### Deep-Check — Tiga Uji Kritis Wajib (Gelombang 1 & 2; berlaku di `MODE: AUTO` maupun memandu peneliti di `MODE: PAIR`)
+
+Dilarang sekadar merangkum ulang tabel Tahap C. Pada setiap Stream, Gelombang 1 **wajib** menjalankan tiga uji kritis berikut dan mencatat hasilnya sebagai `OBS`/`G`/`Q`:
+
+1. **Deep-Check Handoff & State-Bridge:**
+   - Uji silang batas ekstrem input (`0`, `1 wei`, batas maksimum tipe, dan ketidaksamaan desimal token seperti `6` vs `18`) antara `Jaminan Faktual Produsen` dan `Asumsi Faktual Konsumen` pada setiap `Hk` dan `HB-x`.
+   - Uji *State Interleaving*: periksa daftar `EP+SM (state_mutator)` di sensus/`B07` dan jawab eksplisit apakah ada fungsi mutator publik atau pengiriman aset langsung yang dapat diselipkan di antara sisi Produsen dan sisi Konsumen — khususnya pada tag `[SEAM]` dan callback.
+2. **Deep-Check Simpul Fork/Join:**
+   - Pada setiap `Fx`, tulis persamaan pembagian integer aktual dari kode dan uji apakah pembulatan dapat membuat `jumlah_keluaran > masukan` (menguras saldo pengguna terakhir / insolvensi) atau mengendapkan nilai secara permanen.
+   - Pada setiap `Jx`, uji apakah penanda klaim dapat dikelabui lewat pemindahan kepemilikan posisi (`transfer`), penggabungan (`merge`), pemecahan (`split`), atau siklus klaim-setor di blok yang sama.
+3. **Deep-Check Twin-Path & Patch-Scar:**
+   - Pada setiap pasangan `Twin-Path Group` (terutama bila salah satu sisi ber-tag `[SCAR]` atau `[DELTA]`), buat daftar selisih baris eksak pada penjaga (`require`/`if`), urutan pembaruan state terhadap panggilan eksternal, dan arah pembulatan; uji apakah tambalan di satu jalur lupa diterapkan di jalur kembarnya atau justru memicu penguncian dana baru (*freeze*).
 
 Keluaran wajib Gelombang 1 — `D<NN>-<STREAM_ID>-WAVE1-BLIND.md`, seluruhnya berlabel `DIANALISIS`:
 
@@ -70,6 +115,8 @@ Lokasi nyata berkas plugin (rujuk path berikut saat memuat):
 | pemisahan dua transaksi (`request -> execute`), antrean publik, relayer/keeper, urutan state bersama | `AF-05-shared-state-ordering-sandwich.md`, `AF-09-asymmetric-griefing-queue-bricking.md`, `AF-10-offchain-relayer-desync-arbitrage.md`, `M-009-suspended-lifecycle-state.md`, `POV-relayer-mev.md` |
 | pembacaan harga/valuasi, likuidasi, batas jaminan | `AF-06-oracle-price-liquidation-cascade.md`, `POV-DEFI-01-self-liquidation-bad-debt.md`, `POV-DEFI-02-valuation-source-execution-sink.md`, `CHAIN-flash-oracle-liquidation.md` |
 | tanda tangan, bukti Merkle, otorisasi objek/kapabilitas, status pasca-upgrade | `AF-07-account-object-capability-spoofing.md`, `AF-08-signature-proof-replay-malleability.md`, `M-010-live-residual-state-post-upgrade-drift.md`, `CHAIN-offchain-sign-onchain-mutate.md` |
+| **Stream ber-tag `[SCAR]` (patch scar — Post-Audit Hot-Zone)** | **wajib sertakan `M-004-patch-scar-view-write-asymmetry.md`** |
+| **Stream ber-tag `[SEAM]` (cross-audit scope seam — Post-Audit Hot-Zone)** | **wajib sertakan `M-008-caller-callee-seam.md`** |
 
 **Anti-anchoring tetap mutlak:** bila anomali dari Gelombang 1 tidak cocok dengan plugin mana pun, beri label `[NOVEL / NO-CATALOG]`; **dilarang keras menggugurkan kandidat karena tidak ada di katalog**. Temuan di luar katalog = kandidat plugin baru.
 

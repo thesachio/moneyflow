@@ -54,6 +54,8 @@ Mulai **hanya** dari nama proyek (+ tautan yang user beri, bila ada). Tiap butir
 | 5 | Website | tautan di docs | tautan di README repo | web search `<proyek> app` |
 | 6 | Docs | tautan di README | tautan di website | web search `<proyek> docs` |
 | 7 | Audit | halaman audit/security di docs | folder `audits/` di repo | web search `<proyek> audit report` (1 pencarian, 3 hasil teratas) |
+
+**Ekstraksi metadata audit (Post-Audit Hot-Zone, revisi 19 Nov 2026):** bila di dokumen laporan audit tercantum hash commit yang diaudit dan/atau daftar berkas cakupan (*in-scope files*), catat fakta mentahnya apa adanya di `INTEL.md`/`A02` sebagai `audited_commit` dan `audited_files_summary` — tanpa membaca atau merangkum isi opini temuan auditor lama (larangan ini mencegah bias jangkar pada Tahap D). Metadata ini dipakai Tahap B untuk penandaan `[DELTA]`/`[SCAR]`/`[SEAM]`. Bila metadata tidak tersedia, catat `audited_commit: TIDAK KETEMU` — Tahap B kemudian berjalan murni `B2a` tanpa tier.
 | 8 | Bugbounty | halaman bug bounty di docs | `SECURITY.md`/README repo | web search `<proyek> bug bounty` (1 pencarian) |
 | 9 | Severity | **diturunkan dari halaman bounty butir 8** | — | **tidak ada pencarian terpisah** |
 

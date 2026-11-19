@@ -72,8 +72,9 @@ dinamis transitif + proxy→implementation + callback/hook + transfer
 SOL/SPL ke PDA + langkah off-chain (dilabeli asumsi).
 Fungsi = unit sensus (kelengkapan); segmen = unit buruan (partisi).
 Cara pakai: tiap fungsi di tiap berkas scope dapat satu baris JSON
-dengan verdict value_moves (yes/no/unknown) + entrypoint; peristiwa
-bukan-fungsi (transfer langsung, force-feed, dsb.) dicatat sebagai
+dengan verdict value_moves (yes/state_mutator/no/unknown — B14-v2)
++ entrypoint; peristiwa
+bukan-fungsi (transfer langsung, force-feed dan sejenisnya) dicatat sebagai
 permukaan berkas/sistem, bukan baris fungsi.
 
 ### B2. Scope menyeluruh di awal, eksplorasi per klaster
@@ -112,7 +113,8 @@ verifikasi live per klaster jalan just-in-time (B8).
 
 ### B6. Sensus statis: baca manual penuh, tanpa AST
 Definisi: semua fungsi di semua berkas dibaca manual dan dapat
-verdict (yes/no/unknown); verifikasi parent + kontrol positif tetap
+dengan verdict (yes/state_mutator/no/unknown — B14-v2); verifikasi
+parent + kontrol positif tetap
 jalan. TIDAK pakai AST (diputus Kim 15 Nov 2026).
 Cara pakai: kelompokkan berkas (pilot: G01–G10), satu worker per
 kelompok membaca tiap fungsi dari kode; koordinator verifikasi tiap
@@ -212,32 +214,64 @@ terverifikasi, contracts/ bersih.
 Cara pakai: kunci dulu, sensus kemudian; drift di luar scope
 dicatat, tidak dihitung.
 
-### B14. Konvensi sensus statis (7 butir, universal)
-Diputus 15 Nov 2026 atas delegasi Kim.
+### B14. Konvensi sensus statis (7 butir, universal; DIREVISI B14-v2
+19 Nov 2026 — value_moves 4 nilai ketat)
+Diputus 15 Nov 2026 atas delegasi Kim; revisi ketat B14-v2 19 Nov
+2026 perintah Kim (larangan membuang fungsi pengubah state
+berdampak finansial sebagai `no`).
 1. Getter publik = entrypoint (ya). Entrypoint = bisa dipanggil
    dari luar (literal, mekanis); filter nilai lewat value_moves;
-   yang mengikat alur tetap EP+VM.
-2. Receive badan kosong = value_moves no. Menerima saja bukan
+   yang mengikat alur tetap **EP+VM(yes) DAN EP+SM(state_mutator)**.
+2. **Empat nilai sah `value_moves`:**
+   - `yes`: memindahkan aset/token/native langsung ATAU mengubah
+     saldo/share/klaim finansial langsung.
+   - `state_mutator`: `entrypoint: true`, tidak memindahkan aset
+     langsung, bukan khusus admin terverifikasi, TETAPI menulis
+     storage (initialize/setup, allowance/operator/recipient/
+     delegasi, indeks/snapshot/timestamp/twap/sync/poke, siklus
+     hidup posisi merge/split/lock, pembuatan pool/rute publik,
+     pembatalan/penguncian antrean).
+   - `unknown`: dispatcher target/calldata arbitrer, proxy fallback
+     dinamis, penerusan eksternal belum pasti; diselesaikan
+     transitif di inventaris alur.
+   - `no`: HANYA (i) `view`/`pure`/getter yang sama sekali tidak
+     menulis storage; (ii) `receive` berbadan kosong (kontrak tidak
+     memakai `address(this).balance` dalam akuntansi); (iii) fungsi
+     konfigurasi terkunci rapat modifier peran istimewa murni
+     (`onlyOwner`/`onlyAdmin`/`onlyGovernance`/`onlyTimelock`)
+     tanpa jalur pemicu publik — WAJIB `notes` =
+     `PRIVILEGED_ONLY: <nama_modifier>`. `initialize` TIDAK BOLEH
+     `PRIVILEGED_ONLY` kecuali terbukti dikunci
+     (konstruktor/`disableInitializers`) dan terverifikasi live B8.
+3. Receive badan kosong = value_moves no. Menerima saja bukan
    memindahkan; value_moves dinilai dari badan — ada perpindahan
    lanjutan (transfer keluar / perubahan saldo pihak lain) → yes;
    hanya menerima → no; tidak bisa dipastikan → unknown.
-3. Fungsi payable yang memanggil sistem eksternal yang diketahui
+4. Fungsi payable yang memanggil sistem eksternal yang diketahui
    (mis. relayMessage adapter → messenger bridge) = value_moves
    yes; tahap alur WAJIB verifikasi penerusan value per adapter
-   dari badan — bila tidak meneruskan, turunkan ke no.
-4. Dispatcher dengan target/calldata arbitrer (Multicall3
-   aggregate*, deployAndExecute, directWithdraw, dsb.) =
+   dari badan — bila tidak meneruskan, turunkan ke `state_mutator`
+   bila masih menulis storage, atau `no` bila murni view.
+5. Dispatcher dengan target/calldata arbitrer (Multicall3
+   aggregate*, deployAndExecute, directWithdraw dan sejenisnya) =
    value_moves unknown; diselesaikan transitif di inventaris alur
    (ikuti ke implementasi/target).
-5. Getter auto-generated DIBARISKAN (konsisten dengan butir 1):
-   semua getter publik dibariskan (entrypoint yes, value_moves no).
-6. Entrypoint warisan TIDAK dibariskan (satu baris per definisi, di
+6. Getter auto-generated DIBARISKAN (konsisten dengan butir 1):
+   semua getter publik dibariskan (entrypoint yes; value_moves `no`
+   bila view murni, `state_mutator` bila getter non-view menulis
+   state — mis. `sync`/`poke`/`exchangeRate` yang menyemar state).
+7. Entrypoint warisan TIDAK dibariskan (satu baris per definisi, di
    berkas pendefinisi). Tahap alur WAJIB punya langkah perluasan
    permukaan lewat implementasi/warisan sebelum segmentasi.
-7. Atribut berkas direct/proxy dicatat dua lapis: permukaan
+8. Atribut berkas direct/proxy dicatat dua lapis: permukaan
    milik-sendiri + permukaan warisan. Inventaris alur memakai lapis
    warisan untuk permukaan deployed, lapis milik-sendiri untuk
    lokasi kode.
+**Ikatan ledger B14-v2:** seed `B05-LEDGER-SISA.md` memuat SEMUA
+`EP+VM(yes)` (status `BELUM_MASUK_STREAM`) DAN SEMUA
+`EP+SM(state_mutator)` (status `BELUM_TERCAKUP` bila berdiri
+sendiri); `check-final` verify_flow.py memeriksa nol sisa untuk
+kedua populasi pada `CORE-FLOW`.
 
 ### B15. Cek onchain: sensus live ringan B7 WAJIB di Tahap B; cek
 onchain mendalam WAJIB di B8
@@ -271,10 +305,17 @@ yang wajib selesai' di aturan-alur-first.md.
   bukan cuma fungsi.
 - **Entrypoint**: fungsi yang bisa dipanggil dari luar
   (public/external, termasuk getter dan receive/fallback) — B14.1.
-- **value_moves**: yes/no/unknown (B14.2–B14.4). Unknown =
+- **value_moves**: yes/state_mutator/no/unknown (B14-v2). Unknown =
   diselesaikan transitif di inventaris alur, bukan temuan.
+  `state_mutator` = entrypoint yang menulis storage tanpa memindah
+  aset langsung (B14-v2) — wajib masuk koridor Stream ATAU
+  `B07-STATE-BRIDGES.md`.
 - **EP+VM**: entrypoint DAN value_moves yes — angka yang mengikat
   untuk inventaris alur (bukan EP total).
+- **EP+SM**: entrypoint DAN value_moves state_mutator — populasi
+  kedua yang mengikat cakupan (B14-v2): masuk koridor Stream terkait,
+  terdaftar sebagai penulis di `B07`, atau unit pemeriksaan sendiri
+  sampai sisa `BELUM_TERCAKUP` = 0 di `B05`.
 - **Klaster alur**: pengelompokan indeks cakupan di Tahap B (papan
   kontrol kelengkapan, bukan pagar analisis), diklasifikasi 4 tipe
   generik (moneyflow v2.0): `CORE-FLOW` (alur nilai utama) /

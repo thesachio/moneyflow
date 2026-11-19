@@ -21,6 +21,13 @@ Skill ini memuat aturan dan format sampai Tahap E selesai. `methodology/aturan-a
 - Mekanisme penentu **wajib diuji ulang di fork live** bila fork-testable. Bila **tidak** fork-testable, catat keterbatasannya **eksplisit** (jangan diam-diam).
 - Pengecualian: proyek TESTNET/DEVNET — "live" = lingkungan itu sendiri.
 
+### Fork multi-chain untuk protokol multi-chain (revisi 19 Nov 2026, mengikat)
+
+- **Fork mengikuti chain tempat kontrak koridor kartu berada.** Bila rantai (a)+(b)+(c) kartu menyentuh kontrak di lebih dari satu chain (mis. deposit di Polygon → fill di Base), jalankan fork untuk setiap chain yang menyentuh garis aliran dan uji di fork yang sesuai — multi-chain fork (dua anvil instance / satu tes per fork) diizinkan dan wajib dicatat di `E-PROOF`.
+- **Kartu yang menyentuh override/behavior per-chain WAJIB diuji di fork chain tersebut** — bukan di fork Ethereum: contoh yang wajib fork non-Ethereum: `_requireAdminSender` per-varian (aliasing Arbitrum, `callValidated` Polygon, CrossDomainEnabled OP), `_is7702DelegatedWallet` ZkSync (`pure false` — ZkSync_SpokePool.sol:155-157), `_preExecuteLeafHook` Ovm/Linea/Polygon, `_safeTransfer`/`_noRevertTransfer` Tron, light-client Universal (HubPoolStore→SP1Helios).
+- **Dasar pengetahuan per-chain = implementasi yang sudah dibaca di Tahap B/C** (sensus 100% varian + inventaris koridor). Fork Tahap E mengonfirmasi **eksekusi** behavior itu; fork bukan sumber pertama pengetahuan behavior.
+- Bila fork chain tertentu tidak tersedia (RPC publik menolak archive dan sejenisnya), catat transport eksplisit di `E-PROOF` (C3) dan turunkan label bukti sesuai tangga (mis. `CODE-REVIEW-ONLY` untuk behavior khusus chain itu) — jangan klaim fork yang tidak dijalankan.
+
 ### Sumber RPC (mengikat)
 
 - **ALCHEMY utama**: `rpc-env.sh <rantai>` memilih key alchemy per-rantai dari `.env` / `.env.rpc.secret` lebih dulu.

@@ -33,7 +33,7 @@ Skill ini adalah **peta dan aturan gerbang**. Kerja tiap tahap mengikuti skill t
 | **A** | INTEL | `INTEL.md`, `A01-INTEL.md`, `A02-INTEL-discovery.md` | brief 9 butir saja; **tanpa cek onchain**; blok referensi belum ditetapkan |
 | **B** | Mapping | `B01`–`B07` (`B04-STREAMS-AND-CLUSTERS` + `B07-STATE-BRIDGES`) + `scripts/out/*.jsonl` | tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
 | **C** | Pemetaan mendalam per-Stream | `C00-SHARED-PRIMITIVES.md` (sekali di depan) + `C<NN>-<STREAM_ID>-INVENTORY.md` per-Stream | deskriptif saja; **`Corridor-Bound Cross-Cluster`** (wajib menembus batas klaster sepanjang koridor aliran dana aktif; dilarang melebar horizontal ke cabang luar stream; jeda asinkron dicatat ke `B07-STATE-BRIDGES.md`); tanpa invariant/buruan/PoC |
-| **D** | Eksplorasi per-Stream | `D<nn>-<TOPIK>-WAVE1/WAVE2/LEAD-CARDS` | Gelombang 1 bebas/buta katalog (3 Lensa Fisika Nilai + Twin-Path Diff); Gelombang 2 = **Symptom-Triggered Lazy Skill Loading** (maks 2–4 plugin relevan) + `1-hop peek` pada `State-Bridge`; tanpa PoC; gelombang 1/2 **tidak** memberi TERBUKTI |
+| **D** | Eksplorasi per-Stream | `D<nn>-<TOPIK>-WAVE1/WAVE2/LEAD-CARDS` | Gelombang 1 bebas/buta katalog (3 Lensa Fisika Nilai + Twin-Path Diff); Gelombang 2 = **Symptom-Triggered Lazy Skill Loading** (maks 2–4 plugin relevan) + `1-hop peek` pada `State-Bridge`; tanpa PoC; gelombang 1/2 **tidak** memberi TERBUKTI; **dua mode eksekusi: `MODE: AUTO` (default — otonom penuh per Stream, dipakai flow-autopilot) dan `MODE: PAIR` (co-audit kolaboratif fungsi demi fungsi bersama peneliti manusia — hanya bila user eksplisit meminta `pair`/`bareng`/`co-audit`/`interaktif`/`pandu per fungsi`; sorotan titik sensitif + panduan cek invariant per segmen + pelestarian temuan `[USER-INSIGHT]`)** |
 | **E** | Uji test | `E<nn>-<TOPIK>-BATCH<n>-PROOF.md` + `poc/` | satu fork blok pin + pustaka kumulatif transaksi normal; batch maks 3 kartu diurutkan bobot struktural (**Simpul/Komposisi > Handoff/State-Bridge > Segmen Lokal**); mengukur `Observed Live Ceiling` atau `Proven Potential Ceiling`; parent rerun forge |
 | **F** | Komposisi Inkremental & Akhir | `F<nn>-<TOPIK>-COMPOSITION.md` | Inkremental: langsung jalan begitu Stream aktif menyentuh `State-Bridge`/brankas Stream sebelumnya; sapuan komposisi akhir bila multi-stream; **tanpa fork/PoC ulang** |
 | **G** | Verdict | `G01-VERDICT.md` + draf 09 | tiga verdict terpisah; severity dari plafon teramati; **HOLD** |
@@ -84,6 +84,8 @@ C  Stream Inventory → segmen + handoff + simpul, ikut Koridor  (flow-c-invento
 D  Eksplorasi       → gelombang 1 buta (lensa + twin-path)
                       → gelombang 2 lazy-load 2–4 plugin + 1-hop peek
                       → kartu lead + invariant            (flow-d-explore)
+                      → MODE: AUTO default (otonom); MODE: PAIR hanya bila user
+                        eksplisit meminta co-audit fungsi demi fungsi
 E  Uji test         → fork blok pin → PoC + P&L, batch ≤3  (flow-e-test)
 F  Komposisi Inkrem.→ segera bila Stream sentuh State-Bridge/
                       brankas Stream selesai; sapuan akhir bila
