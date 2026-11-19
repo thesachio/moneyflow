@@ -277,14 +277,24 @@ def cmd_check_c(args):
         # --- hitung segmen S1..Sn unik yang DIDEFINISIKAN (bukan disebut)
         seg_defs = set(re.findall(r"^\s*\|?\s*(?:\*\*)?(S\d{1,2})(?:\*\*)?\s*(?:\||:|- )", text, re.M))
         n = len(seg_defs)
-        # --- handoff H1..H(n-1) unik yang DIDEFINISIKAN
+        # --- handoff unik yang DIDEFINISIKAN
         hnd_defs = set(re.findall(r"^\s*\|?\s*(?:\*\*)?(H\d{1,2})(?:\*\*)?\s*(?:\||:|- )", text, re.M))
+        # --- jumlah handoff = N - 1 + Sigma(m - 1); m dibaca dari baris `Masukan: S.., S..`
+        # pada tiap Join (J tanpa baris Masukan dianggap m = 1, kontribusi 0)
+        sigma = 0
+        for mm in re.finditer(r"Masukan:\s*((?:S\d{1,2}\s*,\s*)*S\d{1,2})", text):
+            ids = {s.strip() for s in mm.group(1).split(",")}
+            sigma += max(0, len(ids) - 1)
         if n >= 2:
-            need = set(f"H{i}" for i in range(1, n))
+            target = n - 1 + sigma
+            need = set(f"H{i}" for i in range(1, target + 1))
             missing = sorted(need - hnd_defs)
             if missing:
-                v.append(f"{n} segmen didefinisikan tetapi handoff kurang: butuh {len(need)}, "
-                         f"yang belum terdefinisi: {', '.join(missing)}")
+                v.append(f"N={n} segmen, Sigma(m-1)={sigma} -> target handoff {target}, "
+                         f"aktual {len(hnd_defs)}; yang belum terdefinisi: {', '.join(missing)}")
+            elif len(hnd_defs) != target:
+                v.append(f"N={n} segmen, Sigma(m-1)={sigma} -> target handoff {target}, "
+                         f"aktual {len(hnd_defs)} (jumlah tidak sesuai)")
         # --- larangan klaim prematur
         for m2 in re.finditer(r"\bTERBUKTI\b", text):
             s = max(0, m2.start() - 30)

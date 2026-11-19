@@ -58,7 +58,7 @@ Keluaran `S(k)` wajib **nyambung ke masukan `S(k+1)`**. Bila tidak bersambung le
 
 ### Bagian 3 - Kontrak Handoff (`H1..Hn-1`) (B11)
 
-Dienumerasi **ketat dari batas unit** - rantai linear `N` segmen -> **tepat `N-1` handoff**. Jangan dilabeli tangan.
+Dienumerasi **ketat dari batas unit**: satu handoff per sambungan langsung antar-segmen. Rantai linear atau bercabang tanpa penggabungan ulang: `N` segmen -> **tepat `N-1` handoff**. Bila ada Join `Jx` yang menerima `m` cabang masukan dari segmen berbeda di Stream ini: jumlah handoff = `N - 1 + Σ(m - 1)` atas semua `Jx` tersebut. Jangan dilabeli tangan.
 
 | Kolom | Isi |
 | :--- | :--- |
@@ -87,7 +87,7 @@ Handoff `TERBUKA_EKSTERNAL` = konsumennya di luar kode scope (mis. messenger eks
 Unit mandiri **berprioritas tinggi** - bukan catatan kaki segmen.
 
 - **Fork (`Fx`)** = percabangan aliran: catat **rumus pembagian aliran & potongan biaya sebagaimana tertulis di kode** (nanti diuji: keluaran total = masukan - fee).
-- **Join (`Jx`)** = penggabungan/klaim: catat **penanda state yang mencegah konsumsi ganda sebagaimana tertulis di kode** (nanti diuji: konsumsi tepat sekali - tidak dobel, tidak hilang).
+- **Join (`Jx`)** = penggabungan/klaim: catat **penanda state yang mencegah konsumsi ganda sebagaimana tertulis di kode** (nanti diuji: konsumsi tepat sekali - tidak dobel, tidak hilang). Tulis juga baris `Masukan: S<a>, S<b>, ...` (segmen-segmen yang bertemu di Join ini) — dipakai untuk menghitung jumlah handoff.
 
 ### Bagian 5 - Daftar State-Bridge (`HB-x`) & Referensi Primitif (`C00`)
 
@@ -144,7 +144,7 @@ Aturan Bagian 6:
 
 - [ ] Bagian 1 Identitas: `Stream_ID` + pintu masuk (`File:Lxx-Lyy`) + daftar EP+VM (termasuk lintas-klaster) + rujukan Twin-Path bila ada
 - [ ] Bagian 2 Segmen: semua segmen punya batas masuk/keluar dan bersambung — keluaran `S(k)` nyambung ke masukan `S(k+1)` (atau berakhir di State-Bridge `HB-x`)
-- [ ] Bagian 3 Handoff: jumlahnya **tepat N−1** untuk N segmen, tiap handoff punya field (nama+tipe+satuan) + `Pengendali Field` per field + jaminan produsen + asumsi konsumen + Status
+- [ ] Bagian 3 Handoff: jumlahnya sesuai rumus Bagian 3 (`N−1`, ditambah `Σ(m−1)` bila ada Join bercabang-masuk), tiap handoff punya field (nama+tipe+satuan) + `Pengendali Field` per field + jaminan produsen + asumsi konsumen + Status
 - [ ] Bagian 4 Simpul: tiap `Fx` punya rumus pembagian + potongan biaya; tiap `Jx` punya penanda anti-konsumsi-ganda — apa adanya di kode
 - [ ] Bagian 5: semua `HB-x` yang disentuh sinkron dengan `B07-STATE-BRIDGES.md` (pembaca/penulis + asumsi/jaminan terisi untuk sisi Stream aktif); item `C00` yang dipakai terdaftar
 - [ ] Bagian 6 Lembar Parameter Live: tiap variabel storage/eksternal yang dibaca di koridor dan memengaruhi aliran nilai terdaftar sebagai `LP-x` dengan jangkar baca + pengendali + penulis + cabang yang bergantung; kolom nilai = `DIISI_B8`
