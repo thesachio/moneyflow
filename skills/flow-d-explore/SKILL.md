@@ -13,6 +13,7 @@ Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-a
 - Unit kerja Tahap D = **satu `Stream` ujung-ke-ujung (`STR-xx`)** berdasarkan `C<NN>-<STREAM_ID>-INVENTORY.md` + `C00-SHARED-PRIMITIVES.md` + baris terkait di `B07-STATE-BRIDGES.md`.
 - Registry invariant (`B06`) sudah punya struktur penomoran.
 - **B8 Live-Match Stream** dijalankan sebelum Gelombang 1 dimulai: cek cepat atas kontrak pada koridor Stream aktif — **utamakan desain kode + `cast code`/view di blok pin**; DILARANG memindai log sejarah panjang (pindai log = verifikator terakhir, Tahap G/sapuan akhir). Bila kontrak target belum live-match: masukkan Stream ke `TUNDA-LIVE` di `B05-LEDGER-SISA.md` dan **hentikan putaran Stream tersebut** (nol waktu eksekusi).
+- **B8 mengisi Lembar Parameter Live** (`C<NN>-<STREAM_ID>-INVENTORY.md` Bagian 6): untuk tiap `LP-x`, baca nilai di blok pin (`cast call` / `cast storage`), isi kolom `Nilai @ blok pin` dan `Status Cabang` (`LIVE` / `DEAD-CONFIG` / `TIDAK-TERBACA`). Ini pembacaan state blok pin, bukan pindai log — tetap dalam batas B8. Perubahan pada berkas C ini adalah pengisian kolom yang memang disediakan untuk B8, bukan revisi inventaris.
 
 ## Mode Eksekusi Tahap D: AUTO vs PAIR (Co-Audit)
 
@@ -23,10 +24,10 @@ Tahap D mendukung **dua mode eksekusi**. Pemilihan mode hanya dilakukan oleh use
 
 ### PAIR — Gelombang 1 (Tanpa Katalog)
 
-- DILARANG mendelegasikan pembacaan ke subagent tertutup di belakang layar lalu hanya menyodorkan berkas jadi. Agen utama memandu user berjalan **satu Segmen + Handoff keluarnya (`Sk` + `Hk`) per giliran percakapan** sepanjang `S1 -> Sn`.
+- DILARANG mendelegasikan pembacaan ke subagent tertutup di belakang layar lalu hanya menyodorkan berkas jadi. Agen utama memandu user berjalan **satu Segmen + Handoff keluarnya (`Sk` + `Hk`) per giliran percakapan** sepanjang `S1 -> Sn`, mengikuti **Urutan perhatian Gelombang 1** di bawah
 - Pada setiap pemberhentian fungsi, agen WAJIB menyajikan 5 komponen berurutan di chat:
   1. **Kode Asli Bernomor (`Path/File.ext:Lxx-Lyy`)** — blok kode sumber fungsi pada segmen `Sk` secara utuh (tanpa pemotongan barisan kode) agar user membaca kode asli.
-  2. **Aliran Nilai & Mutasi State Lokal** — ringkasan faktual apa yang masuk, variabel storage apa yang berubah, dan nilai/field apa yang dikirim ke `Hk` atau `State-Bridge (HB-x)`.
+  2. **Aliran Nilai & Mutasi State Lokal** — ringkasan faktual apa yang masuk, variabel storage apa yang berubah, dan nilai/field apa yang dikirim ke `Hk` atau `State-Bridge (HB-x)` — sebutkan `Pengendali Field` (Bagian 3) dan `Status Cabang` (`LP-x`, Bagian 6) yang relevan.
   3. **Titik Sensitif Kode Ini (Code Sensitivity Hotspots)** — nomor baris eksak yang wajib diwaspadai beserta alasannya dari kacamata fisika nilai (urutan baca-tulis-panggilan eksternal, arah pembulatan/pembagian, pengakuan nilai masuk `RAW_PARAM` vs `BALANCE_DELTA`, parameter tujuan/kontrak yang dikendalikan pemanggil, asimetri terhadap Twin-Path, atau kondisi `revert`/loop pengunci dana).
   4. **Panduan Invariant & Cara Cek (Candidate Invariant & Mental Check)** — (a) syarat sehat/invariant apa yang harus terjaga pada segmen/handoff ini agar nilai tidak bocor atau terkunci; (b) pertanyaan uji bagaimana mematahkannya lewat input permissionless. Status tetap kandidat analisis; penomoran `INV-` resmi dikunci di akhir D.
   5. **Draf Observasi (`OBS` / `G` / `Q`) & Kontrol Giliran User** — tampilkan pengamatan awal agen lalu berhenti menunggu input user:
@@ -48,7 +49,16 @@ Tahap D mendukung **dua mode eksekusi**. Pemilihan mode hanya dilakukan oleh use
 
 ## Gelombang 1 — Eksplorasi Bebas Murni (Tanpa Katalog)
 
-Bekal: inventaris Stream aktif (`C<NN>-<STREAM_ID>-INVENTORY.md`), `C00-SHARED-PRIMITIVES.md`, baris `B07-STATE-BRIDGES.md` yang bersinggungan, premis parent.
+Bekal: inventaris Stream aktif (`C<NN>-<STREAM_ID>-INVENTORY.md`, termasuk Bagian 6 yang sudah diisi B8), `C00-SHARED-PRIMITIVES.md`, baris `B07-STATE-BRIDGES.md` yang bersinggungan, premis parent.
+
+**Urutan perhatian Gelombang 1 (bukan filter):**
+
+1. handoff/`HB-x` dengan field `CALLER-INPUT` (atau `DERIVED` dari `CALLER-INPUT`) yang `Asumsi Faktual Konsumen`-nya **tidak dijamin** oleh `Jaminan Faktual Produsen`;
+1. simpul `Fx`/`Jx` pada cabang `LIVE`;
+1. sisa segmen pada cabang `LIVE`;
+1. cabang `DEAD-CONFIG` — tetap dibaca dan dicatat, tapi kandidat yang **hanya** menyala di cabang ini diarahkan ke `DORMAN` di Gate D.
+
+Urutan ini menentukan **mana yang dikerjakan lebih dulu**, bukan mana yang boleh dilewati. Seluruh segmen, handoff, dan simpul tetap wajib dibaca dan didisposisi.
 
 **LARANGAN MUTLAK:**
 
@@ -60,7 +70,7 @@ Ikuti kode sepanjang `S1 -> H1 -> S2 -> Sn` berikut rentetan handoffnya dengan *
 
 **Lensa 1 (Konservasi Simpul & Akuntansi):** lacak setiap satuan nilai dari `Ingress` hingga `Egress`. Uji apakah pada setiap percabangan (`Fx`) berlaku `total_keluaran + fee == masukan`, dan pada setiap penggabungan/klaim (`Jx`) penanda state mengunci konsumsi tepat satu kali — tanpa celah klaim ulang, pencetakan hak berlebih, atau saldo mengendap permanen.
 
-**Lensa 2 (Adu Kontrak Handoff & State-Bridge):** adu kolom `Jaminan Faktual Produsen` melawan `Asumsi Faktual Konsumen` pada setiap `H1..Hn-1`. Bila Stream menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **`1-hop peek`** diizinkan (baca tepat satu lapis fungsi pasangan penulis/pembaca di stream seberang) agar ketidaksinkronan skala desimal, urutan pembaruan state, atau nilai basi langsung tertangkap selagi konteks panas.
+**Lensa 2 (Adu Kontrak Handoff & State-Bridge):** adu kolom `Jaminan Faktual Produsen` melawan `Asumsi Faktual Konsumen` pada setiap `H1..Hn-1`, dengan memperhatikan kolom `Pengendali Field`: asumsi konsumen atas field `CALLER-INPUT` yang tidak dijamin produsen adalah prioritas pertama. Bila Stream menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **`1-hop peek`** diizinkan (baca tepat satu lapis fungsi pasangan penulis/pembaca di stream seberang) agar ketidaksinkronan skala desimal, urutan pembaruan state, atau nilai basi langsung tertangkap selagi konteks panas.
 
 **Lensa 3 (Twin-Path Differential — bila Stream punya pasangan di `Twin-Path Group` pada `B04` yang sudah punya inventaris `C`):** sandingkan tabel Handoff, Simpul, urutan pembaruan state, dan arah pembulatan Stream aktif terhadap Stream kembarnya; catat setiap asimetri yang tidak dijelaskan oleh perbedaan rumus dasar.
 
@@ -69,7 +79,7 @@ Ikuti kode sepanjang `S1 -> H1 -> S2 -> Sn` berikut rentetan handoffnya dengan *
 Dilarang sekadar merangkum ulang tabel Tahap C. Pada setiap Stream, Gelombang 1 **wajib** menjalankan tiga uji kritis berikut dan mencatat hasilnya sebagai `OBS`/`G`/`Q`:
 
 1. **Deep-Check Handoff & State-Bridge:**
-   - Uji silang batas ekstrem input (`0`, `1 wei`, batas maksimum tipe, dan ketidaksamaan desimal token seperti `6` vs `18`) antara `Jaminan Faktual Produsen` dan `Asumsi Faktual Konsumen` pada setiap `Hk` dan `HB-x`.
+   - Uji silang batas ekstrem input (`0`, `1 wei`, batas maksimum tipe, dan ketidaksamaan desimal token seperti `6` vs `18`) antara `Jaminan Faktual Produsen` dan `Asumsi Faktual Konsumen` pada setiap `Hk` dan `HB-x`. Nilai ekstrem dipakai untuk field `CALLER-INPUT`; untuk field `ADMIN-CONFIG` pakai nilai `Nilai @ blok pin` dari Bagian 6.
    - Uji *State Interleaving*: periksa daftar `EP+SM (state_mutator)` di sensus/`B07` dan jawab eksplisit apakah ada fungsi mutator publik atau pengiriman aset langsung yang dapat diselipkan di antara sisi Produsen dan sisi Konsumen — khususnya pada tag `[SEAM]` dan callback.
 2. **Deep-Check Simpul Fork/Join:**
    - Pada setiap `Fx`, tulis persamaan pembagian integer aktual dari kode dan uji apakah pembulatan dapat membuat `jumlah_keluaran > masukan` (menguras saldo pengguna terakhir / insolvensi) atau mengendapkan nilai secara permanen.
@@ -85,6 +95,8 @@ Keluaran wajib Gelombang 1 — `D<NN>-<STREAM_ID>-WAVE1-BLIND.md`, seluruhnya be
 | `G` | jalur yang terbukti tertutup oleh penjaga kode eksak `Path/File.ext:Lxx-Lyy` |
 | `Q` | pertanyaan mekanis tajam / celah asumsi yang harus dipastikan di Gelombang 2 |
 | `SYMPTOM-TAGS` | daftar tag gejala faktual yang ditemukan di kode Stream aktif untuk memicu pemuatan malas di Gelombang 2 |
+
+Tiap `OBS` dan `Q` mencantumkan `LP-x` yang relevan beserta `Status Cabang`-nya bila observasi bergantung pada parameter.
 
 ## Gelombang 2 — Symptom-Triggered Lazy Skill Augmentation
 
@@ -148,6 +160,8 @@ Tiap kartu **wajib punya klaim finansial sendiri** — bukan "ini mencurigakan",
 
 Kartu yang hanya berhenti di (a) = **HIPOTESIS**, bukan kandidat uji.
 
+Tiap kartu juga mencantumkan **daftar `LP-x` yang dipakai rantainya** beserta `Nilai @ blok pin` dan `Status Cabang`-nya — ini bahan seed `FlowFixtures` di Tahap E.
+
 ### Invariant tiga lapis
 
 | Lapis | ID | Cakupan |
@@ -162,8 +176,8 @@ Aturan wajib per invariant:
 
 - **Wajib mencantumkan sumbernya**: field kontrak handoff, atau baris `docs`/NatSpec. **Bukan** perasaan agen.
 - **Wajib punya akibat finansial bila pecah** — invariant tanpa akibat finansial bukan invariant, itu catatan.
-- Cek **testability** dicatat saat perumusan: fork apa, data live apa; dilabeli bila tidak bisa diuji.
-- Registry invariant **satu penomoran global** (`B06`), diisi mulai Tahap D.
+- Cek **testability** dicatat saat perumusan: fork apa, data live apa (rujuk `LP-x`); dilabeli bila tidak bisa diuji.
+- Registry invariant **satu penomoran global** (`B06`), diisi mulai Tahap D. Kartu wajib merujuk ID bernomor (mis. `INV-H3`), bukan placeholder `INV-Hx`.
 
 ## Gate D (C10-v2, statis) — gerbang masuk Tahap E
 
@@ -177,6 +191,9 @@ Aturan wajib per invariant:
 **Konsekuensi penting:** plafon live 0 **TIDAK** membuat lead DORMAN — nilai 0 di live hanya berarti pemicunya belum terjadi.
 
 `DORMAN` **hanya** untuk fitur live yang sedang dikunci saklar konfigurasi admin aktif (`paused`, `cap == 0` admin), wajib disertai **syarat buka-ulang konkret** (mis. "buka bila saklar X diangkat", "buka bila parameter Y diubah").
+
+- Kandidat yang hanya bisa dipicu lewat cabang `DEAD-CONFIG` di Bagian 6 = `DORMAN`, dengan syarat buka-ulang menunjuk `LP-x` (mis. "buka bila `LP-3 feeBps` > 0"). Kandidat pada cabang `LIVE` / `TIDAK-TERBACA` dinilai normal.
+- Nilai `ADMIN-CONFIG` yang dipakai dalam rumus plafon (c) wajib nilai dari Bagian 6 kolom `Nilai @ blok pin`, bukan asumsi.
 
 ## C11 — gelombang 1 dan 2 TIDAK memberi verdict TERBUKTI
 
@@ -196,20 +213,22 @@ Konsekuensi yang sering dilanggar:
 
 ## Keluaran
 
+- `C<NN>-<STREAM_ID>-INVENTORY.md` Bagian 6 — kolom `Nilai @ blok pin` + `Status Cabang` terisi oleh B8.
 - `D<NN>-<STREAM_ID>-WAVE1-BLIND.md` — OBS / G / Q / SYMPTOM-TAGS, semua berlabel `DIANALISIS`.
 - `D<NN>-<STREAM_ID>-WAVE2-QUEUED.md` — QUEUED terurut ketajaman struktural + DORMAN (dengan syarat buka-ulang) + disposisi OBS/Q.
-- `D<NN>-<STREAM_ID>-LEAD-CARDS.md` — kartu 1:1 dengan rantai (a)+(b)+(c) + klaim finansial >= $1.
+- `D<NN>-<STREAM_ID>-LEAD-CARDS.md` — kartu 1:1 dengan rantai (a)+(b)+(c) + klaim finansial >= $1 + daftar `LP-x` yang dipakai.
 - Registry invariant (`B06-REGISTRY-INVARIANT.md`) terisi dengan sumber tiap invariant (termasuk `INV-HBx`).
 
 ## Definition of done Tahap D (per Stream)
 
 - [ ] B8 Live-Match Stream lulus (atau Stream masuk `TUNDA-LIVE` di `B05`, nol waktu eksekusi)
+- [ ] Bagian 6 inventaris Stream terisi kolom nilai + status cabang oleh B8; nol `DIISI_B8` tersisa
 - [ ] gelombang 1 dijalankan **tanpa** membuka katalog/_ROUTER/plugin/laporan audit lama
-- [ ] Tiga Lensa dijalankan: konservasi simpul, adu handoff+State-Bridge (1-hop peek bila perlu), Twin-Path bila ada
+- [ ] Tiga Lensa dijalankan: konservasi simpul, adu handoff+State-Bridge (1-hop peek bila perlu), Twin-Path bila ada, mengikuti Urutan perhatian Gelombang 1
 - [ ] gelombang 2 memuat maks 2-4 plugin via Lazy Skill Router; 1 CHAIN-\* dan 1 DOM-\* bila relevan
-- [ ] tiap QUEUED punya kartu lead dengan rantai (a)+(b)+(c) dan rumus plafon >= $1
+- [ ] tiap QUEUED punya kartu lead dengan rantai (a)+(b)+(c), rumus plafon >= $1, dan daftar `LP-x` yang dipakai
 - [ ] tiap invariant punya sumber (field handoff/state-bridge atau docs/NatSpec) + akibat finansial + catatan fork-testability
-- [ ] Gate D C10-v2 diuji untuk tiap kandidat; DORMAN hanya saklar admin aktif, dengan syarat buka-ulang
+- [ ] Gate D C10-v2 diuji untuk tiap kandidat; DORMAN hanya saklar admin aktif atau cabang `DEAD-CONFIG`, dengan syarat buka-ulang menunjuk `LP-x`
 - [ ] seluruh OBS dan Q habis terdisposisi (QUEUED / DORMAN / G dengan jangkar penjaga kode eksak) — anti-kuota: tidak ada target jumlah
 - [ ] nol verdict `TERBUKTI` dari gelombang 1/2; semua berlabel `DIANALISIS`
 - [ ] nol PoC (itu Tahap E)
