@@ -304,61 +304,56 @@ def cmd_check_d(args):
         print(f"GAGAL check-d: direktori {ad} tidak ada")
         return 1
     sid = args.stream
-
-    wave1 = ad / f"D<NN>-{sid}-WAVE1-BLIND.md"
-    wave2 = ad / f"D<NN>-{sid}-WAVE2-QUEUED.md"
-    cards = ad / f"D<NN>-{sid}-LEAD-CARDS.md"
     reg = ad / "B06-REGISTRY-INVARIANT.md"
+    regtext = reg.read_text(encoding="utf-8", errors="replace") if reg.is_file() else None
+    if regtext is None:
+        v.append("B06-REGISTRY-INVARIANT.md tidak ada; rujukan INV- kartu tidak bisa diverifikasi")
 
-    for lab, p, allow_terbukti in (("Gelombang 1", wave1, False),
-                                   ("Gelombang 2", wave2, False),
-                                   ("Lead Cards", cards, True)):
-        # pola nama eksak per Langkah 3: D<NN>-<STREAM_ID>-WAVE1-BLIND.md dst.
-        pat1 = f"-{sid}-WAVE1-BLIND.md"
-        pat2 = f"-{sid}-WAVE2-QUEUED.md"
-        pat3 = f"-{sid}-LEAD-CARDS.md"
-        cands = {
-            "Gelombang 1": sorted(ad.glob(f"*{pat1}")),
-            "Gelombang 2": sorted(ad.glob(f"*{pat2}")),
-            "Lead Cards": sorted(ad.glob(f"*{pat3}")),
-        }
-        sel = sorted(set(cands[lab]), key=lambda x: x.name)
-        p = sel[0] if sel else p
-        if not p.is_file():
-            v.append(f"berkas {lab} milik Stream {sid} tidak ditemukan (pola: *{pat1} / *{pat2} / *{pat3})")
+    # pola nama eksak: D<NN>-<STREAM_ID>-WAVE1-BLIND.md / -WAVE2-QUEUED.md / -LEAD-CARDS.md
+    groups = (
+        ("Gelombang 1", f"D*-{sid}-WAVE1-BLIND.md", False),
+        ("Gelombang 2", f"D*-{sid}-WAVE2-QUEUED.md", False),
+        ("Lead Cards", f"D*-{sid}-LEAD-CARDS.md", True),
+    )
+    card_files = []
+    for lab, pat, allow_terbukti in groups:
+        found = sorted(ad.glob(pat), key=lambda x: x.name)
+        if not found:
+            v.append(f"berkas {lab} milik Stream {sid} tidak ditemukan (pola: {pat})")
             continue
-        text = p.read_text(encoding="utf-8", errors="replace")
-        n_lazy, details = scan_lazy_tokens(text)
-        for d in details:
-            v.append(f"{p.name}: token kompresi malas [{d}]")
-        for m in scan_code_anchors(text):
-            validate_anchor(m, args.repo, v, p.name)
-        if not allow_terbukti:
-            for m2 in re.finditer(r"\bTERBUKTI\b", text):
-                val = "Gelombang 1/2 TIDAK memberi verdict TERBUKTI (C11)"
-                _once(v, f"{p.name}: {val}")
+        if lab == "Lead Cards":
+            card_files = found
+        for p in found:
+            text = p.read_text(encoding="utf-8", errors="replace")
+            n_lazy, details = scan_lazy_tokens(text)
+            for d in details:
+                v.append(f"{p.name}: token kompresi malas [{d}]")
+            for m in scan_code_anchors(text):
+                validate_anchor(m, args.repo, v, p.name)
+            if not allow_terbukti and re.search(r"\bTERBUKTI\b", text):
+                _once(v, f"{p.name}: Gelombang 1/2 TIDAK memberi verdict TERBUKTI (C11)")
 
-    if cards.is_file():
+    for cards in card_files:
         body = cards.read_text(encoding="utf-8", errors="replace")
-        # pisahkan kartu per heading '## [' atau '## '
         chunks = _split_entries(body)
+        if not chunks:
+            v.append(f"{cards.name}: tidak ada kartu (heading '## ')")
         for cid, chunk in chunks:
-            comp = {}
-            for letter in ("a", "b", "c"):
-                comp[letter] = re.search(rf"\(\s*{letter}\s*\)", chunk) is not None
-            miss = [k for k, ok in comp.items() if not ok]
+            miss = [k for k in ("a", "b", "c") if not re.search(rf"\(\s*{k}\s*\)", chunk)]
             if miss:
-                v.append(f"kartu '{cid}': komponen rantai hilang {', '.join('(' + m + ')' for m in miss)}")
-            invs = set(re.findall(r"\bINV-[A-Za-z]+-?\d+", chunk)) | set(re.findall(r"\bINV-(?:S|H|HB|J|F)x\b", chunk))
+                v.append(f"{cards.name} kartu '{cid}': komponen rantai hilang "
+                         f"{', '.join('(' + m + ')' for m in miss)}")
+            if re.search(r"\bINV-(?:S|H|HB|J|F)x\b", chunk):
+                v.append(f"{cards.name} kartu '{cid}': masih memakai placeholder INV-?x, bukan ID nyata")
+            invs = set(re.findall(r"\bINV-[A-Za-z]+-?\d+\b", chunk))
             if not invs:
-                v.append(f"kartu '{cid}': tanpa rujukan ID invariant INV-")
+                v.append(f"{cards.name} kartu '{cid}': tanpa rujukan ID invariant INV- bernomor")
                 continue
-            if reg.is_file():
-                regtext = reg.read_text(encoding="utf-8", errors="replace")
-                for inv in invs:
-                    if inv not in regtext:
-                        v.append(f"kartu '{cid}': invariant {inv} tidak tercatat di B06-REGISTRY-INVARIANT.md")
-
+            if regtext is not None:
+                for inv in sorted(invs):
+                    if not re.search(rf"\b{re.escape(inv)}\b", regtext):
+                        v.append(f"{cards.name} kartu '{cid}': invariant {inv} "
+                                 f"tidak tercatat di B06-REGISTRY-INVARIANT.md")
     return _report("check-d", f"{ad} [stream {sid}]", v)
 
 
@@ -413,8 +408,8 @@ def cmd_check_final(args):
             if has_sm and uncovered and ("CORE-FLOW" in l or "state_mutator" in l):
                 v.append(f"B05:{i}: EP+SM(state_mutator) CORE-FLOW tersisa belum tercakup: {l.strip()[:100]}")
         for i, l in enumerate(text.splitlines(), 1):
-            mq = re.search(r"QUEUED\s*=\s*(\d+)", l)
-            ma = re.search(r"ACTIVE\s*=\s*(\d+)", l)
+            mq = re.search(r"QUEUED\s*(?:==|=|:)\s*(\d+)", l)
+            ma = re.search(r"ACTIVE\s*(?:==|=|:)\s*(\d+)", l)
             if mq and int(mq.group(1)) > 0:
                 v.append(f"B05:{i}: QUEUED = {mq.group(1)} > 0 pada Stream: {l.strip()[:80]}")
             if ma and int(ma.group(1)) > 0:
