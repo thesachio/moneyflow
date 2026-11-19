@@ -1,6 +1,6 @@
 ---
 name: flow-e-test
-description: Tahap E — Pembuktian Fork Pin (moneyflow v2.0): pustaka Cumulative Normal-Path Fixtures (FlowFixtures) + dua metrik plafon C10-v2 (Observed Live Ceiling / Proven Potential Ceiling + victim seeding), batch maks 3 per Stream, kontrol positif, rerun forge gas IDENTIK, rantai (a)+(b)+(c) utuh (C11), tiga verdict terpisah. Dipakai saat menguji lead, atau saat user menyebut tahap E, uji, proof, fork.
+description: "Tahap E — Pembuktian Fork Pin (moneyflow v2.0): pustaka Cumulative Normal-Path Fixtures (FlowFixtures) + dua metrik plafon C10-v2 (Observed Live Ceiling / Proven Potential Ceiling + victim seeding), batch maks 3 per Stream, kontrol positif, rerun forge gas IDENTIK, rantai (a)+(b)+(c) utuh (C11), tiga verdict terpisah. Dipakai saat menguji lead, atau saat user menyebut tahap E, uji, proof, fork."
 ---
 
 # Skill flow-e-test — Tahap E (Uji test)

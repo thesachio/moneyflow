@@ -1,6 +1,6 @@
 ---
 name: flow-f-compose
-description: Tahap F — Komposisi Inkremental Lintas-Stream (moneyflow v2.0). Dua titik pemicu bersyarat: inkremental seusai Tahap E satu Stream (menyentuh State-Bridge/brankas bersama) + sapuan akhir sebelum penutupan proyek; Lemma 4 Syarat tanpa fork ulang; pengecualian presisi = 1 kartu gabungan ke FlowFixtures Tahap E. Dipakai saat merangkai jalur ujung-ke-ujung, atau saat user menyebut tahap F, komposisi.
+description: "Tahap F — Komposisi Inkremental Lintas-Stream (moneyflow v2.0). Dua titik pemicu bersyarat: inkremental seusai Tahap E satu Stream (menyentuh State-Bridge/brankas bersama) + sapuan akhir sebelum penutupan proyek; Lemma 4 Syarat tanpa fork ulang; pengecualian presisi = 1 kartu gabungan ke FlowFixtures Tahap E. Dipakai saat merangkai jalur ujung-ke-ujung, atau saat user menyebut tahap F, komposisi."
 ---
 
 # Skill flow-f-compose — Tahap F (Komposisi)

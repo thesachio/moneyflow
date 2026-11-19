@@ -1,6 +1,6 @@
 ---
 name: flow-d-explore
-description: Tahap D — Eksplorasi per-Stream (moneyflow v2.0), dua gelombang: Gelombang 1 bebas/buta dengan 3 Lensa Fisika Nilai + SYMPTOM-TAGS; Gelombang 2 Symptom-Triggered Lazy Skill Router (maks 2-4 plugin). Kartu lead + invariant tiga lapis + INV-HBx, Gate D C10-v2 statis, label DIANALISIS wajib (C11). Dipakai saat memburu alur/Stream, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead.
+description: "Tahap D — Eksplorasi per-Stream (moneyflow v2.0), dua gelombang: Gelombang 1 bebas/buta dengan 3 Lensa Fisika Nilai + SYMPTOM-TAGS; Gelombang 2 Symptom-Triggered Lazy Skill Router (maks 2-4 plugin). Kartu lead + invariant tiga lapis + INV-HBx, Gate D C10-v2 statis, label DIANALISIS wajib (C11). Dipakai saat memburu alur/Stream, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead."
 ---
 
 # Skill flow-d-explore — Tahap D (Eksplorasi)
