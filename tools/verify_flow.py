@@ -345,7 +345,7 @@ def cmd_check_d(args):
                          f"{', '.join('(' + m + ')' for m in miss)}")
             if re.search(r"\bINV-(?:S|H|HB|J|F)x\b", chunk):
                 v.append(f"{cards.name} kartu '{cid}': masih memakai placeholder INV-?x, bukan ID nyata")
-            invs = set(re.findall(r"\bINV-[A-Za-z]+-?\d+\b", chunk))
+            invs = set(re.findall(r"\bINV-[A-Za-z]*-?\d+\b", chunk))
             if not invs:
                 v.append(f"{cards.name} kartu '{cid}': tanpa rujukan ID invariant INV- bernomor")
                 continue
