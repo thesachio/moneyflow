@@ -54,16 +54,17 @@ Mulai **hanya** dari nama proyek (+ tautan yang user beri, bila ada). Tiap butir
 | 5 | Website | tautan di docs | tautan di README repo | web search `<proyek> app` |
 | 6 | Docs | tautan di README | tautan di website | web search `<proyek> docs` |
 | 7 | Audit | halaman audit/security di docs | folder `audits/` di repo | web search `<proyek> audit report` (1 pencarian, 3 hasil teratas) |
-
-**Ekstraksi metadata audit (Post-Audit Hot-Zone, revisi 19 Nov 2026):** bila di dokumen laporan audit tercantum hash commit yang diaudit dan/atau daftar berkas cakupan (*in-scope files*), catat fakta mentahnya apa adanya di `INTEL.md`/`A02` sebagai `audited_commit` dan `audited_files_summary` — tanpa membaca atau merangkum isi opini temuan auditor lama (larangan ini mencegah bias jangkar pada Tahap D). Metadata ini dipakai Tahap B untuk penandaan `[DELTA]`/`[SCAR]`/`[SEAM]`. Bila metadata tidak tersedia, catat `audited_commit: TIDAK KETEMU` — Tahap B kemudian berjalan murni `B2a` tanpa tier.
 | 8 | Bugbounty | halaman bug bounty di docs | `SECURITY.md`/README repo | web search `<proyek> bug bounty` (1 pencarian) |
 | 9 | Severity | **diturunkan dari halaman bounty butir 8** | — | **tidak ada pencarian terpisah** |
+
+**Ekstraksi metadata audit (Post-Audit Hot-Zone, revisi 19 Nov 2026):** bila di dokumen laporan audit tercantum hash commit yang diaudit dan/atau daftar berkas cakupan (*in-scope files*), catat fakta mentahnya apa adanya di `INTEL.md`/`A02` sebagai `audited_commit` dan `audited_files_summary` — tanpa membaca atau merangkum isi opini temuan auditor lama (larangan ini mencegah bias jangkar pada Tahap D). Metadata ini dipakai Tahap B untuk penandaan `[DELTA]`/`[SCAR]`/`[SEAM]`. Bila metadata tidak tersedia, catat `audited_commit: TIDAK KETEMU` — Tahap B kemudian berjalan murni `B2a` tanpa tier.
 
 ### Aturan tangga yang sering dilanggar
 
 - **Butir 3 (stage)** di Tahap A = **klaim** docs/app/repo saja. Bukan verifikasi teknis. Konfirmasi teknis di Tahap B (B7).
 - **Butir 4 (repo)**: hanya pilih bila **jelas resmi** — org cocok dan ditaut dari docs. Beberapa kandidat tanpa kejelasan → `TIDAK KETEMU (ambigu)` + eskalasi. **JANGAN menebak URL dari nama proyek.**
 - **Butir 5 & 6**: URL ketemu tapi **tidak merespons** → **catat kodenya** (mis. `HTTP 403`), **bukan** `TIDAK KETEMU`. "Gagal diakses" ≠ "tidak ada".
+- **Butir 8 (bugbounty)**: selain URL, salin **daftar aset in-scope mentah** dari halaman program apa adanya — alamat kontrak per chain, nama kontrak, repo/commit yang disebut, dan daftar pengecualian/out-of-scope bila ada — ke `INTEL.md` sebagai `program_assets` dan `program_out_of_scope`. Ini salinan teks, bukan cek onchain; masih butir 8, bukan butir ke-10. Halaman program tidak memuat daftar aset → `program_assets: TIDAK ADA (sumber: <URL>)`.
 - **Butir 9**: bila bounty `TIDAK KETEMU`, severity ikut `TIDAK KETEMU`. Jangan cari terpisah, jangan karang angka.
 
 ## Tiga status (jangan dicampur)
@@ -121,5 +122,6 @@ Simpan **semua** kode status apa adanya (termasuk 403/429) — itu bukti, bukan 
 - [ ] stage dan repo keduanya `DITEMUKAN` (bila tidak → berhenti + eskalasi, bukan lanjut)
 - [ ] pin commit tercatat sebagai hash nyata; blok referensi ditandai `belum ditetapkan`
 - [ ] `A02` memuat tangga per butir + kode HTTP tiap URL + daftar docs Pre-0
+- [ ] `program_assets` dan `program_out_of_scope` tercatat (atau `TIDAK ADA` dengan sumber) bila butir 8 `DITEMUKAN`
 - [ ] nol `cast`/cek onchain di Tahap A
 - [ ] nol hipotesis kerentanan di INTEL
