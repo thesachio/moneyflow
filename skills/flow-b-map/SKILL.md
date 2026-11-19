@@ -29,11 +29,15 @@ Butuh konteks satu klaster/Stream saja → bukan Tahap B; kerjakan di giliran St
 
 ## Langkah 1 — B13 Scope lock (gerbang masuk; sebelum sensus)
 
-Tiga syarat, semuanya harus benar sebelum satu baris sensus ditulis:
+Empat syarat, semuanya harus benar sebelum satu baris sensus ditulis:
 
 1. **Daftar berkas cocok persis** inventaris kanonik — `diff` kosong antara daftar yang dipakai sensus dan daftar scope yang dikunci.
 2. **Commit terverifikasi** — `git rev-parse HEAD` pada repo target, dan `git status --porcelain` bersih (nol baris).
 3. **`contracts/` bersih** — tidak ada berkas build/artefak yang menyamar sebagai sumber.
+4. **Pemetaan tiga arah aset program ↔ alamat ↔ berkas** — dari `program_assets` di `INTEL.md` + berkas `deployments/` (atau setara) di repo target, buat tabel di `B01-SCOPE.md`:
+   `| Aset program | Chain | Alamat | Kontrak | Berkas repo (Path/File.ext) | Status |`
+   Status: `COCOK` / `ASET_TANPA_BERKAS` (alamat in-scope, sumbernya tidak ada di repo/commit pin) / `BERKAS_DI_LUAR_PROGRAM` (berkas ada di repo, tidak termasuk aset program) / `OUT_OF_SCOPE_PROGRAM` (masuk daftar pengecualian program).
+   Aturan: baris `ASET_TANPA_BERKAS` = eskalasi ke user sebelum sensus. Baris `BERKAS_DI_LUAR_PROGRAM` dan `OUT_OF_SCOPE_PROGRAM` tetap disensus (cakupan statis 100% tidak berubah), tapi Stream yang seluruh koridornya hanya berisi berkas berstatus itu dicatat di `B04` dan dikerjakan paling akhir. Bila `program_assets: TIDAK ADA`, syarat ke-4 dicatat `TIDAK BERLAKU (program tanpa daftar aset)`.
 
 Drift di luar scope **dicatat, tidak dihitung**. Bukti: simpan daftar scope (`scripts/out/scope-all.txt`) lalu bandingkan dengan daftar yang benar-benar diproses sensus.
 
@@ -232,7 +236,7 @@ Batasan jujur: cek penutupan tidak bisa menemukan item yang tidak ada di daftarn
 
 Semua ini ada dan bisa ditunjuk:
 
-- [ ] `B01-SCOPE.md` + scope lock tiga syarat lulus
+- [ ] `B01-SCOPE.md` + scope lock empat syarat lulus (termasuk tabel pemetaan tiga arah)
 - [ ] `B02-CENSUS-STATIC.md` + JSONL; kontrol positif **9/9**; nol mekanis terpecahkan; EP+VM(yes) dan EP+SM(state_mutator) dihitung; nol baris `no` melanggar B14-v2 (dicek `check-b`)
 - [ ] `B03-CENSUS-LIVE.md`; B7 ≤5 menit; blok referensi ditetapkan; kegagalan RPC tercatat
 - [ ] `B04-STREAMS-AND-CLUSTERS.md`; klaster 4 tipe + katalog Stream terurut B2a + Twin-Path Group + relasi kasar antar-klaster
