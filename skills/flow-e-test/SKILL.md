@@ -16,8 +16,28 @@ Skill ini memuat aturan dan format sampai Tahap E selesai. `methodology/aturan-a
 
 ## Langkah 1 — Fork live (C1, mengikat)
 
+- **Mode default: `FORK_LIVE_PIN`** — fork pada blok pin, lalu panggil **alamat deployed**. ABI mengikuti versi live; kalau ABI live berbeda dari HEAD, sesuaikan PoC ke ABI live.
+- `FORK_DEPLOYED_HEAD` adalah **pengecualian**, hanya dipakai dalam dua kasus: (a) membuktikan `PRE_LIVE_SCOPE`; (b) uji silang untuk `FIXED_IN_HEAD`.
 - Fork dibangun ke **kondisi live**: kontrak ter-deploy + state live pada **blok yang dipin**.
 - **PoC HEAD saja tidak cukup** bila live ≠ HEAD.
+
+### Paket reproduksi (wajib dilampirkan per temuan)
+
+Pengembang asli harus bisa langsung menjalankannya:
+- chain, `fork_block`, kebutuhan RPC archive;
+- alamat-alamat yang disentuh;
+- perintah forge lengkap (`forge test --fork-url $RPC --fork-block-number <pin> --match-test <nama> -vvvv`);
+- log `[PASS]`;
+- `caller_role: permissionless`;
+- `vm_store_used: false`, tanpa `deal` ke kontrak protokol;
+- `ceiling_usd` beserta sumber angkanya.
+
+### Prosedur `FIXED_IN_HEAD` (dua log wajib)
+
+- Log 1: PoC `[PASS]` di `FORK_LIVE_PIN`.
+- Log 2: PoC yang sama **gagal** pada `FORK_DEPLOYED_HEAD`.
+- Sertakan rujukan commit perbaikan, dicari dengan `git log -S "<potongan kode>" --oneline`.
+- Kalau perbaikannya tidak bisa ditunjuk ke commit tertentu, tulis `FIXED_IN_HEAD_UNATTRIBUTED`. Wadahnya tetap `08`.
 - Mekanisme penentu **wajib diuji ulang di fork live** bila fork-testable. Bila **tidak** fork-testable, catat keterbatasannya **eksplisit** (jangan diam-diam).
 - Pengecualian: proyek TESTNET/DEVNET — "live" = lingkungan itu sendiri.
 
@@ -67,7 +87,7 @@ Direktori `poc/FlowFixtures` (atau setara bahasa target):
 
 **Mode 1 (`Observed Live Ceiling`):** bila kontrak pada blok pin sudah menyimpan saldo/likuiditas `> 0`, jalankan rantai (a)+(b)+(c) langsung terhadap state blok pin dan catat nilai kerugian aktual dalam satuan aset & USD.
 
-**Mode 2 (`Proven Potential Ceiling`):** bila kontrak pada blok pin memiliki saldo/aktivitas `== 0` tetapi terbuka bagi operasi pengguna normal, langkah pertama PoC wajib mensimulasikan transaksi pengguna korban (`victim`) secara wajar lewat **entrypoint resmi** pada fork blok pin (*Victim Seeding* rasional sesuai Pernyataan #3 dan #4 `verify/VERDICT.md`), diikuti transaksi akun penguji tanpa hak istimewa (`attacker`) yang mengeksekusi rantai (a)+(b)+(c); lalu ukur selisih P&L bersih — wajib **>= $1**.
+**Mode 2 (`Proven Potential Ceiling`):** bila kontrak pada blok pin memiliki saldo/aktivitas `== 0` tetapi terbuka bagi operasi pengguna normal, langkah pertama PoC wajib mensimulasikan transaksi pengguna korban (`victim`) secara wajar lewat **entrypoint resmi** pada fork blok pin (*Victim Seeding* rasional sesuai Pernyataan #3 dan #4 `verify/VERDICT.md`), diikuti transaksi akun penguji tanpa hak istimewa (**pemanggil permissionless**) yang mengeksekusi rantai (a)+(b)+(c); lalu ukur selisih P&L bersih — wajib **>= $1**.
 
 ## Langkah 3 — Verifikasi parent atas bukti penentu (lantai bawah)
 
@@ -135,7 +155,7 @@ Ambang: potensi kerugian **≥ $1 = bukan debu** (kandidat sah, disimpan). Hanya
 - [ ] penarikan batch mengikuti urutan ketajaman struktural B2a-v2; berhenti saat `QUEUED == 0` dan `ACTIVE == 0`
 - [ ] maks 3 kartu per batch
 - [ ] tiap kartu: PoC + kontrol positif + P&L terukur + mode kegagalan
-- [ ] kedua metrik plafon C10-v2 diterapkan: `Observed Live Ceiling` (saldo > 0, langsung ke state blok pin) atau `Proven Potential Ceiling` (saldo == 0 tapi terbuka, victim seeding + attacker, P&L bersih >= $1)
+- [ ] kedua metrik plafon C10-v2 diterapkan: `Observed Live Ceiling` (saldo > 0, langsung ke state blok pin) atau `Proven Potential Ceiling` (saldo == 0 tapi terbuka, victim seeding + pemanggil permissionless, P&L bersih >= $1)
 - [ ] parent rerun forge; gas **IDENTIK**
 - [ ] jangkar diperiksa via `grep -n` (fungsi, bukan baris)
 - [ ] rantai (a)+(b)+(c) diuji utuh (C11); yang berhenti di satu fungsi = TIDAK KONKLUSIF

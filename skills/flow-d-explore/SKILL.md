@@ -186,7 +186,7 @@ Aturan wajib per invariant:
 
 1. pemicu **permissionless** (atau *unprivileged state poisoning* yang dieksekusi rutin oleh keeper normal);
 2. state prasyarat **reachable** lewat transaksi operasi normal — tanpa `vm.store`/role admin;
-3. lulus **B8 live-match** (atau dicatat jalur uji `FORK_DEPLOYED_HEAD` untuk pelaporan wadah `08` bila fitur belum live);
+3. lulus **B8 live-match (L1–L4)**. Jalur `FORK_DEPLOYED_HEAD` hanya boleh dipakai bila B8 membuktikan kontrak/fungsi koridor BELUM ter-deploy (`cast code` = 0x, atau fungsinya tidak ada di sumber deployed). Bukti itu wajib dilampirkan;
 4. rumus plafon potensial terukur **>= $1**.
 
 **Konsekuensi penting:** plafon live 0 **TIDAK** membuat lead DORMAN — nilai 0 di live hanya berarti pemicunya belum terjadi.

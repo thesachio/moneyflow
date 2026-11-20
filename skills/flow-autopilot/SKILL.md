@@ -76,8 +76,8 @@ Komposisi multi-stream akhir (bila ada siklus 3+ stream atau loop umpan-balik ni
 **STEP C-STREAM — petakan inventaris Stream.**
 Petakan `C<NN>-<STREAM_ID>-INVENTORY.md` menembus batas klaster sepanjang koridor aliran dana aktif (`Corridor-Bound Cross-Cluster` — boleh `1-hop peek` pada `State-Bridge`), perbarui `B05-LEDGER-SISA.md` dan `B07-STATE-BRIDGES.md`, lalu jalankan `python3 tools/verify_flow.py check-c audit/C<NN>-<STREAM_ID>-INVENTORY.md`. Verifikasi parent → checkpoint.
 
-**STEP B8-STREAM — verifikasi live-match Stream.**
-Verifikasi `deploy_parity` / kode live kontrak pada koridor Stream di blok pin (pakai ulang cache per rantai). Tidak live-match → tandai `TUNDA-LIVE` di `B05`, nol waktu eksekusi, kembali ke **STEP PROJECT**.
+**STEP B8-STREAM — verifikasi live-match Stream (L1–L4).**
+Verifikasi `deploy_parity` / kode live kontrak pada koridor Stream di blok pin (pakai ulang cache per rantai) sesuai empat syarat live-match: L1 Kode (sumber deployed per fungsi koridor, proxy via EIP-1967 @ blok pin; `KORIDOR_SAMA`/`KORIDOR_BEDA:<fungsi>`/`KORIDOR_TIDAK_TERBUKTI`), L2 Config (ADMIN-CONFIG dibaca dari storage @ pin sesuai LP-x; DEAD-CONFIG → DORMAN), L3 Payload (CALLER-INPUT dalam bentuk/batas live + 3–5 contoh tx nyata per entrypoint), L4 Target (uji ke alamat deployed di fork blok pin). Simpan ke `audit/notes/live-match-<STREAM>.md` (kolom: chain, fork_block, alamat proxy, alamat impl@pin, sumber_deployed, status koridor per fungsi, LP-x terbaca). Tidak live-match → tandai `TUNDA-LIVE` di `B05`, nol waktu eksekusi, kembali ke **STEP PROJECT**.
 
 **STEP D-WAVE1 — eksplorasi bebas murni.**
 Delegasikan dengan **`Stream Context Capsule`** murni tanpa katalog: **Tiga Lensa Fisika Nilai** + `1-hop peek` pada `B07` + *Twin-Path Diff* bila pasangan kembar sudah punya berkas `C`. Keluaran `D<NN>-<STREAM_ID>-WAVE1-BLIND.md`: `OBS`, `G`, `Q`, `SYMPTOM-TAGS` (semua berlabel `DIANALISIS`). Verifikasi parent → checkpoint.

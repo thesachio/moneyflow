@@ -104,6 +104,7 @@ class ParityReport:
     env_attempts: list[dict[str, str]] = field(default_factory=list)
     repo_ref: dict[str, Any] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
+    fork_block: str | None = None
     generated_at: str = ""
 
     def to_json(self) -> str:
@@ -236,7 +237,7 @@ def decode_ck256(data: str) -> list[str]:
 # --------------------------------------------------------------------------
 
 
-def strategy_registry_aptos(ep: str, addr: str, entrypoints: list[str], rep: ParityReport) -> None:
+def strategy_registry_aptos(ep: str, addr: str, entrypoints: list[str], rep: ParityReport, block: str | None = None) -> None:
     """Aptos: baca exposed_functions literal dari module ABI."""
     if "::" not in addr:
         rep.notes.append("Aptos butuh alamat berformat 0xADDR::module")
@@ -267,7 +268,7 @@ def strategy_registry_aptos(ep: str, addr: str, entrypoints: list[str], rep: Par
     rep.confidence = CONF_EXACT
 
 
-def strategy_registry_sui(ep: str, addr: str, entrypoints: list[str], rep: ParityReport) -> None:
+def strategy_registry_sui(ep: str, addr: str, entrypoints: list[str], rep: ParityReport, block: str | None = None) -> None:
     """
     Sui: baca daftar fungsi eksplisit dari MovePackage lewat GraphQL.
 
@@ -419,7 +420,7 @@ def strategy_registry_sui(ep: str, addr: str, entrypoints: list[str], rep: Parit
 # --------------------------------------------------------------------------
 
 
-def strategy_attestation_solana(ep: str, addr: str, entrypoints: list[str], rep: ParityReport) -> None:
+def strategy_attestation_solana(ep: str, addr: str, entrypoints: list[str], rep: ParityReport, block: str | None = None) -> None:
     """
     Solana: identitas deployment = sha256(bytecode) + slot + upgrade authority
     dari ProgramData. Entrypoint per-instruction (discriminator) TIDAK dapat
@@ -525,13 +526,13 @@ def resolve_evm_targets(address: str, rpcurl: str, rep: ParityReport) -> str:
     return target
 
 
-def probe_evm_call(rpcurl: str, target: str, sel: str) -> tuple[str, str]:
+def probe_evm_call(rpcurl: str, target: str, sel: str, block: str | None = None) -> tuple[str, str]:
     """Return (status, detail) dengan status: OK|REVERT_DATA|REVERT_EMPTY|RPC_FAIL."""
     payload = {
         "jsonrpc": "2.0",
         "id": 1,
         "method": "eth_call",
-        "params": [{"to": target, "data": "0x" + sel}, "latest"],
+        "params": [{"to": target, "data": "0x" + sel}, block if block is not None else "latest"],
     }
     for _ in range(2):
         ok, data = http_json(rpcurl, payload)
@@ -561,7 +562,7 @@ def probe_evm_call(rpcurl: str, target: str, sel: str) -> tuple[str, str]:
     return "RPC_FAIL", rep_detail
 
 
-def strategy_probe_evm(ep: str, addr: str, entrypoints: list[str], rep: ParityReport) -> None:
+def strategy_probe_evm(ep: str, addr: str, entrypoints: list[str], rep: ParityReport, block: str | None = None) -> None:
     target = resolve_evm_targets(addr, ep, rep)
 
     ok_code, code = cast("code", target, "--rpc-url", ep)
@@ -581,7 +582,7 @@ def strategy_probe_evm(ep: str, addr: str, entrypoints: list[str], rep: ParityRe
     disp = push4_selectors(code)
 
     # Kalibrasi negatif
-    neg_status, neg_detail = probe_evm_call(ep, target, NEGATIVE_SELECTOR)
+    neg_status, neg_detail = probe_evm_call(ep, target, NEGATIVE_SELECTOR, block)
     rep.probes.append(Probe("eth_call", target, neg_status == "OK", f"neg:{neg_status} {neg_detail[:60]}"))
     fallback_permissive = neg_status == "OK"
 
@@ -592,7 +593,7 @@ def strategy_probe_evm(ep: str, addr: str, entrypoints: list[str], rep: ParityRe
                 EntrypointResult(name=name, verdict="UNVERIFIABLE", evidence=["selector gagal dihitung"])
             )
             continue
-        status, detail = probe_evm_call(ep, target, sel)
+        status, detail = probe_evm_call(ep, target, sel, block)
         rep.probes.append(Probe("eth_call", target, status == "OK", f"{name}:{status}", str(detail)[:42]))
         in_disp = sel in disp
 
@@ -623,7 +624,7 @@ def strategy_probe_evm(ep: str, addr: str, entrypoints: list[str], rep: ParityRe
         rep.cycle = CYCLE_FULL
 
 
-def strategy_probe_ton(ep: str, addr: str, entrypoints: list[str], rep: ParityReport) -> None:
+def strategy_probe_ton(ep: str, addr: str, entrypoints: list[str], rep: ParityReport, block: str | None = None) -> None:
     """TON: runGetMethod. exit_code 0 = ada; 11 = ambigu (ada-tapi-salah ATAU tidak ada)."""
     base = ep.rstrip("/")
     # kontrak ada?
@@ -705,7 +706,7 @@ def strategies_available() -> list[str]:
     return sorted({k for k in STRATEGIES})
 
 
-def strategy_generic_explorer(ep: str, addr: str, entrypoints: list[str], rep: ParityReport) -> None:
+def strategy_generic_explorer(ep: str, addr: str, entrypoints: list[str], rep: ParityReport, block: str | None = None) -> None:
     """
     Paradigma GENERIC untuk rantai yang BELUM DIKENALI.
 
@@ -727,7 +728,7 @@ def strategy_generic_explorer(ep: str, addr: str, entrypoints: list[str], rep: P
 
     probes = [
         ("getAccountInfo", [addr, {"encoding": "base64"}]),
-        ("eth_getCode", [addr, "latest"]),
+        ("eth_getCode", [addr, block if block is not None else "latest"]),
         ("getAccount", [addr]),
         ("query_account", [addr]),
     ]
@@ -832,7 +833,7 @@ def _default_fn_for(par: str):
     }.get(par)
 
 
-def analyse(rep: ParityReport, ep: str, addr: str, entrypoints: list[str]) -> None:
+def analyse(rep: ParityReport, ep: str, addr: str, entrypoints: list[str], block: str | None = None) -> None:
     par = rep.paradigm.lower().strip()
 
     entry = STRATEGIES.get(par)
@@ -862,7 +863,7 @@ def analyse(rep: ParityReport, ep: str, addr: str, entrypoints: list[str]) -> No
             rep.notes.append(
                 f"Tidak ada implementasi spesifik untuk '{rep.paradigm}'; memakai generic"
             )
-    fn(ep, addr, entrypoints, rep)
+    fn(ep, addr, entrypoints, rep, block)
     # Strategi boleh menimpa confidence; kalau tidak, pakai default registry.
     if rep.confidence in ("", CONF_UNVERIFIABLE) and rep.entrypoints:
         rep.confidence = entry["confidence"]
@@ -926,6 +927,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--artifact", help="Path repo/artefak build yang diuji (opsional)")
     p.add_argument("--repo", help="Path repo git untuk info HEAD/tag")
     p.add_argument("--out", help="Tulis laporan JSON ke path ini")
+    p.add_argument("--block", help="Blok pin (desimal/hex): semua eth_call & eth_getCode memakai blok ini. Tanpa --block hasil tidak sah untuk Tahap G")
     p.add_argument("--plugin-dir", action="append", default=[], help="Folder plugin paradigma (bisa berkali-kali)")
     p.add_argument("--list-paradigms", action="store_true", help="Tampilkan paradigma terdaftar")
     p.add_argument("--selftest", action="store_true")
@@ -991,17 +993,20 @@ def main(argv: list[str]) -> int:
         )
         return 2
 
+    if not args.block:
+        print("TANPA PIN: hasil tidak sah untuk Tahap G", file=sys.stderr)
     rep = ParityReport(
         paradigm=args.paradigm,
         chain=args.chain,
         address=args.addr,
+        fork_block=args.block,
         generated_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     )
     rep.env_attempts.append({"endpoint": args.rpc, "result": "attempted"})
     if args.repo:
         rep.repo_ref = git_ref_info(args.repo)
 
-    analyse(rep, args.rpc, args.addr, eps)
+    analyse(rep, args.rpc, args.addr, eps, args.block)
 
     text = rep.to_json()
     if args.out:

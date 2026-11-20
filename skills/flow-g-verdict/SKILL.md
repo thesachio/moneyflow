@@ -19,7 +19,7 @@ Skill ini memuat aturan pengadilan sampai Tahap G selesai. `methodology/aturan-a
 | Wadah | Nama | Kriteria MASUK | Kriteria TIDAK boleh masuk |
 | :--- | :--- | :--- | :--- |
 | **09** | temuan terkonfirmasi | mekanisme **TERBUKTI** (C11: rantai (a)+(b)+(c) utuh, bukan satu fungsi) **DAN** kerugian bisa dibuktikan (C10/C10-v2: `Proven Potential Ceiling >= $1` dengan pemicu permissionless) **DAN** lolos eligibility | mekanisme cuma DIANALISIS; rantai berhenti di satu fungsi |
-| **08** | valid tapi tidak memenuhi syarat | mekanisme terbukti, tapi: out-of-scope · known issue · peran terpercaya/admin · debu < $1 | mekanisme **belum** terbukti (itu pelarian wadah) |
+| **08** | valid tapi tidak dilaporkan | mekanisme terbukti, tapi kelasnya salah satu: `PRE_LIVE_SCOPE` (kode belum di-deploy) · `FIXED_IN_HEAD (DUPLICATE_RISK)` · out-of-scope · known issue · peran terpercaya/admin · debu < $1. **Larangan:** temuan yang `[PASS]` di `FORK_LIVE_PIN` dengan `KORIDOR_SAMA` tidak boleh masuk 08 hanya karena HEAD lebih baru | mekanisme **belum** terbukti (itu pelarian wadah) |
 | **07** | butuh langkah lanjut | logika **belum terbantahkan**, butuh verifikasi lanjutan (state on-chain spesifik, komponen eksternal) | parkir tanpa usaha (LAZY_BAILOUT) |
 | **06** | terbantahkan / tidak valid | mekanisme **patah** saat pembuktian, atau di bawah $1 (DUST) | penolakan kertas tanpa bukti eksekusi |
 

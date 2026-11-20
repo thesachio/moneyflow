@@ -76,7 +76,7 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 | `HEAD_ONLY_PROVEN` | siklus P1, atau live tak tersedia | **`08`** `PRE_LIVE_SCOPE` |
 | `TESTNET_ONLY` | siklus P2 | **`08`** `TESTNET_ONLY` |
 | `ENTRYPOINT_RELOCATED` | entrypoint ada di handler/callee, bukan kontrak titik serang | **`08`** + catatan rute |
-| `REGRESSION_FIXED` | live lulus & PoC di HEAD gagal (**dua-arah**, dua log) | **`06`** `REJECTED_BY_DESIGN` |
+| `FIXED_IN_HEAD` | PoC `[PASS]` di objek live dan **GAGAL** di HEAD (**dua log**) | **`08`** `FIXED_IN_HEAD (DUPLICATE_RISK)` |
 | `ENV_ERROR` / `UNVERIFIABLE` | RPC gagal 2×, rate-limit, revert tak terklasifikasi | **`07`** `TOOL_BLOCKED` |
 | `IDENTITY_ONLY` | rantai belum dikenal / entrypoint tak terbaca otomatis | **`07`** `NEXT_EXPLORE` |
 
@@ -99,7 +99,7 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 
 - `ENTRYPOINT_ABSENT` **HANYA** sah bila seluruh metode gagal **dan** ada bukti tambahan (`git log -S` tidak menemukan fungsi tersebut). Untuk paradigma `generic`, `ABSENT` **DILARANG MUTLAK** — gunakan `IDENTITY_ONLY`.
 - `ENV_ERROR` **tidak pernah** menjadi bukti ketiadaan. Rate-limit TON, 403 RPC, atau timeout **bukan** "fungsi tidak ada".
-- `HEAD_FIXED` / `REGRESSION_FIXED` wajib disertai **dua log eksekusi** (live PASS + HEAD FAIL). Tanpa itu → `ENV_ERROR`.
+- `FIXED_IN_HEAD` wajib disertai **dua log eksekusi** (live PASS di `FORK_LIVE_PIN` + HEAD FAIL di `FORK_DEPLOYED_HEAD`) + rujukan commit perbaikan via `git log -S`; tanpa rujukan commit → `FIXED_IN_HEAD_UNATTRIBUTED`. Tanpa dua log → `ENV_ERROR`.
 - Setiap artefak wajib memuat `live_identity` terukur (mis. `accountId()` = `biconomy.nexus.1.3.3`, atau `sha256(ProgramData)` untuk Solana). **Tanpa identitas terukur, `LIVE_MATCH` ditolak.**
 
 ### 0.2c — GERBANG SCOPE FACTS (WAJIB SEBELUM MENETAPKAN SEVERITY & ELIGIBILITY)
@@ -202,11 +202,13 @@ grep -n "Severity Basis" <proyek>/audit/INTEL.md
 
 ### 0.4 — Bila `DEPLOYMENT_MATCH` ≠ `LIVE_MATCH` padahal alamat live tersedia
 
-**DILARANG** langsung menggeser ke `08`. Wajib:
+**Putaran wajib ini dimajukan ke Tahap E** — sebagai putaran verifikasi ulang yang wajib dijalankan **sebelum entri keluar dari Tahap E** (mengikat pelaksana Tahap E):
 
 1. Catat `RECHECK_REQUIRED` di artefak beserta `commit_ref` (HEAD) dan `nearest_tag`.
-2. Kembalikan entri ke Fase 3 untuk **satu putaran PoC kedua** yang menembak **objek live** (lewat Factory resmi, atau `vm.etch` bytecode live yang dicatat sebagai deviasi).
-3. Baru setelah putaran kedua itu, bila tetap tidak cocok, entri masuk `08` dengan `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`.
+2. Jalankan **satu putaran PoC kedua** yang menembak **objek live** (lewat Factory resmi, atau `vm.etch` bytecode live yang dicatat sebagai deviasi) — masih di Tahap E.
+3. Baru setelah putaran kedua itu, bila tetap tidak cocok, entri keluar dari Tahap E dan masuk `08` dengan `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`.
+
+**Tahap G hanya memeriksa bahwa putaran ini sudah dijalankan** (bukti `RECHECK_REQUIRED` + log putaran kedua di artefak); G tidak mengulang putarannya.
 
 ---
 
@@ -427,7 +429,7 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 | Tingkat | Jenis bukti | Boleh menopang |
 |---|---|---|
 | **A** | `Mode Uji: FORK_LIVE` terhadap bytecode produksi ter-deploy, tanpa cheatcode, output `[PASS]` | hingga `09` |
-| **A-HEAD** | `Mode Uji: FORK_DEPLOYED_HEAD` (kontrak repo di-deploy di atas fork mainnet nyata, `[PASS]`, tanpa cheatcode) | `09` (bila kode identik dgn live) atau `08` [`PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN`] (bila kode belum live) |
+| **A-HEAD** | `Mode Uji: FORK_DEPLOYED_HEAD` (kontrak repo di-deploy di atas fork mainnet nyata, `[PASS]`, tanpa cheatcode) | `09` hanya bila PoC juga `[PASS]` di `FORK_LIVE_PIN`, atau `KORIDOR_SAMA` terbukti (L1). Selain itu → `08` `PRE_LIVE_SCOPE` |
 | **B** | `Mode Uji: LOKAL` dengan kontrak asli (khusus non-EVM `cargo test`/`sui move test`/`@ton/sandbox`, atau rantai tanpa RPC) | hingga `09` (non-EVM kode cocok live) atau `08` (EVM tanpa RPC / HEAD-only) |
 | **C** | Bukti **struktural** (baca kode + `eth_call`), atau **mock pihak ketiga** | maksimal `07` (dengan `PERCOBAAN:`) atau `06` (untuk salah baca statis) |
 | **D** | Asumsi/hitungan kertas **tanpa eksekusi test** | **TIDAK SAH** untuk `09`/`08`/`07` maupun untuk `06` (`POC_FAILS`/`NEGATIVE_EV`/`DUST`) → memicu `PAPER_REFUTATION_DETECTED` |
