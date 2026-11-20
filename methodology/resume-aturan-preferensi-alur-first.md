@@ -143,7 +143,7 @@ workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
   sampai `QUEUED == 0` dan `ACTIVE == 0` sebelum pindah Stream. Artefak:
   `B07-STATE-BRIDGES.md` (Tahap B, diperbarui C/D; kolom `Bridge_ID |
   Storage_Var | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption |
-  Sync_Status`) dan `C00-SHARED-PRIMITIVES.md` (sekali di awal Tahap C).
+  Sync_Status | Waktu`; enum `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED`) dan `C00-SHARED-PRIMITIVES.md` (sekali di awal Tahap C).
 
 ## 5. Tahap B — yang wajib selesai (7 butir)
 

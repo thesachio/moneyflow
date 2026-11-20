@@ -14,8 +14,8 @@ Repo ini **bukan** proyek audit: tidak memuat kode kontrak target dan tidak memu
 | Tahap | Nama | Keluaran | Batas |
 | :--- | :--- | :--- | :--- |
 | A | INTEL | `INTEL.md` (brief 9 butir), `A01-INTEL.md`, `A02-INTEL-discovery.md` | Brief saja; **tanpa cek onchain**, tanpa verifikasi teknis (A2) |
-| B | Mapping | `B01-SCOPE` s.d. `B07`: incl. `B04-STREAMS-AND-CLUSTERS` & `B07-STATE-BRIDGES` | Tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
-| C | Stream-Slice Inventory | `C00-SHARED-PRIMITIVES` (sekali di awal) + `C<NN>-<STREAM_ID>-INVENTORY` per Stream | Deskriptif saja; menembus batas klaster sepanjang koridor aliran nilai (`Corridor-Bound Cross-Cluster`) |
+| B | Mapping | `B00-TOPOLOGY` (profil topologi + `IN-x`) lalu `B01`–`B07`: incl. `B04-STREAMS-AND-CLUSTERS` & `B07-STATE-BRIDGES` | Tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
+| C | Stream-Slice Inventory | `C00-SHARED-PRIMITIVES` (sekali di awal) + `C<NN>-<STREAM_ID>-INVENTORY` per Stream (memuat Lintasan per domain, Tabel Selisih Varian, `CY-x`) | Deskriptif saja; menembus batas klaster sepanjang koridor aliran nilai (`Corridor-Bound Cross-Cluster`); batas segmen 5 pemicu (B19) |
 | D | Eksplorasi | `D<NN>-<STREAM_ID>-WAVE1-BLIND`, `-WAVE2-QUEUED`, `-LEAD-CARDS` + invariant (`INV-Sx/Hx/HBx/Jx/Fx`) | Gelombang 1 bebas katalog (3 Lensa Fisika Nilai + Twin-Path Diff) lalu Gelombang 2 Symptom-Triggered Lazy Skill Loading (2-4 plugin relevan); tanpa PoC |
 | E | Pembuktian fork | `E<NN>-<STREAM_ID>-BATCH<M>-PROOF` + pustaka `FlowFixtures` kumulatif | Fork blok pin; rantai utuh (a)+(b)+(c); batch maks 3; standar C10-v2 (Permissionless + Observed Live Ceiling / Proven Potential Ceiling >= $1) |
 | F | Komposisi Inkremental (bersyarat) | `F<NN>-<COMPOSITION_ID>` + pembaruan `Sync_Status` di `B07` | Dua pemicu: inkremental seusai E per Stream (menyentuh State-Bridge/brankas bersama) + sapuan akhir multi-stream; Lemma 4 Syarat tanpa fork ulang |

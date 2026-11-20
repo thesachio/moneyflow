@@ -1,0 +1,168 @@
+---
+name: flow-d-explore
+description: Tahap D — Eksplorasi per-Stream (moneyflow v2.0), dua gelombang: Gelombang 1 bebas/buta dengan 3 Lensa Fisika Nilai + SYMPTOM-TAGS; Gelombang 2 Symptom-Triggered Lazy Skill Router (maks 2-4 plugin). Kartu lead + invariant tiga lapis + INV-HBx, Gate D C10-v2 statis, label DIANALISIS wajib (C11). Dipakai saat memburu alur/Stream, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead.
+---
+
+# Skill flow-d-explore — Tahap D (Eksplorasi)
+
+Tahap D = buruan **per Stream** (moneyflow v2.0). Unit round = **satu `Stream` ujung-ke-ujung (`STR-xx`)**, dua gelombang (bebas/buta → lazy skill augmentation).
+Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-alur-first.md` (seksi D — Tahap D, B12, C10, C11) hanya rujukan sengketa.
+
+## Prasyarat & Gerbang Awal B8 (tanpa ini D tidak mulai)
+
+- Unit kerja Tahap D = **satu `Stream` ujung-ke-ujung (`STR-xx`)** berdasarkan `C<NN>-<STREAM_ID>-INVENTORY.md` + `C00-SHARED-PRIMITIVES.md` + baris terkait di `B07-STATE-BRIDGES.md`.
+- Registry invariant (`B06`) sudah punya struktur penomoran.
+- **B8 Live-Match Stream** dijalankan sebelum Gelombang 1 dimulai: cek cepat atas kontrak pada koridor Stream aktif — **utamakan desain kode + `cast code`/view di blok pin**; DILARANG memindai log sejarah panjang (pindai log = verifikator terakhir, Tahap G/sapuan akhir). Bila kontrak target belum live-match: masukkan Stream ke `TUNDA-LIVE` di `B05-LEDGER-SISA.md` dan **hentikan putaran Stream tersebut** (nol waktu eksekusi).
+
+## Gelombang 1 — Eksplorasi Bebas Murni (Tanpa Katalog)
+
+Bekal: inventaris Stream aktif (`C<NN>-<STREAM_ID>-INVENTORY.md`), `C00-SHARED-PRIMITIVES.md`, baris `B07-STATE-BRIDGES.md` yang bersinggungan, premis parent.
+
+**LARANGAN MUTLAK:**
+
+- membuka berkas `_ROUTER.md` mana pun atau berkas plugin (`M-*`, `AF-*`, `DOM-*`, `POV-*`, `CHAIN-*`)
+- memakai laporan audit lama sebagai sumber hipotesis
+- (dihapus dari versi lama) larangan membaca fungsi lintas-klaster **apabila fungsi itu berada di dalam koridor Stream aktif** — Aturan Koridor Stream tetap mengikat: dilarang melebar horizontal ke luar garis aliran.
+
+Ikuti kode sepanjang `S1 -> H1 -> S2 -> Sn` berikut rentetan handoffnya dengan **Tiga Lensa Fisika Nilai**:
+
+**Lensa 1 (Konservasi Simpul & Akuntansi):** lacak setiap satuan nilai dari `Ingress` hingga `Egress`. Uji apakah pada setiap percabangan (`Fx`) berlaku `total_keluaran + fee == masukan`, dan pada setiap penggabungan/klaim (`Jx`) penanda state mengunci konsumsi tepat satu kali — tanpa celah klaim ulang, pencetakan hak berlebih, atau saldo mengendap permanen.
+
+**Lensa 2 (Adu Kontrak Handoff & State-Bridge):** adu kolom `Jaminan Faktual Produsen` melawan `Asumsi Faktual Konsumen` pada setiap `H1..Hn-1`. Bila Stream menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **`1-hop peek`** diizinkan (baca tepat satu lapis fungsi pasangan penulis/pembaca di stream seberang) agar ketidaksinkronan skala desimal, urutan pembaruan state, atau nilai basi langsung tertangkap selagi konteks panas.
+
+**Lensa 3 (Twin-Path Differential — bila Stream punya pasangan di `Twin-Path Group` pada `B04` yang sudah punya inventaris `C`):** sandingkan tabel Handoff, Simpul, urutan pembaruan state, dan arah pembulatan Stream aktif terhadap Stream kembarnya; catat setiap asimetri yang tidak dijelaskan oleh perbedaan rumus dasar.
+
+Keluaran wajib Gelombang 1 — `D<NN>-<STREAM_ID>-WAVE1-BLIND.md`, seluruhnya berlabel `DIANALISIS`:
+
+| Label | Arti |
+| :--- | :--- |
+| `OBS` | observasi anomali kode bernomor `Path/File.ext:Lxx-Lyy` (fakta kode, belum jalur) |
+| `G` | jalur yang terbukti tertutup oleh penjaga kode eksak `Path/File.ext:Lxx-Lyy` |
+| `Q` | pertanyaan mekanis tajam / celah asumsi yang harus dipastikan di Gelombang 2 |
+| `SYMPTOM-TAGS` | daftar tag gejala faktual yang ditemukan di kode Stream aktif untuk memicu pemuatan malas di Gelombang 2 |
+
+## Gelombang 2 — Symptom-Triggered Lazy Skill Augmentation
+
+Silang empat hal:
+
+1. **Inversi handoff / State-Bridge** — patahkan jaminan produsen / asumsi konsumen dari `C<NN>`; lengkapi sisi pembaca `HB-x` di `B07`.
+2. **Konservasi** — keluaran total vs masukan di tiap simpul fork/join.
+3. **Jejak event live** — enumerasi independen, bukan cara kerja utama (pindai log = verifikator terakhir).
+4. **Plugin malas berdasarkan gejala** — LIHAT TABEL DI BAWAH.
+
+**LARANGAN MUAT BORONGAN:** dilarang memuat seluruh katalog 52 plugin. Koordinator/pekerja hanya boleh memuat **maksimal 2 sampai 4 berkas plugin spesifik** yang cocok dengan `SYMPTOM-TAGS` dari Gelombang 1 (ditambah maksimal 1 berkas `CHAIN-*` sesuai arsitektur rantai target dan maksimal 1 berkas `DOM-*` sesuai domain protokol bila relevan).
+
+### Lazy Skill Router (tabel pemetaan gejala -> plugin)
+
+Lokasi nyata berkas plugin (rujuk path berikut saat memuat):
+- `<AF-*>` : `methodology/attack-forms/`
+- `<CHAIN-*>` : `references/chains/`
+- `<M-*>` : `references/methods/`
+- `<POV-*>` : `references/pov/`
+- `<DOM-*>` : `methodology/domains/`
+
+| Gejala di kode (dari `SYMPTOM-TAGS`) | Plugin yang dimuat |
+| :--- | :--- |
+| pembagian integer, konversi share/asset, pembulatan biaya, pemecahan transaksi | `AF-02-precision-slicing-dust-splitting.md`, `POV-MATH-02-inverse-rounding-fee-truncation.md`, `M-007-metamorphic-split-vs-bulk-asymmetry.md`, `CHAIN-rounding-amplification-drain.md` |
+| pool/vault baru, saldo awal nol, donasi langsung, manipulasi batas pertama/terakhir | `AF-01-flash-liquidity-donation-inflation.md`, `AF-03-boundary-zero-first-last-manipulation.md` |
+| indeks akrual, snapshot distribusi, pencatatan utang/imbal hasil lintas waktu | `POV-MATH-01-accrual-index-desync.md`, `M-006-stale-snapshot-aliasing.md`, `CHAIN-shared-state-desync.md` |
+| panggilan eksternal di tengah fungsi, callback/hook, subcall, multicall | `AF-04-reentrancy-callback-cpi-interleaving.md`, `POV-CALL-01-state-desync-control-handoff.md`, `POV-CALL-02-subcall-state-divergence.md`, `POV-EVM-01-multicall-context-reuse.md`, `M-008-caller-callee-seam.md`, `CHAIN-reentrancy-valuation.md` |
+| pemisahan dua transaksi (`request -> execute`), antrean publik, relayer/keeper, urutan state bersama | `AF-05-shared-state-ordering-sandwich.md`, `AF-09-asymmetric-griefing-queue-bricking.md`, `AF-10-offchain-relayer-desync-arbitrage.md`, `M-009-suspended-lifecycle-state.md`, `POV-relayer-mev.md` |
+| pembacaan harga/valuasi, likuidasi, batas jaminan | `AF-06-oracle-price-liquidation-cascade.md`, `POV-DEFI-01-self-liquidation-bad-debt.md`, `POV-DEFI-02-valuation-source-execution-sink.md`, `CHAIN-flash-oracle-liquidation.md` |
+| tanda tangan, bukti Merkle, otorisasi objek/kapabilitas, status pasca-upgrade | `AF-07-account-object-capability-spoofing.md`, `AF-08-signature-proof-replay-malleability.md`, `M-010-live-residual-state-post-upgrade-drift.md`, `CHAIN-offchain-sign-onchain-mutate.md` |
+
+**Anti-anchoring tetap mutlak:** bila anomali dari Gelombang 1 tidak cocok dengan plugin mana pun, beri label `[NOVEL / NO-CATALOG]`; **dilarang keras menggugurkan kandidat karena tidak ada di katalog**. Temuan di luar katalog = kandidat plugin baru.
+
+Keluaran Gelombang 2 — `D<NN>-<STREAM_ID>-WAVE2-QUEUED.md`: kandidat `QUEUED` (terurut ketajaman struktural, lihat di bawah) + `DORMAN` (hanya bila gagal Gate D C10-v2, dengan syarat buka-ulang konkret) + disposisi `Q`/SYMPTOM-TAGS.
+
+### Urutan QUEUED menuju Tahap E (B2a-v2 Lapis 2 — ketajaman struktural)
+
+Urutkan kartu di dalam Stream aktif menurut ketajaman struktural:
+
+1. **`INV-Jx` / `INV-Fx`** — kegagalan konservasi simpul fork/join atau komposisi multi-segmen;
+2. **`INV-Hx` / `INV-HBx`** — patahan kontrak handoff atau ketidaksinkronan `State-Bridge`;
+3. **`INV-Sx`** — anomali lokal satu segmen, urut `S1 -> Sn`.
+
+Urutan **antar-Stream** tetap B2a (pintu masuk pertama kali). EV live tidak dipakai sebagai penentu urutan; boleh dicatat sebagai data pendukung.
+
+> Catatan jujur: label `P1–P5` yang dipakai di beberapa berkas adalah kosakata warisan katalog dan **tidak punya definisi di methodology repo ini**. Jangan mengarang definisinya. Kalau user meminta label prioritas, minta definisinya lebih dulu.
+
+## Kartu lead (C11) + Invariant Tiga Lapis + State-Bridge (B12)
+
+### Kartu lead (1:1 dari QUEUED)
+
+Tiap kartu **wajib punya klaim finansial sendiri** — bukan "ini mencurigakan", tapi "kalau ini pecah, X unit nilai berpindah dari A ke B".
+
+**C11 mengikat bentuk kartu:** kartu merumuskan rantai **(a)+(b)+(c)** sebagai **satu rantai** yang akan diuji utuh di Tahap E:
+
+- (a) pelanggaran invariant pada `File:Lxx-Lyy`;
+- (b) jalur rambatan antar-fungsi/segmen menuju perubahan hak/saldo;
+- (c) rumus plafon kerugian finansial >= $1 (angka, bukan perkiraan).
+
+Kartu yang hanya berhenti di (a) = **HIPOTESIS**, bukan kandidat uji.
+
+### Invariant tiga lapis
+
+| Lapis | ID | Cakupan |
+| :--- | :--- | :--- |
+| L1 | `INV-Sx` | di dalam segmen |
+| L2 | `INV-Hx`, `INV-Jx`, `INV-HBx` | di handoff, di simpul, dan di State-Bridge |
+| L3 | `INV-Fx` | ujung-ke-ujung / komposisi |
+
+**Subtipe `INV-HBx` (State-Bridge):** mendampingi `INV-Hx` dan `INV-Jx` pada Lapis L2; mencatat invarian sinkronisasi atas variabel storage yang ditulis satu Stream dan dibaca Stream lain secara asinkron (dari `B07-STATE-BRIDGES.md`, kolom `Writer_Stream_&_Guarantee` vs `Reader_Stream_&_Assumption`). Satu penomoran global di `B06-REGISTRY-INVARIANT.md`.
+
+Aturan wajib per invariant:
+
+- **Wajib mencantumkan sumbernya**: field kontrak handoff, atau baris `docs`/NatSpec. **Bukan** perasaan agen.
+- **Wajib punya akibat finansial bila pecah** — invariant tanpa akibat finansial bukan invariant, itu catatan.
+- Cek **testability** dicatat saat perumusan: fork apa, data live apa; dilabeli bila tidak bisa diuji.
+- Registry invariant **satu penomoran global** (`B06`), diisi mulai Tahap D.
+
+## Gate D (C10-v2, statis) — gerbang masuk Tahap E
+
+**Gate D diuji statis di akhir Gelombang 2, SEBELUM PoC Tahap E; eksekusi fork adalah verifikasi Gate E di Tahap E.** Kandidat masuk `QUEUED` menuju Tahap E bila secara desain kode + bacaan state blok pin terbukti:
+
+1. pemicu **permissionless** (atau *unprivileged state poisoning* yang dieksekusi rutin oleh keeper normal);
+2. state prasyarat **reachable** lewat transaksi operasi normal — tanpa `vm.store`/role admin;
+3. lulus **B8 live-match** (atau dicatat jalur uji `FORK_DEPLOYED_HEAD` untuk pelaporan wadah `08` bila fitur belum live);
+4. rumus plafon potensial terukur **>= $1**.
+
+**Konsekuensi penting:** plafon live 0 **TIDAK** membuat lead DORMAN — nilai 0 di live hanya berarti pemicunya belum terjadi.
+
+`DORMAN` **hanya** untuk fitur live yang sedang dikunci saklar konfigurasi admin aktif (`paused`, `cap == 0` admin), wajib disertai **syarat buka-ulang konkret** (mis. "buka bila saklar X diangkat", "buka bila parameter Y diubah").
+
+## C11 — gelombang 1 dan 2 TIDAK memberi verdict TERBUKTI
+
+Konsekuensi yang sering dilanggar:
+
+- Gelombang 1/2 **tidak boleh** menyimpulkan `TERBUKTI`.
+- Tiap observasi/jawaban dilabeli **`DIANALISIS`**.
+- Wajib mencatat **alur terkait apa yang masih kurang** menuju kerugian terukur.
+- `TERBUKTI` hanya boleh datang dari Tahap E yang menguji rantai (a)+(b)+(c) utuh.
+
+## Aturan mengikat lain
+
+- **Bahasa brief: verifikasi invariant, bukan bahasa serangan.** Brief Tahap E memakai bahasa verifikasi.
+- **Tugas agen dibatasi KORIDOR STREAM, bukan klaster** — wajib menembus batas klaster sepanjang koridor Stream aktif (Aturan Koridor Stream, `Corridor-Bound Cross-Cluster`); dilarang melebar horizontal ke luar garis aliran nilai.
+- **Deep-run per jalur**: satu perintah berdiri hulu→hilir sampai verdict per lead, tanpa tap antar langkah.
+- **`/stop` mencabut otorisasi seketika** — hentikan subagent, tulis nol berkas.
+
+## Keluaran
+
+- `D<NN>-<STREAM_ID>-WAVE1-BLIND.md` — OBS / G / Q / SYMPTOM-TAGS, semua berlabel `DIANALISIS`.
+- `D<NN>-<STREAM_ID>-WAVE2-QUEUED.md` — QUEUED terurut ketajaman struktural + DORMAN (dengan syarat buka-ulang) + disposisi OBS/Q.
+- `D<NN>-<STREAM_ID>-LEAD-CARDS.md` — kartu 1:1 dengan rantai (a)+(b)+(c) + klaim finansial >= $1.
+- Registry invariant (`B06-REGISTRY-INVARIANT.md`) terisi dengan sumber tiap invariant (termasuk `INV-HBx`).
+
+## Definition of done Tahap D (per Stream)
+
+- [ ] B8 Live-Match Stream lulus (atau Stream masuk `TUNDA-LIVE` di `B05`, nol waktu eksekusi)
+- [ ] gelombang 1 dijalankan **tanpa** membuka katalog/_ROUTER/plugin/laporan audit lama
+- [ ] Tiga Lensa dijalankan: konservasi simpul, adu handoff+State-Bridge (1-hop peek bila perlu), Twin-Path bila ada
+- [ ] gelombang 2 memuat maks 2-4 plugin via Lazy Skill Router; 1 CHAIN-\* dan 1 DOM-\* bila relevan
+- [ ] tiap QUEUED punya kartu lead dengan rantai (a)+(b)+(c) dan rumus plafon >= $1
+- [ ] tiap invariant punya sumber (field handoff/state-bridge atau docs/NatSpec) + akibat finansial + catatan fork-testability
+- [ ] Gate D C10-v2 diuji untuk tiap kandidat; DORMAN hanya saklar admin aktif, dengan syarat buka-ulang
+- [ ] seluruh OBS dan Q habis terdisposisi (QUEUED / DORMAN / G dengan jangkar penjaga kode eksak) — anti-kuota: tidak ada target jumlah
+- [ ] nol verdict `TERBUKTI` dari gelombang 1/2; semua berlabel `DIANALISIS`
+- [ ] nol PoC (itu Tahap E)

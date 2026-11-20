@@ -192,16 +192,24 @@ def cmd_check_b(args):
         if not (ad / name).is_file():
             v.append(f"artefak Tahap B hilang: {name}")
 
+    # ---- v2.1: B00-TOPOLOGY wajib (proyek lama boleh ditandai LEGACY-v2.0)
+    if not (ad / "B00-TOPOLOGY.md").is_file() and not _is_legacy(ad):
+        v.append("B00-TOPOLOGY.md hilang (v2.1 B0) — atau tandai proyek lama dengan LEGACY-v2.0")
+
     # ---- sensus statis JSONL (14 kunci spesifikasi flow-b-map)
     JSONL_FIELDS = [
         "file", "contract", "function", "line", "end_line", "visibility",
         "mutability", "payable", "entrypoint", "value_moves", "mechanisms",
         "events_emitted", "external_calls", "notes",
     ]
-    jsonl_files = sorted(ad.glob("*.jsonl"))
+    # v2.1: hanya berkas SENSUS yang divalidasi; ledger/seed/artefak lain dikecualikan by-name
+    NON_CENSUS = ("b05-ledger", "ledger-seed", "b05-", "delta-", "scar-", "oz-audit")
+    jsonl_files = [f for f in sorted(ad.glob("*.jsonl"))
+                   if not any(k in f.name for k in NON_CENSUS)]
     out_dir = ad / "scripts" / "out"
     if out_dir.is_dir():
-        jsonl_files += sorted(out_dir.glob("*.jsonl"))
+        jsonl_files += [f for f in sorted(out_dir.glob("*.jsonl"))
+                        if not any(k in f.name for k in NON_CENSUS)]
     if not jsonl_files:
         v.append("tidak ada berkas *.jsonl sensus statis di audit_dir (cari juga scripts/out/)")
     for jf in jsonl_files:
@@ -466,6 +474,89 @@ def cmd_check_final(args):
 # 5. Utilistik pelaporan
 # ---------------------------------------------------------------------------
 
+
+LEGACY_MARKER = "LEGACY-v2.0"
+MODES = ("TUNGGAL", "BERINSTANS", "MULTI-DOMAIN")
+
+
+def _is_legacy(ad):
+    """Proyek lama (pra-v2.1) boleh ditandai LEGACY-v2.0 agar gerbang baru tidak memblokir."""
+    if (ad / LEGACY_MARKER).is_file():
+        return True
+    for name in ("B01-SCOPE.md", "B05-LEDGER-SISA.md", "README.md"):
+        f = ad / name
+        if not f.is_file():
+            continue
+        txt, _err = _read(f)
+        if txt and LEGACY_MARKER in txt:
+            return True
+    return False
+
+
+def cmd_check_b0(args):
+    """check-b0 <audit_dir> — gerbang v2.1: profil topologi, IN-x, domain, varian, lintasan."""
+    v = []
+    ad = Path(args.audit_dir)
+    if not ad.is_dir():
+        print(f"GAGAL check-b0: direktori {ad} tidak ada")
+        return 1
+
+    topo = ad / "B00-TOPOLOGY.md"
+    if not topo.is_file():
+        if _is_legacy(ad):
+            print(f"LEWATI check-b0: proyek ditandai {LEGACY_MARKER} (tanpa B00-TOPOLOGY.md)")
+            return 0
+        v.append("B00-TOPOLOGY.md hilang (v2.1 B0) — atau tandai proyek lama dengan LEGACY-v2.0")
+        _report("check-b0", str(ad), v)
+        return 1
+
+    t, terr = _read(topo)
+    if t is None:
+        v.append(f"B00-TOPOLOGY.md tidak bisa dibaca: {terr}")
+        _report("check-b0", str(topo), v)
+        return 1
+    n_lazy, lazy_hits = scan_lazy_tokens_wide(t)
+    if n_lazy:
+        for hit in lazy_hits:
+            v.append(f"B00-TOPOLOGY.md: token kompresi malas [{hit}]")
+
+    mode = None
+    for m in MODES:
+        if re.search(rf"\b{m}\b", t):
+            mode = m
+            break
+    if not mode:
+        v.append("B00-TOPOLOGY.md: mode topologi tidak dinyatakan (TUNGGAL / BERINSTANS / MULTI-DOMAIN)")
+
+    for i in range(1, 7):
+        if not re.search(rf"IN-{i}\b", t):
+            v.append(f"B00-TOPOLOGY.md: kelas ingress IN-{i} tidak dicek (B17 — wajib ADA/TIDAK ADA + alasan)")
+
+    if mode == "BERINSTANS":
+        if "Selisih Varian" not in t:
+            v.append("B00-TOPOLOGY.md: mode BERINSTANS tanpa Tabel Selisih Varian (B21)")
+        else:
+            for tok in ("TIDAK-DIBACA", "BEDA-KODE", "SAMA"):
+                if tok not in t:
+                    v.append(f"Tabel Selisih Varian: enum {tok} tidak muncul (B21)")
+
+    if mode == "MULTI-DOMAIN":
+        if not re.search(r"LINT-\d+", t):
+            v.append("B00-TOPOLOGY.md: mode MULTI-DOMAIN tanpa daftar Lintasan LINT-xx (B20)")
+
+    b03 = ad / "B03-CENSUS-LIVE.md"
+    if b03.is_file():
+        b3, _e3 = _read(b03)
+        b3 = b3 or ""
+        if not re.search(r"\|\s*domain\s*\|", b3, re.I) and "domain" not in b3.lower():
+            v.append("B03-CENSUS-LIVE.md: kolom `domain` tidak ada (B0 aturan 2)")
+    else:
+        v.append("B03-CENSUS-LIVE.md hilang — kolom domain tidak bisa diverifikasi")
+
+    _report("check-b0", str(topo), v)
+    return 0 if not v else 1
+
+
 def _once(v, msg):
     if msg not in v:
         v.append(msg)
@@ -514,6 +605,11 @@ def main():
     p.add_argument("file")
     p.add_argument("--repo")
     p.set_defaults(func=cmd_check_staging)
+
+    p = sub.add_parser("check-b0", help="gerbang v2.1: profil topologi B00 + IN-x + domain + varian + lintasan")
+    p.add_argument("audit_dir")
+    p.add_argument("--repo")
+    p.set_defaults(func=cmd_check_b0)
 
     p = sub.add_parser("check-b", help="artefak Tahap B + sensus statis JSONL")
     p.add_argument("audit_dir")

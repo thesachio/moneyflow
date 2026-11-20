@@ -35,7 +35,7 @@ A. Sekali, untuk seluruh protokol (bagian depan):
    diputus 22:33 WIB 16 Nov 2026.)
 5. B07-STATE-BRIDGES.md — seed tabel State-Bridge antar-Stream
    (kolom: `Bridge_ID | Storage_Var | Writer_Stream_&_Guarantee |
-   Reader_Stream_&_Assumption | Sync_Status`); diperbarui di C/D.
+   Reader_Stream_&_Assumption | Sync_Status | Waktu`); diperbarui di C/D.
 6. Ledger sisa (B10) — seed: entrypoint belum masuk alur, handoff
    terbuka, Stream belum dikerjakan.
 7. Registry invariant (B3) — struktur + penomoran (kosong; diisi
@@ -377,7 +377,7 @@ yang wajib selesai' di aturan-alur-first.md.
   verifikasi ditunda ke B8), batasan RPC, koreksi).
 - `B07-STATE-BRIDGES.md` (moneyflow v2.0) — tabel State-Bridge
   antar-Stream: `Bridge_ID | Storage_Var | Writer_Stream_&_Guarantee |
-  Reader_Stream_&_Assumption | Sync_Status`.
+  Reader_Stream_&_Assumption | Sync_Status | Waktu`.
 - `notes/staging-G01..G10-*.md` — staging per kelompok (baris JSON
   per fungsi) + `notes/staging-synthesis.md`.
 - `notes/clusters-draft.md` — draf klaster + ledger sisa benih

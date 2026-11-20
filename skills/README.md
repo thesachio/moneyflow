@@ -8,7 +8,9 @@
 - `flow-c-inventory/` — Tahap C: Stream-Slice Inventory — `C00-SHARED-PRIMITIVES` sekali di awal + `C<NN>-<STREAM_ID>-INVENTORY` per Stream, menembus batas klaster sepanjang koridor aliran nilai (`Corridor-Bound Cross-Cluster`).
 - `flow-d-explore/` — Tahap D: eksplorasi per Stream — Gelombang 1 bebas katalog (3 Lensa Fisika Nilai + Twin-Path Diff), Gelombang 2 Symptom-Triggered Lazy Skill Augmentation (maks 2-4 plugin via Lazy Skill Router), kartu lead (a)+(b)+(c), Gate D C10-v2.
 - `flow-e-test/` — Tahap E: pembuktian fork blok pin — pustaka kumulatif `FlowFixtures`, dua metrik plafon (`Observed Live Ceiling` / `Proven Potential Ceiling` + victim seeding), plafon wajib `>= $1`, batch maks 3.
-- `flow-f-compose/` — Tahap F: komposisi inkremental lintas-Stream (pemicu seusai E per Stream + sapuan akhir), Lemma 4 Syarat, pembaruan `Sync_Status` di `B07`.
+- `flow-f-compose/` — Tahap F: komposisi inkremental lintas-Stream (pemicu seusai E per Stream + sapuan akhir), Lemma 4 Syarat, pembaruan `Sync_Status` di `B07` (enum `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED` + kolom `Waktu`).
+
+**moneyflow v2.1:** Tahap B kini dimulai dari `B00-TOPOLOGY` (profil topologi + `IN-x`); Tahap C memuat Lintasan (`LINT-xx`), Tabel Selisih Varian, dan `CY-x`. Gerbang baru: `verify_flow.py check-b0`.
 - `flow-g-verdict/` — Tahap G: triage per-Stream ke wadah `06/07/08/09` + rekapitulasi akhir; kedua metrik plafon transparan pada verdict dampak.
 - `flow-autopilot/` — orkestrator full-autopilot Stream-First (mesin status dua lapis Lapis Proyek + Lapis Stream, `Stream Context Capsule`, ekspansi dinamis `STR` baru dari sisa ledger; `/stop` mencabut otorisasi seketika).
 
