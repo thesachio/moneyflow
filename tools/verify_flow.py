@@ -287,6 +287,16 @@ def cmd_check_c(args):
     fname = Path(args.file).name
     is_stream = re.match(r"^C\d{2,}-.*-INVENTORY\.md$", fname) and not fname.startswith("C00-")
     if is_stream:
+        # ---- v2.1 (A04): inventaris per-Lintasan wajib 9 bagian (dilewati utk LEGACY-v2.0)
+        parent = Path(args.file).parent
+        legacy = _is_legacy(parent)
+        if not legacy:
+            SECTIONS = ("Identitas Lintasan", "Segmen", "Titik Serah Kendali",
+                        "Kontrak Handoff", "Simpul", "State-Bridge",
+                        "Tabel Selisih Varian", "Lembar Parameter Live", "Rekonsiliasi Ledger")
+            for i, name in enumerate(SECTIONS, start=1):
+                if not re.search(rf"^#+\s*Bagian\s*{i}\b", text, re.M):
+                    v.append(f"bagian {i} ({name}) tidak ada — format v2.1 wajib 9 bagian (A04)")
         # --- hitung segmen S1..Sn unik yang DIDEFINISIKAN (bukan disebut)
         seg_defs = set(re.findall(r"^\s*\|?\s*(?:\*\*)?(S\d{1,2})(?:\*\*)?\s*(?:\||:|- )", text, re.M))
         n = len(seg_defs)
