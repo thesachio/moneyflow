@@ -196,11 +196,16 @@ def cmd_check_b(args):
     if not (ad / "B00-TOPOLOGY.md").is_file() and not _is_legacy(ad):
         v.append("B00-TOPOLOGY.md hilang (v2.1 B0) — atau tandai proyek lama dengan LEGACY-v2.0")
 
-    # ---- sensus statis JSONL (14 kunci spesifikasi flow-b-map)
-    JSONL_FIELDS = [
+    # ---- sensus statis JSONL
+    # v2.0 (LEGACY): 14 kunci. v2.1 (A03): 18 kunci (+modifiers, storage_writes,
+    # ast_hint, domain_variant).
+    JSONL_FIELDS_V20 = [
         "file", "contract", "function", "line", "end_line", "visibility",
         "mutability", "payable", "entrypoint", "value_moves", "mechanisms",
         "events_emitted", "external_calls", "notes",
+    ]
+    JSONL_FIELDS = JSONL_FIELDS_V20 if _is_legacy(ad) else JSONL_FIELDS_V20 + [
+        "modifiers", "storage_writes", "ast_hint", "domain_variant",
     ]
     # v2.1: hanya berkas SENSUS yang divalidasi; ledger/seed/artefak lain dikecualikan by-name
     NON_CENSUS = ("b05-ledger", "ledger-seed", "b05-", "delta-", "scar-", "oz-audit")
@@ -528,6 +533,13 @@ def cmd_check_b0(args):
             break
     if not mode:
         v.append("B00-TOPOLOGY.md: mode topologi tidak dinyatakan (TUNGGAL / BERINSTANS / MULTI-DOMAIN)")
+
+    # B0 v2.1 (A03): kelas aset baku — minimal 3 token muncul (boleh MUNGKIN)
+    ASSET_CLASSES = ("NATIVE", "WRAPPED_NATIVE", "ERC20_STD", "FEE_ON_TRANSFER",
+                     "REBASING", "HOOK_TOKEN", "DECIMALS", "NON_EVM_ASSET")
+    hits = [c for c in ASSET_CLASSES if c in t.upper()]
+    if len(hits) < 3:
+        v.append(f"B00-TOPOLOGY.md: kelas aset belum dinyatakan (A03 — minimal 3 dari {len(ASSET_CLASSES)} token baku; MUNGKIN sah)")
 
     # B17 v2.1: enam KELAS ingress wajib muncul (USER/ACTOR/CALLBACK/PASSIVE/ACCRUAL/ADMIN)
     for hit in ("DOM-", "VK-", "VC-"):

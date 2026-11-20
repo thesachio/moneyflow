@@ -141,7 +141,7 @@ workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
   `INV-Fx`) → P2 ketidakcocokan Handoff/State-Bridge (`INV-Hx`, `INV-HBx`)
   → P3 anomali lokal Segmen (`INV-Sx`, S1→Sn); anti-kuota mutlak: kuras
   sampai `QUEUED == 0` dan `ACTIVE == 0` sebelum pindah Stream. Artefak:
-  `B07-STATE-BRIDGES.md` (Tahap B, diperbarui C/D; kolom `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`; enum `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED`) dan `C00-SHARED-PRIMITIVES.md` (sekali di awal Tahap C).
+  `B07-STATE-BRIDGES.md` (Tahap B, diperbarui C/D; kolom `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`; enum `SEED`/`WRITER_MAPPED`/`READER_MAPPED`/`SINKRON`/`DESINKRON:<OBS-id>`/`TERBUKA_EKSTERNAL`) dan `C00-SHARED-PRIMITIVES.md` (sekali di awal Tahap C).
 
 ## 5. Tahap B — yang wajib selesai (7 butir)
 

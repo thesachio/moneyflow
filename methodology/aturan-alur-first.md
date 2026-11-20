@@ -95,8 +95,10 @@ hitungan mekanis (AST/grep boleh; hasil diverifikasi parent):
   `Tron_*`, V1 & V2 hidup berdampingan).
 - **Varian konfigurasi (`VC-x`)**: instance dengan parameter berbeda dari
   kode yang sama (market, vault, pool, strategi) + **kelas aset** yang
-  diterima (native, wrapped native, ERC-20 standar, fee-on-transfer,
-  rebasing, hook/callback token, token desimal non-18).
+  diterima, memakai token baku: `NATIVE`, `WRAPPED_NATIVE`, `ERC20_STD`,
+  `FEE_ON_TRANSFER`, `REBASING`, `HOOK_TOKEN` (777/1363/ber-callback),
+  `DECIMALS!=18`, `NON_EVM_ASSET`. Ragu bahwa kelas tertentu diterima ->
+  catat `MUNGKIN` (bukan dihapus).
 
 Mode ditentukan mekanis:
 
@@ -257,12 +259,11 @@ v2.0 — Lapis Konstitusi, diputus 18 Nov 2026, mengikat):
   Tahap B, diperbarui di C/D: tabel pencatat variabel storage yang
   ditulis satu Lintasan dan dibaca Lintasan lain secara asinkron (kolom:
   `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`). Kolom
-  `Sync_Status` WAJIB memakai enum baku (v2.1):
-  `OPEN` (belum diverifikasi) | `READ` (dibaca, belum dinilai) |
-  `MATCH` (jaminan penulis == asumsi pembaca) | `DIVERGENT` (tidak
-  cocok — wajib jadi kandidat invariant) | `UNVERIFIED` (tidak bisa
-  dibaca andal). `UNVERIFIED` **BUKAN** `LIVE`: dilarang
-  memperlakukannya sebagai terverifikasi. Kolom `Window_&_Trigger`
+  `Sync_Status` WAJIB memakai enum baku (v2.1, A03): `SEED` ->
+  `WRITER_MAPPED` / `READER_MAPPED` -> `SINKRON` (jaminan penulis ==
+  asumsi pembaca) | `DESINKRON:<OBS-id>` (tidak cocok — wajib jadi
+  kandidat invariant) | `TERBUKA_EKSTERNAL` (konsumen di luar kode
+  scope). Kolom `Window_&_Trigger`
   memuat jendela waktu (ISO-8601) + pemicu yang membuat variabel itu
   ditulis/dibaca — menggantikan kolom `Waktu` v2.0. (2)
   `C00-SHARED-PRIMITIVES.md` — dijalankan SEKALI di awal Tahap C
@@ -316,7 +317,9 @@ B6-v2. Sensus statis: **baca badan penuh, AST sebagai alat bantu**
   per berkas; selisih != 0 wajib dijelaskan per baris (mis. deklarasi
   interface, fungsi warisan B14.6). Selisih yang tidak dijelaskan = sensus
   belum lulus.
-- Kontrol positif 9/9, nol mekanis wajib dipecahkan, dan verifikasi parent
+- Kontrol positif 9/9; untuk `MULTI-DOMAIN`/`TUNGGAL-BERINSTANS` minimal
+  **2 dari 9** berasal dari berkas varian (`VK-x`) — membuktikan sensus
+  tidak buta varian. Nol mekanis wajib dipecahkan, dan verifikasi parent
   tetap jalan (lantai bawah). B9 (usaha yang cukup) tetap TIDAK berlaku
   untuk kedalaman sensus statis.
 - Verdict `value_moves` = **4 nilai** `yes | state_mutator | no | unknown`
@@ -351,7 +354,11 @@ rantai lain — itu kerja B8 per klaster. Anggaran maks 5 menit untuk
 seluruh B7 (target, belum terukur); bila habis, berhenti dengan
 hasil yang ada + catatan. Status B7 (moneyflow v2.0, selaras B15):
 B7 **WAJIB** untuk proyek MAINNET/TESTNET — ringan (≤5 menit: getCode
-1–3 alamat inti + 1 view murah + penetapan blok pin referensi).
+1–3 alamat inti + 1 view murah + penetapan blok pin referensi). Untuk
+`MULTI-DOMAIN`: anggaran ≤5 menit **per keluarga domain** (bukan per
+domain), dengan satu domain representatif per keluarga; domain
+non-representatif berstatus `UNVERIFIED` sampai B8 Lintasan yang
+menyentuhnya. Satu blok pin per domain representatif.
 Dilewati HANYA bila proyek murni belum di-deploy (`repo-only`); bila
 dilewati sah, sensus live di Tahap B tinggal inventaris alamat
 klaim-repo (statis) + catatan verifikasi ditunda ke B8; kerja statis
@@ -400,7 +407,7 @@ Kolom `waktu` (ISO-8601) wajib ada pada setiap baris ledger.
 
 **Rekonsiliasi berbasis nama (v2.1):** sisa ledger dihitung ulang dari
 daftar nama `(file, contract, function)` / `IN-x` yang belum berstatus
-`TERPETAKAN_DI_<LINTASAN>`, **bukan** dari pengurangan angka berjalan.
+`TERPETAKAN_DI_<STR>.<Lk>` / `TERIKAT_DI_<STR>.<Lk>`, **bukan** dari pengurangan angka berjalan.
 Setiap baris status `TERPETAKAN_DI_` wajib menyebut nama, bukan hanya
 jumlah. (Pemicu: across_hermes C10 menemukan trail angka 45/20 vs
 enumerasi nama 49/36.)
@@ -432,6 +439,10 @@ agen. Tiga lapis tetap: L1 dalam segmen (INV-Sx), L2 handoff + simpul
 wajib akibat finansial bila pecah. Cek testability dicatat saat
 perumusan (fork apa, data live apa; dilabeli bila tidak bisa diuji).
 Registry invariant tetap satu penomoran global (B3), diisi mulai Tahap D.
+Prefiks yang disiapkan (v2.1): `INV-S` (segmen), `INV-H` (handoff),
+`INV-HB` (state-bridge), `INV-J` (join), `INV-F` (komposisi),
+`INV-CY` (serah kendali `CY-x`), `INV-V` (selisih varian `BEDA`),
+`INV-IN` (Ingress `IN-x`).
 
 B13. Scope lock sebelum sensus jalan: daftar berkas scope harus cocok
 persis dengan inventaris kanonik (diff kosong), commit terverifikasi,
@@ -590,6 +601,10 @@ pengikatnya adalah Lintasan yang rumusnya membaca saldo/waktu itu.
 `IN-x` kelas `ADMIN` boleh diikat ke Lintasan admin dan diprioritaskan
 terakhir. Status: `BELUM_TERIKAT` -> `TERIKAT_DI_<LINTASAN>`.
 `check-final` menolak sisa `BELUM_TERIKAT` pada `CORE-FLOW`.
+**Wajib minimal satu baris `PASSIVE` per `Value_Holder`** yang membaca
+saldonya sendiri dalam akuntansi; bila tidak ada pembaca saldo sendiri,
+tulis `PASSIVE: TIDAK_BERDAMPAK` + bukti AST (tidak ada pembacaan
+`balanceOf(this)` / `address(this).balance`).
 Konsekuensi Tahap C: Ingress `PASSIVE`/`ACCRUAL` muncul sebagai **segmen
 masuk tidak resmi** `S0` di inventaris Lintasan pembacanya (deskriptif:
 siapa bisa memicu, berapa batasnya, bagaimana akuntansi menyerapnya).

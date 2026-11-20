@@ -146,7 +146,7 @@ Unit mandiri **berprioritas tinggi** - bukan catatan kaki segmen.
 
 ### Bagian 5 - Daftar State-Bridge (`HB-x`) & Referensi Primitif (`C00`)
 
-- Daftar **jembatan storage asinkron** yang disentuh Stream ini - **sinkron dengan `B07-STATE-BRIDGES.md`** (baris `HB-x` yang sama; kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`; `Sync_Status` ∈ `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED` + kolom `Waktu` ISO-8601).
+- Daftar **jembatan storage asinkron** yang disentuh Stream ini - **sinkron dengan `B07-STATE-BRIDGES.md`** (baris `HB-x` yang sama; kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`; `Sync_Status` ∈ `SEED`/`WRITER_MAPPED`/`READER_MAPPED`/`SINKRON`/`DESINKRON:<OBS-id>`/`TERBUKA_EKSTERNAL` + kolom `Window_&_Trigger`).
 - Daftar item `C00-SHARED-PRIMITIVES.md` yang dipakai segmen-segmen Stream ini.
 
 ### Bagian 6 - Lembar Parameter Live (`LP-x`)
