@@ -171,7 +171,7 @@ EV boleh tetap dicatat sebagai data, tetapi bukan penentu urutan.
 Cara menentukan: susun klaster/alur menurut urutan entrypoint pada
 alur pengguna (pintu masuk pertama yang dijumpai → berikutnya →
 seterusnya); klaster/alur yang entrypoint-nya lebih awal dikerjakan
-lebih dulu. Alasan perubahan dicatat di B04-CLUSTERS.md per proyek.
+lebih dulu. Alasan perubahan dicatat di B04-STREAMS-AND-CLUSTERS.md per proyek.
 Konsekuensi: prioritas uang-dulu hilang (sama seperti B2); cakupan
 tetap dijamin B9/B10, dan urutan tidak boleh dipakai menunda klaster
 mana pun — semua klaster tetap wajib dikerjakan sampai selesai.
@@ -255,16 +255,16 @@ v2.0 — Lapis Konstitusi, diputus 18 Nov 2026, mengikat):
       pemangkasan scope.
 - **2 artefak standar baru:** (1) `B07-STATE-BRIDGES.md` — dibuat di
   Tahap B, diperbarui di C/D: tabel pencatat variabel storage yang
-  ditulis satu Stream dan dibaca Stream lain secara asinkron (kolom:
-  `Bridge_ID | Storage_Var | Writer_Stream_&_Guarantee |
-  Reader_Stream_&_Assumption | Sync_Status | Waktu`). Kolom
+  ditulis satu Lintasan dan dibaca Lintasan lain secara asinkron (kolom:
+  `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`). Kolom
   `Sync_Status` WAJIB memakai enum baku (v2.1):
   `OPEN` (belum diverifikasi) | `READ` (dibaca, belum dinilai) |
   `MATCH` (jaminan penulis == asumsi pembaca) | `DIVERGENT` (tidak
   cocok — wajib jadi kandidat invariant) | `UNVERIFIED` (tidak bisa
   dibaca andal). `UNVERIFIED` **BUKAN** `LIVE`: dilarang
-  memperlakukannya sebagai terverifikasi. Kolom `Waktu` = ISO-8601
-  saat baris terakhir diperbarui. (2)
+  memperlakukannya sebagai terverifikasi. Kolom `Window_&_Trigger`
+  memuat jendela waktu (ISO-8601) + pemicu yang membuat variabel itu
+  ditulis/dibaca — menggantikan kolom `Waktu` v2.0. (2)
   `C00-SHARED-PRIMITIVES.md` — dijalankan SEKALI di awal Tahap C
   sebelum Stream pertama: inventaris deskriptif seluruh
   kontrak/library bertipe `SHARED-PRIMITIVE` (jaminan pembulatan,
@@ -278,7 +278,7 @@ B4. Yang BISA DIPECAH per Stream: inventaris alur + segmentasi,
 kontrak handoff, penulisan invariant, uji invariant, komposisi,
 verdict. Klasifikasi klaster — 4 tipe generik universal, berlaku
 proyek apa pun (moneyflow v2.0; menghapus bias proyek tunggal): tiap
-klaster di `B04-CLUSTERS.md` diberi tepat satu tipe — `CORE-FLOW`
+klaster di `B04-STREAMS-AND-CLUSTERS.md` diberi tepat satu tipe — `CORE-FLOW`
 (klaster alur nilai utama pengguna/protokol), `SHARED-PRIMITIVE`
 (kontrak/library dasar bersama: token internal, math/share library,
 brankas akuntansi bersama, modul akses dasar), `EXTERNAL-BOUNDARY`
@@ -357,7 +357,7 @@ dilewati sah, sensus live di Tahap B tinggal inventaris alamat
 klaim-repo (statis) + catatan verifikasi ditunda ke B8; kerja statis
 tetap valid sebagai peta kode (menunggu di TUNDA-LIVE).
 
-B8. Cek live-match diulang di awal fase uji per klaster, sebelum PoC
+B8. B8 Live-Match Lintasan — dijalankan di awal Tahap D, wajib lulus sebelum Gate D, per domain eksekusi segmen (B21); sebelum PoC
 ditulis. Yang tidak live-match masuk wadah TUNDA-LIVE: tercatat di
 ledger sisa (tetap terhitung, bukan hilang); nol waktu eksekusi
 (tanpa PoC, tanpa fork); dibuka lagi hanya bila deployment live muncul
@@ -702,9 +702,8 @@ handoff terbuka; diperbarui sesudah tiap round.
 7. Struktur registry invariant (B3) — penomoran + registry kosong;
 diisi mulai Tahap D.
 8. B07-STATE-BRIDGES — seed (moneyflow v2.0): tabel variabel storage
-yang ditulis satu Stream dan dibaca Stream lain secara asinkron
-(`Bridge_ID | Storage_Var | Writer_Stream_&_Guarantee |
-Reader_Stream_&_Assumption | Sync_Status | Waktu`); diperbarui di C/D.
+yang ditulis satu Lintasan dan dibaca Lintasan lain secara asinkron
+(`Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`); diperbarui di C/D.
 Bukan pekerjaan Tahap B (dikerjakan di tahap berikut): pemetaan
 mendalam per klaster (Tahap C: inventaris alur + segmentasi + kontrak
 handoff deskriptif), invariant (Tahap D), buruan (Tahap D), PoC + P&L
@@ -873,7 +872,7 @@ standar ini bersama C10. Berlaku ke G02 juga (buka ulang P7) dan mulai P8.
 C12. Stream Context Capsule (moneyflow v2.0, 18 Nov 2026, mengikat
 untuk delegasi): brief delegasi subagent Tahap C/D/E hanya memuat
 konteks terikat Stream aktif — `C00-SHARED-PRIMITIVES.md`,
-`C<NN>-STREAM-INVENTORY.md` beserta potongan kode bernomor
+`C<NN>-<STR>-<Lk>-INVENTORY.md` beserta potongan kode bernomor
 `File:Lxx-Lyy` pada koridor stream, baris relevan dari
 `B07-STATE-BRIDGES.md`, maksimal 1 ringkasan tabel Handoff/Simpul dari
 stream kembar (*twin-path*) bila relevan, dan (khusus Tahap D

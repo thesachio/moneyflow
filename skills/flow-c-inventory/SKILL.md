@@ -1,6 +1,6 @@
 ---
 name: flow-c-inventory
-description: "Tahap C — Stream-Slice Inventory (moneyflow v2.1). Dua mode terstruktur: C00-SHARED-PRIMITIVES (sekali di awal) + C<NN>-<STREAM_ID>-INVENTORY per Stream ujung-ke-ujung dengan Aturan Koridor Stream (Corridor-Bound Cross-Cluster), format segmen (5 pemicu batas B19 a-e)/handoff/simpul/State-Bridge/Titik Serah Kendali CY-x (10 kolom)/Lembar Parameter Live (domain + UNVERIFIED), Lintasan per domain (B19) bila MULTI-DOMAIN, Tabel Selisih Varian (B20) bila TUNGGAL-BERINSTANS, Ingress S0 (B17), murni deskriptif — tanpa invariant, tanpa buruan, tanpa PoC. Dipakai saat memetakan Stream/klaster, atau saat user menyebut tahap C, pemetaan mendalam, inventaris alur."
+description: "Tahap C — Stream-Slice Inventory (moneyflow v2.1). Dua mode terstruktur: C00-SHARED-PRIMITIVES (sekali di awal) + C<NN>-<STR>-<Lk>-INVENTORY per Stream ujung-ke-ujung dengan Aturan Koridor Stream (Corridor-Bound Cross-Cluster), format segmen (5 pemicu batas B19 a-e)/handoff/simpul/State-Bridge/Titik Serah Kendali CY-x (10 kolom)/Lembar Parameter Live (domain + UNVERIFIED), Lintasan per domain (B19) bila MULTI-DOMAIN, Tabel Selisih Varian (B20) bila TUNGGAL-BERINSTANS, Ingress S0 (B17), murni deskriptif — tanpa invariant, tanpa buruan, tanpa PoC. Dipakai saat memetakan Stream/klaster, atau saat user menyebut tahap C, pemetaan mendalam, inventaris alur."
 ---
 
 # Skill flow-c-inventory — Tahap C (Stream-Slice Inventory)
@@ -63,7 +63,7 @@ Ingress kelas `PASSIVE`/`ACCRUAL` muncul sebagai **segmen masuk tidak resmi `S0`
 
 **Mode Pra-Stream (`C00-SHARED-PRIMITIVES.md`) — dijalankan SEKALI sebelum `STR-01` dimulai.** Petakan seluruh unit bertipe `SHARED-PRIMITIVE` dari `B04-STREAMS-AND-CLUSTERS.md`. Untuk tiap primitif catat **secara deskriptif**: lokasi `Path/File.ext:Lxx-Lyy`; fungsi konversi/akuntansi (mis. wrap/unwrap, mint/redeem, share↔aset); arah pembulatan dan satuan desimal; perubahan state/saldo yang ditulisnya; event yang diemisikan. Inventaris ini **dirujuk semua Stream** — tidak diulang per Stream.
 
-**Mode Utama (`C<NN>-<STREAM_ID>-INVENTORY.md`) — dijalankan satu Stream ujung-ke-ujung per putaran**, mengikuti urutan `B2a` dari `B04` / `B05`.
+**Mode Utama (`C<NN>-<STR>-<Lk>-INVENTORY.md`) — dijalankan satu **Lintasan** ujung-ke-ujung per sesi** (B19: satu sesi kerja = satu Lintasan), mengikuti urutan `B2a` dari `B04` / `B05`.
  `methodology/aturan-alur-first.md` (seksi D — Tahap C) hanya rujukan sengketa.
 
 ## Aturan Koridor Stream (`Corridor-Bound Cross-Cluster`)
@@ -72,7 +72,7 @@ Ingress kelas `PASSIVE`/`ACCRUAL` muncul sebagai **segmen masuk tidak resmi `S0`
 - Urutan kerja = **pintu masuk pertama kali** (B2a, diputus 17 Nov 2026; B2a-v2 moneyflow v2.0): entrypoint paling awal yang dilalui pengguna dikerjakan lebih dulu, bukan EV live. Kalau user memerintah urutan lain, catat alasannya di `B04-STREAMS-AND-CLUSTERS.md`.
 - Mulai dari entrypoint Stream aktif: lakukan **langkah perluasan warisan/implementasi** (konvensi B14.6 & B14.7) dan **penguraian dispatcher `unknown`** (B14.4) bila entrypoint melewatinya.
 - Ikuti aliran uang/nilai dari `Ingress` → `Accounting/Transform` → `Egress` **secara vertikal** sampai aliran nilai pada transaksi/siklus tersebut tuntas.
-- **WAJIB TEMBUS KLASTER SEPANJANG KORIDOR:** bila Segmen `S(k)` memanggil kontrak di klaster `CORE-FLOW` lain sebagai bagian langsung dari aliran nilai itu, **baca badan fungsi target tersebut dan jadikan `S(k+1)`** di berkas `C<NN>-<STREAM_ID>-INVENTORY.md` ini juga; tandai EP+VM tersebut selesai dipetakan di `B05-LEDGER-SISA.md` (`TERPETAKAN_DI_<STREAM_ID>`).
+- **WAJIB TEMBUS KLASTER SEPANJANG KORIDOR:** bila Segmen `S(k)` memanggil kontrak di klaster `CORE-FLOW` lain sebagai bagian langsung dari aliran nilai itu, **baca badan fungsi target tersebut dan jadikan `S(k+1)`** di berkas `C<NN>-<STR>-<Lk>-INVENTORY.md` ini juga; tandai EP+VM tersebut selesai dipetakan di `B05-LEDGER-SISA.md` (`TERPETAKAN_DI_<LINTASAN>`).
 - **LARANGAN MELEBAR HORIZONTAL:** dilarang membaca atau menginventarisasi fungsi lain di kontrak/klaster seberang yang **tidak dipanggil** dan **tidak dilalui** oleh koridor Stream aktif.
 - **JEMBATAN ASINKRON (`State-Bridge`):** bila aliran nilai berhenti di penyimpanan state (mis. pengguna mencatat deposit/request/stake ke variabel storage `V`, sementara pencairan/eksekusi/distribusi dilakukan di transaksi terpisah oleh pengguna/keeper/aktor lain pada Stream berbeda) — **hentikan segmen di penulisan `V`**, lalu **wajib daftarkan/perbarui baris `HB-x` di `B07-STATE-BRIDGES.md`**: tulis variabel `V`, lokasi kode penulis, dan jaminan faktual penulis dari kode. Sebaliknya, bila Stream aktif adalah **pembaca** variabel `V` yang sudah ada di `B07`, lengkapi kolom pembaca dan asumsi faktual pembacanya di `B07`.
 - Pada Tahap D, koridor ini membuka hak **`1-hop peek`**: membaca tepat fungsi pembaca/penulis pasangan `HB-x` agar kecocokan jaminan penulis vs asumsi pembaca diuji saat konteks masih panas.
@@ -82,9 +82,9 @@ Ingress kelas `PASSIVE`/`ACCRUAL` muncul sebagai **segmen masuk tidak resmi `S0`
 | Berkas | Isi |
 | :--- | :--- |
 | `C00-SHARED-PRIMITIVES.md` | inventaris deskriptif seluruh unit `SHARED-PRIMITIVE` (sekali di awal Tahap C, sebelum Stream pertama) |
-| `C<NN>-<STREAM_ID>-INVENTORY.md` | inventaris Stream itu (identitas + segmen + handoff + simpul + State-Bridge + referensi C00 + Lembar Parameter Live) |
+| `C<NN>-<STR>-<Lk>-INVENTORY.md` | inventaris Stream itu (identitas + segmen + handoff + simpul + State-Bridge + referensi C00 + Lembar Parameter Live) |
 
-## Format wajib: 6 bagian per `C<NN>-<STREAM_ID>-INVENTORY.md` (murni deskriptif - apa kata kode, nol invariant, nol klaim bug, nol PoC)
+## Format wajib: 6 bagian per `C<NN>-<STR>-<Lk>-INVENTORY.md` (murni deskriptif - apa kata kode, nol invariant, nol klaim bug, nol PoC)
 
 ### Bagian 1 - Identitas Stream & Cakupan EP+VM
 
@@ -146,7 +146,7 @@ Unit mandiri **berprioritas tinggi** - bukan catatan kaki segmen.
 
 ### Bagian 5 - Daftar State-Bridge (`HB-x`) & Referensi Primitif (`C00`)
 
-- Daftar **jembatan storage asinkron** yang disentuh Stream ini - **sinkron dengan `B07-STATE-BRIDGES.md`** (baris `HB-x` yang sama; kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption | Sync_Status | Waktu`; `Sync_Status` ∈ `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED` + kolom `Waktu` ISO-8601).
+- Daftar **jembatan storage asinkron** yang disentuh Stream ini - **sinkron dengan `B07-STATE-BRIDGES.md`** (baris `HB-x` yang sama; kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`; `Sync_Status` ∈ `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED` + kolom `Waktu` ISO-8601).
 - Daftar item `C00-SHARED-PRIMITIVES.md` yang dipakai segmen-segmen Stream ini.
 
 ### Bagian 6 - Lembar Parameter Live (`LP-x`)
@@ -197,7 +197,7 @@ Aturan Bagian 6:
 
 - [ ] `C00-SHARED-PRIMITIVES.md` lengkap: seluruh unit `SHARED-PRIMITIVE` dari `B04` terpetakan — lokasi `File:Lxx-Lyy`, fungsi konversi/akuntansi, arah pembulatan + desimal, perubahan state/saldo, event
 
-**Per-Stream (`C<NN>-<STREAM_ID>-INVENTORY.md`):**
+**Per-Stream (`C<NN>-<STR>-<Lk>-INVENTORY.md`):**
 
 - [ ] Bagian 1 Identitas: `Stream_ID` + pintu masuk (`File:Lxx-Lyy`) + daftar EP+VM (termasuk lintas-klaster) + rujukan Twin-Path bila ada
 - [ ] Bagian 2 Segmen: semua segmen punya batas masuk/keluar dan bersambung — keluaran `S(k)` nyambung ke masukan `S(k+1)` (atau berakhir di State-Bridge `HB-x`)
@@ -212,5 +212,5 @@ Aturan Bagian 6:
 - [ ] bila `MULTI-DOMAIN`: Matriks Domain ada, tiap Lintasan (`STR-nn.Lk`) punya Ingress+Egress, LP-x dibaca di domainnya sendiri
 - [ ] Ingress `PASSIVE`/`ACCRUAL` muncul sebagai segmen `S0` di Lintasan pembacanya
 - [ ] nol invariant, nol buruan, nol PoC
-- [ ] `B05-LEDGER-SISA.md` diperbarui: semua EP+VM koridor ini berstatus `TERPETAKAN_DI_<STREAM_ID>` (sisa menyusut)
+- [ ] `B05-LEDGER-SISA.md` diperbarui: semua EP+VM koridor ini berstatus `TERPETAKAN_DI_<LINTASAN>` (sisa menyusut)
 - [ ] `B07-STATE-BRIDGES.md` diperbarui bila Stream menyentuh/membaca jembatan state

@@ -484,7 +484,7 @@ def _is_legacy(ad):
     """Proyek lama (pra-v2.1) boleh ditandai LEGACY-v2.0 agar gerbang baru tidak memblokir."""
     if (ad / LEGACY_MARKER).is_file():
         return True
-    for name in ("B01-SCOPE.md", "B05-LEDGER-SISA.md", "README.md"):
+    for name in ("B04-STREAMS-AND-CLUSTERS.md", "B01-SCOPE.md", "B05-LEDGER-SISA.md", "README.md"):
         f = ad / name
         if not f.is_file():
             continue

@@ -26,7 +26,7 @@ Butuh konteks satu klaster/Stream saja → bukan Tahap B; kerjakan di giliran St
 | `B04-STREAMS-AND-CLUSTERS.md` (menggantikan nama lama `B04-CLUSTERS.md`) | indeks klaster universal 4 tipe + katalog awal Stream + urutan B2a + Twin-Path Group + relasi handoff kasar |
 | `B05-LEDGER-SISA.md` | ledger sisa seed (B10) |
 | `B06-REGISTRY-INVARIANT.md` | struktur + penomoran, **isi kosong** (diisi Tahap D) |
-| `B07-STATE-BRIDGES.md` | kerangka tabel jembatan state lintas-Stream; header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption | Sync_Status | Waktu`; `Sync_Status` ∈ `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED` |
+| `B07-STATE-BRIDGES.md` | kerangka tabel jembatan state lintas-Stream; header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`; `Sync_Status` ∈ `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED` |
 
 ## Langkah 0 — B0 Profil Topologi (gerbang masuk PALING AWAL, v2.1)
 
@@ -185,7 +185,7 @@ Aturan rantai:
 
 ## Langkah 4 — B8 Cek live-match per Stream + TUNDA-LIVE
 
-B8 **diulang di awal fase uji tiap Stream**, sebelum PoC ditulis. Tanpa B8, PoC Stream itu **TERBLOKIR**.
+**B8 Live-Match Lintasan — dijalankan di awal Tahap D, wajib lulus sebelum Gate D** (v2.1), per domain eksekusi segmen (B21). Tanpa B8, PoC Lintasan itu **TERBLOKIR**.
 
 Tidak live-match → wadah **TUNDA-LIVE**:
 
@@ -245,7 +245,7 @@ Seed memuat **DUA populasi yang mengikat (B14-v2)**:
 
 **Rekonsiliasi berbasis nama (B10 v2.1):** sisa dihitung ulang dari daftar nama `(file, contract, function)` / `IN-x` yang belum `TERPETAKAN_DI_<LINTASAN>` — **bukan** pengurangan angka berjalan. Setiap baris `TERPETAKAN_DI_` wajib menyebut nama, bukan hanya jumlah.
 
-**Aturan penyusutan (moneyflow v2.0):** setiap kali satu `Stream` dipetakan di Tahap C — termasuk fungsi lintas-klaster yang ikut tersapu dalam koridor Stream tersebut — semua `EP+VM` dan `EP+SM` yang dilalui langsung berubah status menjadi `TERPETAKAN_DI_<STREAM_ID>`. Bila saat seluruh `STR` awal habis masih ada `EP+VM(yes)` **atau** `EP+SM(state_mutator)` pada `CORE-FLOW` berstatus belum tercakup, **wajib dibuatkan `Stream` baru** (atau unit pemeriksaan untuk `EP+SM` berdiri sendiri) sampai sisa kedua populasi di `CORE-FLOW` tepat `0`.
+**Aturan penyusutan (moneyflow v2.0):** setiap kali satu `Stream` dipetakan di Tahap C — termasuk fungsi lintas-klaster yang ikut tersapu dalam koridor Stream tersebut — semua `EP+VM` dan `EP+SM` yang dilalui langsung berubah status menjadi `TERPETAKAN_DI_<LINTASAN>`. Bila saat seluruh `STR` awal habis masih ada `EP+VM(yes)` **atau** `EP+SM(state_mutator)` pada `CORE-FLOW` berstatus belum tercakup, **wajib dibuatkan `Stream` baru** (atau unit pemeriksaan untuk `EP+SM` berdiri sendiri) sampai sisa kedua populasi di `CORE-FLOW` tepat `0`.
 
 Aturan B10 tetap: ledger diperbarui **sesudah tiap round**; round selesai **hanya bila sisa menyusut**; round tanpa hasil baru = sinyal berhenti dan periksa. Target buruan **harus ada di sensus** — kalau tidak, di luar scope menurut konstruksi.
 
@@ -294,7 +294,7 @@ Semua ini ada dan bisa ditunjuk:
 - [ ] `B04-STREAMS-AND-CLUSTERS.md`; klaster 4 tipe + katalog Stream terurut B2a (tiap Stream punya `Value_Holder` + `Sink` + `Live_Balance@pin: DIISI_B8`) + `Flow Family` + Twin-Path Group + relasi kasar antar-klaster
 - [ ] `B05-LEDGER-SISA.md` seed lengkap (EP+VM `BELUM_MASUK_STREAM` + EP+SM `BELUM_TERCAKUP`, `STR` `PENDING`, `HANDOFF_TERBUKA`, `TUNDA-LIVE`, `DORMAN`)
 - [ ] `B06-REGISTRY-INVARIANT.md` struktur kosong
-- [ ] `B07-STATE-BRIDGES.md` kerangka + header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption | Sync_Status`
+- [ ] `B07-STATE-BRIDGES.md` kerangka + header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`
 - [ ] **`B00-TOPOLOGY.md`** ada: hitungan `DOM-x`/`VK-x`/`VC-x` + mode + Matriks Domain (bila `MULTI-DOMAIN`)
 - [ ] `B04` Bagian 2b: katalog `IN-x` lengkap (6 kelas) + kolom pengikat + status
 - [ ] `B03-CENSUS-LIVE.md` punya kolom `domain` pada setiap alamat

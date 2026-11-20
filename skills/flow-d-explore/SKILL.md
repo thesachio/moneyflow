@@ -10,10 +10,10 @@ Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-a
 
 ## Prasyarat & Gerbang Awal B8 (tanpa ini D tidak mulai)
 
-- Unit kerja Tahap D = **satu `Stream` ujung-ke-ujung (`STR-xx`)** berdasarkan `C<NN>-<STREAM_ID>-INVENTORY.md` + `C00-SHARED-PRIMITIVES.md` + baris terkait di `B07-STATE-BRIDGES.md`.
+- Unit kerja Tahap D = **satu Lintasan (`STR-nn.Lk`)** berdasarkan `C<NN>-<STR>-<Lk>-INVENTORY.md` + `C00-SHARED-PRIMITIVES.md` + baris terkait di `B07-STATE-BRIDGES.md`.
 - Registry invariant (`B06`) sudah punya struktur penomoran.
 - **B8 Live-Match Stream** dijalankan sebelum Gelombang 1 dimulai: cek cepat atas kontrak pada koridor Stream aktif — **utamakan desain kode + `cast code`/view di blok pin**; DILARANG memindai log sejarah panjang (pindai log = verifikator terakhir, Tahap G/sapuan akhir). Bila kontrak target belum live-match: masukkan Stream ke `TUNDA-LIVE` di `B05-LEDGER-SISA.md` dan **hentikan putaran Stream tersebut** (nol waktu eksekusi).
-- **B8 mengisi Lembar Parameter Live** (`C<NN>-<STREAM_ID>-INVENTORY.md` Bagian 6): untuk tiap `LP-x`, baca nilai di blok pin (`cast call` / `cast storage`), isi kolom `Nilai @ blok pin` dan `Status Cabang` (`LIVE` / `DEAD-CONFIG` / `TIDAK-TERBACA`). Ini pembacaan state blok pin, bukan pindai log — tetap dalam batas B8. Perubahan pada berkas C ini adalah pengisian kolom yang memang disediakan untuk B8, bukan revisi inventaris.
+- **B8 mengisi Lembar Parameter Live** (`C<NN>-<STR>-<Lk>-INVENTORY.md` Bagian 6): untuk tiap `LP-x`, baca nilai di blok pin (`cast call` / `cast storage`), isi kolom `Nilai @ blok pin` dan `Status Cabang` (`LIVE` / `DEAD-CONFIG` / `UNVERIFIED`). Ini pembacaan state blok pin, bukan pindai log — tetap dalam batas B8. Perubahan pada berkas C ini adalah pengisian kolom yang memang disediakan untuk B8, bukan revisi inventaris.
 - **B8 mengisi `Live_Balance@pin`** Stream aktif di `B04` (saldo `Value_Holder` per token pada blok pin). Nilai ini menjadi masukan `Observed Live Ceiling` (C10-v2) di Tahap E. Stream berstatus `SINK_BELUM_JELAS` tidak boleh memulai Gelombang 1.
 
 ## Mode Eksekusi Tahap D: AUTO vs PAIR (Co-Audit)
@@ -41,16 +41,16 @@ Tahap D mendukung **dua mode eksekusi**. Pemilihan mode hanya dilakukan oleh use
 
 1. Tampilkan rekap `OBS`, `Q` (termasuk `[USER-INSIGHT]`), dan `SYMPTOM-TAGS`, lalu sebutkan 2-4 plugin katalog yang dimuat oleh *Lazy Skill Router*.
 2. Terjemahkan poin pemeriksaan dari ke-2 s.d. ke-4 plugin tersebut langsung menunjuk nomor baris kode `S1..Sn` yang baru saja dibaca bersama (bukan kutipan teori abstrak).
-3. Diskusikan dan kunci bersama user daftar Invariant resmi (`INV-Sx / Hx / HBx / Jx / Fx` ke `B06-REGISTRY-INVARIANT.md`) dan Kartu Lead rantai `(a)+(b)+(c)` sebelum menulis berkas kanonik `D<NN>-<STREAM_ID>-WAVE1-BLIND.md`, `WAVE2-QUEUED.md`, dan `LEAD-CARDS.md`.
+3. Diskusikan dan kunci bersama user daftar Invariant resmi (`INV-Sx / Hx / HBx / Jx / Fx` ke `B06-REGISTRY-INVARIANT.md`) dan Kartu Lead rantai `(a)+(b)+(c)` sebelum menulis berkas kanonik `D<NN>-<STR>-<Lk>-WAVE1-BLIND.md`, `WAVE2-QUEUED.md`, dan `LEAD-CARDS.md`.
 
 ### Aturan keras yang tetap berlaku penuh di PAIR
 
-- Dilarang membuka katalog pada Gelombang 1; dilarang memberi vonis `TERBUKTI` di Tahap D (semua tetap `DIANALISIS` sampai diuji di Tahap E); hasil akhir berkas `D<NN>-*` tetap wajib lulus `python3 tools/verify_flow.py check-d`.
+- Dilarang membuka katalog pada Gelombang 1; dilarang memberi vonis `TERBUKTI` di Tahap D (semua tetap `DIANALISIS` sampai diuji di Tahap E); hasil akhir berkas `D<NN>-<STR>-<Lk>-*` tetap wajib lulus `python3 tools/verify_flow.py check-d`.
 - `[USER-INSIGHT]` adalah observasi berstatus sama dengan `OBS` agen — wajib terdisposisi di Gelombang 2, tidak boleh hilang saat transisi mode.
 
 ## Gelombang 1 — Eksplorasi Bebas Murni (Tanpa Katalog)
 
-Bekal: inventaris Stream aktif (`C<NN>-<STREAM_ID>-INVENTORY.md`, termasuk Bagian 6 yang sudah diisi B8), `C00-SHARED-PRIMITIVES.md`, baris `B07-STATE-BRIDGES.md` yang bersinggungan, premis parent.
+Bekal: inventaris Lintasan aktif (`C<NN>-<STR>-<Lk>-INVENTORY.md`, termasuk Bagian 6 yang sudah diisi B8), `C00-SHARED-PRIMITIVES.md`, baris `B07-STATE-BRIDGES.md` yang bersinggungan, premis parent.
 
 **Urutan perhatian Gelombang 1 (bukan filter):**
 
@@ -88,7 +88,7 @@ Dilarang sekadar merangkum ulang tabel Tahap C. Pada setiap Stream, Gelombang 1 
 3. **Deep-Check Twin-Path & Patch-Scar:**
    - Pada setiap pasangan `Twin-Path Group` (terutama bila salah satu sisi ber-tag `[SCAR]` atau `[DELTA]`), buat daftar selisih baris eksak pada penjaga (`require`/`if`), urutan pembaruan state terhadap panggilan eksternal, dan arah pembulatan; uji apakah tambalan di satu jalur lupa diterapkan di jalur kembarnya atau justru memicu penguncian dana baru (*freeze*).
 
-Keluaran wajib Gelombang 1 — `D<NN>-<STREAM_ID>-WAVE1-BLIND.md`, seluruhnya berlabel `DIANALISIS`:
+Keluaran wajib Gelombang 1 — `D<NN>-<STR>-<Lk>-WAVE1-BLIND.md`, seluruhnya berlabel `DIANALISIS`:
 
 | Label | Arti |
 | :--- | :--- |
@@ -133,7 +133,7 @@ Lokasi nyata berkas plugin (rujuk path berikut saat memuat):
 
 **Anti-anchoring tetap mutlak:** bila anomali dari Gelombang 1 tidak cocok dengan plugin mana pun, beri label `[NOVEL / NO-CATALOG]`; **dilarang keras menggugurkan kandidat karena tidak ada di katalog**. Temuan di luar katalog = kandidat plugin baru.
 
-Keluaran Gelombang 2 — `D<NN>-<STREAM_ID>-WAVE2-QUEUED.md`: kandidat `QUEUED` (terurut ketajaman struktural, lihat di bawah) + `DORMAN` (hanya bila gagal Gate D C10-v2, dengan syarat buka-ulang konkret) + disposisi `Q`/SYMPTOM-TAGS.
+Keluaran Gelombang 2 — `D<NN>-<STR>-<Lk>-WAVE2-QUEUED.md`: kandidat `QUEUED` (terurut ketajaman struktural, lihat di bawah) + `DORMAN` (hanya bila gagal Gate D C10-v2, dengan syarat buka-ulang konkret) + disposisi `Q`/SYMPTOM-TAGS.
 
 ### Urutan QUEUED menuju Tahap E (B2a-v2 Lapis 2 — ketajaman struktural)
 
@@ -171,7 +171,7 @@ Tiap kartu juga mencantumkan **daftar `LP-x` yang dipakai rantainya** beserta `N
 | L2 | `INV-Hx`, `INV-Jx`, `INV-HBx` | di handoff, di simpul, dan di State-Bridge |
 | L3 | `INV-Fx` | ujung-ke-ujung / komposisi |
 
-**Subtipe `INV-HBx` (State-Bridge):** mendampingi `INV-Hx` dan `INV-Jx` pada Lapis L2; mencatat invarian sinkronisasi atas variabel storage yang ditulis satu Stream dan dibaca Stream lain secara asinkron (dari `B07-STATE-BRIDGES.md`, kolom `Writer_Stream_&_Guarantee` vs `Reader_Stream_&_Assumption`). Satu penomoran global di `B06-REGISTRY-INVARIANT.md`.
+**Subtipe `INV-HBx` (State-Bridge):** mendampingi `INV-Hx` dan `INV-Jx` pada Lapis L2; mencatat invarian sinkronisasi atas variabel storage yang ditulis satu Lintasan dan dibaca Lintasan lain secara asinkron (dari `B07-STATE-BRIDGES.md`, kolom `Writer_Lintasan_&_Guarantee` vs `Reader_Lintasan_&_Assumption`, plus `Window_&_Trigger`). Satu penomoran global di `B06-REGISTRY-INVARIANT.md`.
 
 Aturan wajib per invariant:
 
@@ -193,7 +193,7 @@ Aturan wajib per invariant:
 
 `DORMAN` **hanya** untuk fitur live yang sedang dikunci saklar konfigurasi admin aktif (`paused`, `cap == 0` admin), wajib disertai **syarat buka-ulang konkret** (mis. "buka bila saklar X diangkat", "buka bila parameter Y diubah").
 
-- Kandidat yang hanya bisa dipicu lewat cabang `DEAD-CONFIG` di Bagian 6 = `DORMAN`, dengan syarat buka-ulang menunjuk `LP-x` (mis. "buka bila `LP-3 feeBps` > 0"). Kandidat pada cabang `LIVE` / `TIDAK-TERBACA` dinilai normal.
+- Kandidat yang hanya bisa dipicu lewat cabang `DEAD-CONFIG` di Bagian 6 = `DORMAN`, dengan syarat buka-ulang menunjuk `LP-x` (mis. "buka bila `LP-3 feeBps` > 0"). Kandidat pada cabang `LIVE` dinilai normal; kandidat pada `UNVERIFIED` dinilai normal TAPI wajib menyatakan nilai itu belum terverifikasi dan Lintasan-nya belum lolos Gate D.
 - Nilai `ADMIN-CONFIG` yang dipakai dalam rumus plafon (c) wajib nilai dari Bagian 6 kolom `Nilai @ blok pin`, bukan asumsi.
 
 ## C11 — gelombang 1 dan 2 TIDAK memberi verdict TERBUKTI
@@ -214,10 +214,10 @@ Konsekuensi yang sering dilanggar:
 
 ## Keluaran
 
-- `C<NN>-<STREAM_ID>-INVENTORY.md` Bagian 6 — kolom `Nilai @ blok pin` + `Status Cabang` terisi oleh B8.
-- `D<NN>-<STREAM_ID>-WAVE1-BLIND.md` — OBS / G / Q / SYMPTOM-TAGS, semua berlabel `DIANALISIS`.
-- `D<NN>-<STREAM_ID>-WAVE2-QUEUED.md` — QUEUED terurut ketajaman struktural + DORMAN (dengan syarat buka-ulang) + disposisi OBS/Q.
-- `D<NN>-<STREAM_ID>-LEAD-CARDS.md` — kartu 1:1 dengan rantai (a)+(b)+(c) + klaim finansial >= $1 + daftar `LP-x` yang dipakai.
+- `C<NN>-<STR>-<Lk>-INVENTORY.md` Bagian 6 — kolom `Nilai @ blok pin` + `Status Cabang` terisi oleh B8.
+- `D<NN>-<STR>-<Lk>-WAVE1-BLIND.md` — OBS / G / Q / SYMPTOM-TAGS, semua berlabel `DIANALISIS`.
+- `D<NN>-<STR>-<Lk>-WAVE2-QUEUED.md` — QUEUED terurut ketajaman struktural + DORMAN (dengan syarat buka-ulang) + disposisi OBS/Q.
+- `D<NN>-<STR>-<Lk>-LEAD-CARDS.md` — kartu 1:1 dengan rantai (a)+(b)+(c) + klaim finansial >= $1 + daftar `LP-x` yang dipakai.
 - Registry invariant (`B06-REGISTRY-INVARIANT.md`) terisi dengan sumber tiap invariant (termasuk `INV-HBx`).
 
 ## Definition of done Tahap D (per Stream)
@@ -231,5 +231,8 @@ Konsekuensi yang sering dilanggar:
 - [ ] tiap invariant punya sumber (field handoff/state-bridge atau docs/NatSpec) + akibat finansial + catatan fork-testability
 - [ ] Gate D C10-v2 diuji untuk tiap kandidat; DORMAN hanya saklar admin aktif atau cabang `DEAD-CONFIG`, dengan syarat buka-ulang menunjuk `LP-x`
 - [ ] seluruh OBS dan Q habis terdisposisi (QUEUED / DORMAN / G dengan jangkar penjaga kode eksak) — anti-kuota: tidak ada target jumlah
+- [ ] **gerbang v2.1:** tiap Lintasan ≥ 1 kartu ATAU catatan `NIHIL_KANDIDAT: <alasan per segmen>`
+- [ ] **gerbang v2.1:** tiap baris `BEDA` Tabel Selisih Varian yang menyentuh nilai/autentikasi ≥ 1 kartu
+- [ ] **gerbang v2.1:** tiap `CY-x` dengan `Storage ditulis SESUDAH` tidak kosong DAN guard `none` ≥ 1 kartu atau catatan eksplisit
 - [ ] nol verdict `TERBUKTI` dari gelombang 1/2; semua berlabel `DIANALISIS`
 - [ ] nol PoC (itu Tahap E)

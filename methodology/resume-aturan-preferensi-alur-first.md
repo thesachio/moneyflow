@@ -81,7 +81,7 @@ workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
 - B7: cek rantai utama, ringan: getCode 1–3 alamat inti di blok referensi +
   satu view murah; fallback rantai utama kedua; rantai tidak merespons →
   langsung pindah; anggaran maks 5 menit (target, belum terukur).
-- B8: cek live-match diulang di awal fase uji per klaster sebelum PoC;
+- B8: **B8 Live-Match Lintasan — di awal Tahap D, wajib lulus sebelum Gate D** (per domain eksekusi);
   tidak live-match → TUNDA-LIVE (tercatat di ledger, nol waktu eksekusi,
   dibuka lagi bila deployment live muncul atau Kim memerintah cek ulang,
   ditinjau di sapuan akhir). Utamakan alur, log untuk verifikator terakhir
@@ -141,9 +141,7 @@ workflow Tahap B: `acuan-workflow-tahap-B.md`. Draf usulan awal:
   `INV-Fx`) → P2 ketidakcocokan Handoff/State-Bridge (`INV-Hx`, `INV-HBx`)
   → P3 anomali lokal Segmen (`INV-Sx`, S1→Sn); anti-kuota mutlak: kuras
   sampai `QUEUED == 0` dan `ACTIVE == 0` sebelum pindah Stream. Artefak:
-  `B07-STATE-BRIDGES.md` (Tahap B, diperbarui C/D; kolom `Bridge_ID |
-  Storage_Var | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption |
-  Sync_Status | Waktu`; enum `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED`) dan `C00-SHARED-PRIMITIVES.md` (sekali di awal Tahap C).
+  `B07-STATE-BRIDGES.md` (Tahap B, diperbarui C/D; kolom `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`; enum `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED`) dan `C00-SHARED-PRIMITIVES.md` (sekali di awal Tahap C).
 
 ## 5. Tahap B — yang wajib selesai (7 butir)
 
@@ -195,7 +193,7 @@ penutupan B9 (dieksekusi di akhir; bahannya yang wajib ada di Tahap B).
   arsip validasi; nomor B07 kini dipakai B07-STATE-BRIDGES.]
 - C (per-Stream just-in-time): C00-SHARED-PRIMITIVES (sekali di awal
   Tahap C sebelum Stream pertama: jaminan pembulatan, skala desimal,
-  invarian 1:1/share conversion, peran, event) + C<NN>-STREAM-INVENTORY
+  invarian 1:1/share conversion, peran, event) + C<NN>-<STR>-<Lk>-INVENTORY
   (inventaris alur + segmentasi + kontrak handoff deskriptif per
   Stream). [ARSIP RIWAYAT PILOT: C08-K8-PRIMITIVES primitif; K9 mock
   dilewati — kini digeneralisasi: SHARED-PRIMITIVE → C00;

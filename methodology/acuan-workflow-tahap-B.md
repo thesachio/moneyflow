@@ -21,6 +21,7 @@ proyek berikut bisa jalan hanya dari dokumen ini + INTEL proyeknya.
 Tahap B = tahu scope menyeluruh di awal (sensus utuh + peta alur),
 tanpa buruan. Keluarannya — dua lapis:
 A. Sekali, untuk seluruh protokol (bagian depan):
+0. B00-TOPOLOGY.md — Profil Topologi (B0): mode + Matriks Domain + VK/VC.
 1. B01-SCOPE.md — daftar scope + scope lock (B13).
 2. B02-CENSUS-STATIC.md + staging JSON — sensus statis 100%
    peristiwa pemindah nilai (B1/B6). (Field 'keluar' tiap fungsi EP+VM
@@ -28,14 +29,16 @@ A. Sekali, untuk seluruh protokol (bagian depan):
 3. B03-CENSUS-LIVE.md — inventaris alamat live (daftar) + sensus live
    ringan B7 (WAJIB, B15); sensus live penuh opsional, sisanya
    just-in-time per klaster (B8).
-4. B04-CLUSTERS.md — identifikasi klaster + daftar handoff (B11) +
+4. B04-STREAMS-AND-CLUSTERS.md — identifikasi klaster + katalog
+   Stream/Lintasan + Katalog Ingress `IN-x` (B17) + daftar handoff (B11) +
    klasifikasi 4 tipe (moneyflow v2.0): CORE-FLOW / SHARED-PRIMITIVE /
    EXTERNAL-BOUNDARY / NON-PROD-SKIP.
    (Daftar jahitan SM-xx lengkap TIDAK wajib — B16 tidak dipakai,
    diputus 22:33 WIB 16 Nov 2026.)
-5. B07-STATE-BRIDGES.md — seed tabel State-Bridge antar-Stream
-   (kolom: `Bridge_ID | Storage_Var | Writer_Stream_&_Guarantee |
-   Reader_Stream_&_Assumption | Sync_Status | Waktu`); diperbarui di C/D.
+5. B07-STATE-BRIDGES.md — seed tabel State-Bridge antar-Lintasan
+   (kolom baku v2.1: `Bridge_ID | Storage_Var_&_Contract |
+   Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption |
+   Window_&_Trigger | Sync_Status`); diperbarui di C/D.
 6. Ledger sisa (B10) — seed: entrypoint belum masuk alur, handoff
    terbuka, Stream belum dikerjakan.
 7. Registry invariant (B3) — struktur + penomoran (kosong; diisi
@@ -77,12 +80,12 @@ dengan verdict value_moves (yes/state_mutator/no/unknown — B14-v2)
 bukan-fungsi (transfer langsung, force-feed dan sejenisnya) dicatat sebagai
 permukaan berkas/sistem, bukan baris fungsi.
 
-### B2. Scope menyeluruh di awal, eksplorasi per klaster
+### B2. Scope menyeluruh di awal, eksplorasi per Lintasan
 Definisi: luasan diketahui utuh di awal (sensus + daftar scope);
-kerja mendalam jalan round per round per klaster alur, diurutkan EV
-live; rolling Tahap C → Tahap D → Tahap E per klaster (Tahap B
-sensus utuh → Tahap C klaster 1 → Tahap D klaster 1 → Tahap E klaster 1
-→ Tahap C klaster 2 → …).
+kerja mendalam jalan round per round **per Lintasan (B19)**, urutan
+B2a/B2a-v2/B2a-PostAudit; rolling **C → D → E per Lintasan** (Tahap B
+sensus utuh → Tahap C Lintasan 1 → Tahap D Lintasan 1 → Tahap E
+Lintasan 1 → Tahap C Lintasan 2 → …).
 Cara pakai: jangan mulai buruan sebelum sensus utuh selesai; jangan
 kerjakan semua klaster sekaligus. Urutan pintu masuk pertama kali (B2a) = default, bukan
 gerbang: bila EV tidak dipakai (data live tidak ada — B15 — atau Kim
@@ -97,9 +100,9 @@ akhir, registry invariant (satu penomoran), aturan/gerbang.
 Cara pakai: klaster boleh dipecah, tapi enam hal ini selalu utuh
 untuk seluruh protokol.
 
-### B4. Yang BISA DIPECAH per klaster
+### B4. Yang BISA DIPECAH per Lintasan
 Definisi: inventaris alur + segmentasi, kontrak handoff (Tahap C); penulisan invariant (Tahap D) + uji invariant (Tahap E); komposisi (Tahap F); verdict (Tahap G).
-Cara pakai: pecah kerja mendalam per klaster (diurutkan pintu masuk pertama kali — B2a);
+Cara pakai: pecah kerja mendalam per Lintasan (B19), diurutkan B2a;
 sensus dan aturan tetap utuh (B3).
 
 ### B5. Peta utuh, bukti just-in-time
@@ -111,16 +114,21 @@ fase/klaster yang membutuhkannya.
 Cara pakai: di depan cukup peta + sensus live singkat (B7);
 verifikasi live per klaster jalan just-in-time (B8).
 
-### B6. Sensus statis: baca manual penuh, tanpa AST
-Definisi: semua fungsi di semua berkas dibaca manual dan dapat
-dengan verdict (yes/state_mutator/no/unknown — B14-v2); verifikasi
-parent + kontrol positif tetap
-jalan. TIDAK pakai AST (diputus Kim 15 Nov 2026).
+### B6-v2. Sensus statis: baca badan penuh, AST sebagai alat bantu
+Rujuk `aturan-alur-first.md` **B6-v2** (moneyflow v2.1). Ringkas:
+AST/parser boleh melokalisasi fungsi, daftar warisan/override, panggilan
+eksternal (`CY-x`), storage ditulis/dibaca, deteksi
+`receive`/`fallback`/`selfdestruct`/`balanceOf(this)`; **verdict
+`value_moves` (4 nilai B14-v2), tag `PRIVILEGED_ONLY:`/
+`COSMETIC_NON_ECONOMIC:`, kelas Ingress B17, dan seluruh kolom deskriptif
+Tahap C diisi setelah badan fungsi dibaca penuh**. Rekonsiliasi wajib:
+jumlah fungsi AST vs jumlah baris sensus per berkas, selisih ≠ 0
+dijelaskan per baris.
 Cara pakai: kelompokkan berkas (pilot: G01–G10), satu worker per
-kelompok membaca tiap fungsi dari kode; koordinator verifikasi tiap
-staging sebelum sintesis; kontrol positif 9/9 wajib lolos; nol
-mekanis wajib dipecahkan. B9 (usaha yang cukup) TIDAK berlaku di
-sini — kedalaman sensus statis tidak diambil risiko.
+kelompok membaca tiap badan fungsi dari kode; koordinator verifikasi tiap
+staging sebelum sintesis; kontrol positif 9/9 wajib lolos; nol mekanis
+wajib dipecahkan. B9 (usaha yang cukup) TIDAK berlaku di sini —
+kedalaman sensus statis tidak diambil risiko.
 Bukti biaya (pilot Across): putaran 1 ~23 menit; rerun 13 menit 36
 detik; biaya jujur satu putaran ~14–23 menit.
 
@@ -147,9 +155,10 @@ proyek murni belum di-deploy (`repo-only`) — bila repo-only, sensus
 live di Tahap B tinggal inventaris alamat klaim-repo (statis) +
 catatan verifikasi ditunda ke B8.
 
-### B8. Cek live-match diulang per Stream; TUNDA-LIVE
-Definisi: cek live-match diulang di awal fase uji per Stream
-(moneyflow v2.0), sebelum PoC ditulis. Yang tidak live-match masuk wadah TUNDA-LIVE.
+### B8. B8 Live-Match Lintasan; TUNDA-LIVE
+Definisi: **B8 Live-Match Lintasan — dijalankan di awal Tahap D, wajib
+lulus sebelum Gate D** (moneyflow v2.1), per domain eksekusi segmen
+(B21). Yang tidak live-match masuk wadah TUNDA-LIVE.
 Cara pakai: TUNDA-LIVE = tercatat di ledger sisa (tetap terhitung,
 bukan hilang); nol waktu eksekusi (tanpa PoC, tanpa fork); dibuka
 lagi hanya bila deployment live muncul atau Kim memerintah cek ulang;
@@ -164,8 +173,9 @@ penutupan graf akhir. Batasan jujur: cek penutupan tidak bisa
 menemukan item yang tidak ada di daftarnya; miss di klaster belum
 dijelajahi tetap tersembunyi sampai round-nya.
 Penopang wajib: sapuan akhir dengan enumerasi independen kedua
-dibanding ledger akhir. Caranya MASIH TERBUKA — bukan AST (diputus
-15 Nov 2026) dan bukan regex yang sama (terbukti cacat di pilot).
+dibanding ledger akhir. **Cara: enumerasi AST independen per nama
+`(file, contract, function)` vs ledger akhir (atau rerun manual) — B9
+v2.1**; regex yang sama dengan sensus tetap tidak sah.
 Sensus di depan adalah rencana + daftar periksa, bukan bukti
 kelengkapan; buktinya datang dari eksplorasi + sapuan akhir.
 Catatan: B9 TIDAK berlaku untuk kedalaman sensus statis (B6).
@@ -188,7 +198,7 @@ input N+1.
 
 ### B12. Invariant TIDAK dinyatakan di Tahap B
 Definisi: Tahap B hanya membangun yang riil/teramati untuk
-seluruh protokol — sensus, klaster, daftar handoff (B11). (B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.) Tahap C
+seluruh protokol — sensus, profil topologi (B0), klaster, katalog Ingress (B17), daftar handoff (B11). (B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.) Tahap C
 membangun yang riil/teramati per-Stream — `C00-SHARED-PRIMITIVES`
 sekali di awal Tahap C + inventaris alur, segmentasi, kontrak handoff
 deskriptif (jaminan produsen + asumsi konsumen sebagaimana teramati
@@ -332,10 +342,28 @@ yang wajib selesai' di aturan-alur-first.md.
   rolling C→D→E = per-Stream (B2a-v2); garis aliran menembus batas
   klaster (Aturan Koridor Stream); jeda nilai pada storage =
   State-Bridge (`HB-x`, B07).
-- **Unit / segmen**: unit = Stream (aliran nilai ujung-ke-ujung);
-  segmen = potongan alur di handoff yang bisa diamati (event,
-  perubahan state, pesan lintas-chain, batas waktu, langkah
-  off-chain); segmen = unit buruan.
+- **Stream / Lintasan / Segmen (v2.1):** Stream = siklus hidup nilai
+  (indeks cakupan); Lintasan = unit kerja satu sesi (B19 anggaran,
+  `STR-nn.Lk`); Segmen = unit buruan, dibatasi 5 pemicu B19
+  (`STR-nn.Lk.Sj`). Segmen masih = potongan alur yang bisa diamati
+  (event, perubahan state, pesan lintas-chain, batas waktu, langkah
+  off-chain).
+- **Mode topologi (B0):** `TUNGGAL` / `TUNGGAL-BERINSTANS` /
+  `MULTI-DOMAIN` — ditentukan dari hitungan `DOM-x`/`VK-x`/`VC-x`, bukan
+  selera agen; mode menentukan bentuk pemecahan, bukan isi rule.
+- **`IN-x` (B17):** baris katalog Ingress — cara nilai/klaim bertambah di
+  sebuah `Value_Holder`, berkelas `USER`/`ACTOR`/`CALLBACK`/`PASSIVE`/
+  `ACCRUAL`/`ADMIN`; terikat ke Lintasan yang **membaca** efeknya.
+- **`CY-x` (B18):** titik serah kendali di dalam segmen (call/delegatecall/
+  transfer native/token ber-hook/try-catch) dengan kolom storage ditulis
+  SEBELUM/SESUDAH + storage dibaca SESUDAH + guard + efek bila revert.
+- **Tabel Selisih (B20):** tabel perbedaan antar-anggota satu keluarga
+  varian (`VK-x`/`VC-x`/`DOM-x`); satu anggota representatif dibedah
+  penuh, sisanya ditabulasi; baris `BEDA` yang menyentuh nilai atau
+  autentikasi wajib jadi kartu Tahap D.
+- **`UNVERIFIED` (B21):** status nilai LP-x yang tidak terbaca andal di
+  blok pin domainnya. BUKAN `LIVE`; Lintasan dengan LP-x pengendali nilai
+  berstatus ini tidak lolos Gate D. (Menggantikan `TIDAK-TERBACA`.)
 - **Handoff**: batas antar segmen + kontraknya (B11).
 - **Simpul (fork/join)**: titik percabangan/penggabungan aliran;
   fork → cek konservasi (Σkeluaran = masukan − fee); join → cek
@@ -347,7 +375,7 @@ yang wajib selesai' di aturan-alur-first.md.
   tertutup; batasan: tidak bisa menemukan item yang tidak ada di
   daftarnya (B9).
 - **Sapuan akhir**: enumerasi independen kedua dibanding ledger
-  akhir (cara terbuka, B9).
+  akhir (enumerasi AST independen atau rerun manual — B9 v2.1).
 - **Kontrol positif**: fungsi yang diketahui pasti pemindah nilai,
   dicek di baris yang dipin untuk membuktikan sensus tidak buta
   (pilot: 9/9 — depositV3:611, fillRelay:986,
@@ -376,8 +404,7 @@ yang wajib selesai' di aturan-alur-first.md.
   kehadiran kode + jejak event (bila B7 dijalankan; bila `repo-only`,
   verifikasi ditunda ke B8), batasan RPC, koreksi).
 - `B07-STATE-BRIDGES.md` (moneyflow v2.0) — tabel State-Bridge
-  antar-Stream: `Bridge_ID | Storage_Var | Writer_Stream_&_Guarantee |
-  Reader_Stream_&_Assumption | Sync_Status | Waktu`.
+  antar-Stream: `Bridge_ID | Storage_Var_&_Contract | Writer_Lintasan_&_Guarantee | Reader_Lintasan_&_Assumption | Window_&_Trigger | Sync_Status`.
 - `notes/staging-G01..G10-*.md` — staging per kelompok (baris JSON
   per fungsi) + `notes/staging-synthesis.md`.
 - `notes/clusters-draft.md` — draf klaster + ledger sisa benih
@@ -418,8 +445,6 @@ Rule ini tinggal di `aturan-alur-first.md`; yang dipakai di Tahap B:
 
 ## 8. Yang masih terbuka (bukan rule)
 
-- Cara enumerasi independen untuk sapuan akhir (B9) — bukan AST,
-  bukan regex yang sama.
 - Aturan pin commit di run dari-0 + blok referensi (A5) — Kim
   menunda untuk fase ini (15 Nov 2026).
 - Urutan klaster + bentuk rinci Tahap C–G — keputusan per proyek (struktur modular A–G di aturan-alur-first.md seksi D)

@@ -14,14 +14,14 @@ Repo ini **bukan** proyek audit: tidak memuat kode kontrak target dan tidak memu
 | Tahap | Nama | Keluaran | Batas |
 | :--- | :--- | :--- | :--- |
 | A | INTEL | `INTEL.md` (brief 9 butir), `A01-INTEL.md`, `A02-INTEL-discovery.md` | Brief saja; **tanpa cek onchain**, tanpa verifikasi teknis (A2) |
-| B | Mapping | `B00-TOPOLOGY` (DOM-x/VK-x/VC-x → mode + Matriks Domain) lalu `B01`–`B07` (termasuk katalog `IN-x` di `B04` Bagian 2b): incl. `B04-STREAMS-AND-CLUSTERS` & `B07-STATE-BRIDGES` | Tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict |
-| C | Stream-Slice Inventory | `C00-SHARED-PRIMITIVES` (sekali di awal) + `C<NN>-<STREAM_ID>-INVENTORY` per Stream (memuat Lintasan `STR-nn.Lk`, Tabel Selisih Varian, `CY-x`, Ingress `S0`) | Deskriptif saja; menembus batas klaster sepanjang koridor aliran nilai (`Corridor-Bound Cross-Cluster`); 5 pemicu batas segmen (B19) |
-| D | Eksplorasi | `D<NN>-<STREAM_ID>-WAVE1-BLIND`, `-WAVE2-QUEUED`, `-LEAD-CARDS` + invariant (`INV-Sx/Hx/HBx/Jx/Fx`) | Gelombang 1 bebas katalog (3 Lensa Fisika Nilai + Twin-Path Diff) lalu Gelombang 2 Symptom-Triggered Lazy Skill Loading (2-4 plugin relevan); tanpa PoC |
-| E | Pembuktian fork | `E<NN>-<STREAM_ID>-BATCH<M>-PROOF` + pustaka `FlowFixtures` kumulatif | Fork blok pin; rantai utuh (a)+(b)+(c); batch maks 3; standar C10-v2 (Permissionless + Observed Live Ceiling / Proven Potential Ceiling >= $1) |
+| B | Mapping | `B00-TOPOLOGY`, `B01-SCOPE`, `B02-CENSUS-STATIC`, `B03-CENSUS-LIVE`, `B04-STREAMS-AND-CLUSTERS` (klaster 4 tipe + katalog Stream/Lintasan + Katalog Ingress `IN-x`), `B05-LEDGER-SISA` (3 populasi), `B06-REGISTRY-INVARIANT`, `B07-STATE-BRIDGES` | Tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict; AST boleh untuk lokalisasi (B6-v2) |
+| C | Stream-Slice Inventory (rolling per-Lintasan) | `C00-SHARED-PRIMITIVES` (sekali), `C<NN>-<STR>-<Lk>-INVENTORY` | Deskriptif saja; koridor (`Corridor-Bound Cross-Cluster`); segmen menurut 5 pemicu B19; `CY-x`, Ingress `S0`, Tabel Selisih, LP-x per domain |
+| D | Eksplorasi | Kartu lead + invariant (`INV-Sx/Hx/HBx/Jx/Fx` + `INV-CYx` serah kendali + `INV-Vx` selisih varian) | Per-Lintasan; dua gelombang; gerbang ≥1 kartu atau `NIHIL_KANDIDAT`; mode `AUTO`/`PAIR` tetap |
+| E | Pembuktian fork | `E<NN>-<STR>-<Lk>-BATCH<M>-PROOF` + pustaka `FlowFixtures` kumulatif | Fork blok pin per domain Lintasan; rantai utuh (a)+(b)+(c); batch maks 3; standar C10-v2 |
 | F | Komposisi Inkremental (bersyarat) | `F<NN>-<COMPOSITION_ID>` + pembaruan `Sync_Status` di `B07` | Dua pemicu: inkremental seusai E per Stream (menyentuh State-Bridge/brankas bersama) + sapuan akhir multi-stream; Lemma 4 Syarat tanpa fork ulang |
 | G | Verdict | Verdict 06/07/08/09 per kandidat + distribusi akhir | Triage per-Stream + rekapitulasi akhir; tiga verdict terpisah |
 
-Rolling **vertikal per Stream ujung-ke-ujung**: `C -> B8 -> D -> E -> F inkremental -> G triage` — satu Stream utuh dikerjakan sebelum Stream berikutnya; sapuan akhir `B9` + rekapitulasi di penutupan proyek. Pra-cek deterministik: `python3 tools/verify_flow.py` (check-staging / check-b / check-c / check-d / check-e / check-final).
+Rolling **vertikal per Lintasan**: `C -> B8 -> D -> E -> F inkremental -> G triage` — satu Lintasan per sesi; semua Lintasan satu Stream tuntas sebelum Stream berikutnya; sapuan akhir `B9` (enumerasi AST independen) + rekapitulasi di penutupan. Pra-cek: `python3 tools/verify_flow.py` (check-staging / **check-b0** / check-b / check-c / check-d / check-e / check-final).
 
 ---
 
@@ -36,7 +36,8 @@ Rolling **vertikal per Stream ujung-ke-ujung**: `C -> B8 -> D -> E -> F inkremen
 | `SOUL.md` | Identitas + hukum kognitif metode flow |
 | `AGENTS.md` | Konstitusi operasional: tahap, delegasi, gerbang, preferensi, lantai bawah |
 | `verify/VERDICT.md`, `verify/SEVERITY-RUBRIC.md` | Standar verdict + severity (dipakai Tahap G) + blok penyetaraan metode Flow Money First v2.0 |
-| `tools/verify_flow.py` | Pemeriksa gerbang deterministik (exit 0 lulus / 1 gagal): check-staging, check-b, check-c, check-d, check-e, check-final |
+| `tools/verify_flow.py` | Pemeriksa gerbang deterministik (exit 0 lulus / 1 gagal): check-staging, **check-b0**, check-b, check-c, check-d, check-e, check-final |
+| `templates/B00-TOPOLOGY.md` | Template profil topologi (B0) — hitungan `DOM-x`/`VK-x`/`VC-x`, Matriks Domain, Katalog `IN-x`, Tabel Selisih Varian, daftar Lintasan |
 | `skills/flow-*` | Skill per tahap + autopilot |
 
 ---

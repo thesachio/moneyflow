@@ -74,22 +74,22 @@ Komposisi multi-stream akhir (bila ada siklus 3+ stream atau loop umpan-balik ni
 ### Lapis Stream (STEP STREAM-R — satu Stream utuh hulu-ke-hilir tanpa putus konteks)
 
 **STEP C-STREAM — petakan inventaris Stream.**
-Petakan `C<NN>-<STREAM_ID>-INVENTORY.md` menembus batas klaster sepanjang koridor aliran dana aktif (`Corridor-Bound Cross-Cluster` — boleh `1-hop peek` pada `State-Bridge`), perbarui `B05-LEDGER-SISA.md` dan `B07-STATE-BRIDGES.md`, lalu jalankan `python3 tools/verify_flow.py check-c audit/C<NN>-<STREAM_ID>-INVENTORY.md`. Verifikasi parent → checkpoint.
+Petakan `C<NN>-<STR>-<Lk>-INVENTORY.md` menembus batas klaster sepanjang koridor aliran dana aktif (`Corridor-Bound Cross-Cluster` — boleh `1-hop peek` pada `State-Bridge`), perbarui `B05-LEDGER-SISA.md` dan `B07-STATE-BRIDGES.md`, lalu jalankan `python3 tools/verify_flow.py check-c audit/C<NN>-<STR>-<Lk>-INVENTORY.md`. Verifikasi parent → checkpoint.
 
 **STEP B8-STREAM — verifikasi live-match Stream (L1–L4).**
 Verifikasi `deploy_parity` / kode live kontrak pada koridor Stream di blok pin (pakai ulang cache per rantai) sesuai empat syarat live-match: L1 Kode (sumber deployed per fungsi koridor, proxy via EIP-1967 @ blok pin; `KORIDOR_SAMA`/`KORIDOR_BEDA:<fungsi>`/`KORIDOR_TIDAK_TERBUKTI`), L2 Config (ADMIN-CONFIG dibaca dari storage @ pin sesuai LP-x; DEAD-CONFIG → DORMAN), L3 Payload (CALLER-INPUT dalam bentuk/batas live + 3–5 contoh tx nyata per entrypoint), L4 Target (uji ke alamat deployed di fork blok pin). Simpan ke `audit/notes/live-match-<STREAM>.md` (kolom: chain, fork_block, alamat proxy, alamat impl@pin, sumber_deployed, status koridor per fungsi, LP-x terbaca). Tidak live-match → tandai `TUNDA-LIVE` di `B05`, nol waktu eksekusi, kembali ke **STEP PROJECT**.
 
 **STEP D-WAVE1 — eksplorasi bebas murni.**
-Delegasikan dengan **`Stream Context Capsule`** murni tanpa katalog: **Tiga Lensa Fisika Nilai** + `1-hop peek` pada `B07` + *Twin-Path Diff* bila pasangan kembar sudah punya berkas `C`. Keluaran `D<NN>-<STREAM_ID>-WAVE1-BLIND.md`: `OBS`, `G`, `Q`, `SYMPTOM-TAGS` (semua berlabel `DIANALISIS`). Verifikasi parent → checkpoint.
+Delegasikan dengan **`Stream Context Capsule`** murni tanpa katalog: **Tiga Lensa Fisika Nilai** + `1-hop peek` pada `B07` + *Twin-Path Diff* bila pasangan kembar sudah punya berkas `C`. Keluaran `D<NN>-<STR>-<Lk>-WAVE1-BLIND.md`: `OBS`, `G`, `Q`, `SYMPTOM-TAGS` (semua berlabel `DIANALISIS`). Verifikasi parent → checkpoint.
 
 **STEP D-WAVE2 — lazy skill augmentation.**
 Koordinator memilih **maksimal 2 sampai 4 plugin katalog** berdasarkan `SYMPTOM-TAGS` (+ maks 1 `CHAIN-*` dan 1 `DOM-*` bila relevan) sesuai tabel *Lazy Skill Router* di `flow-d-explore`. Disposisi seluruh `OBS` dan `Q` sampai habis tanpa kuota. Verifikasi parent → checkpoint.
 
 **STEP D-CARDS — kartu lead + invariant + Gate D.**
-Koordinator merumuskan `D<NN>-<STREAM_ID>-LEAD-CARDS.md` (rantai `(a)+(b)+(c)` per C11) + mengisi `B06-REGISTRY-INVARIANT.md` (`INV-Sx` / `INV-Hx` / `INV-HBx` / `INV-Jx` / `INV-Fx`, bersumber) + menyaring lewat **Gate D** (C10-v2: *permissionless* + *reachable state* + lulus B8 + rumus plafon potensial >= $1) + mengurutkan `QUEUED` berdasarkan bobot struktural (`Simpul/Komposisi > Handoff/State-Bridge > Segmen Lokal`). Jalankan `python3 tools/verify_flow.py check-d audit/ --stream <STREAM_ID>`. Verifikasi parent → checkpoint.
+Koordinator merumuskan `D<NN>-<STR>-<Lk>-LEAD-CARDS.md` (rantai `(a)+(b)+(c)` per C11) + mengisi `B06-REGISTRY-INVARIANT.md` (`INV-Sx` / `INV-Hx` / `INV-HBx` / `INV-Jx` / `INV-Fx`, bersumber) + menyaring lewat **Gate D** (C10-v2: *permissionless* + *reachable state* + lulus B8 + rumus plafon potensial >= $1) + mengurutkan `QUEUED` berdasarkan bobot struktural (`Simpul/Komposisi > Handoff/State-Bridge > Segmen Lokal`). Jalankan `python3 tools/verify_flow.py check-d audit/ --stream <STR>`. Verifikasi parent → checkpoint.
 
 **STEP E-BATCH — pembuktian fork blok pin (loop, maks 3 per batch).**
-Tarik maks 3 kartu teratas per batch, uji di satu fork blok pin menggunakan pustaka kumulatif `FlowFixtures`, ukur `Observed Live Ceiling` atau `Proven Potential Ceiling` (*rational victim seeding*), wajib kontrol positif, dan parent menjalankan ulang seluruh tes forge hingga **gas IDENTIK**. Jalankan `python3 tools/verify_flow.py check-e audit/E<NN>-<STREAM_ID>-BATCH<M>-PROOF.md`. Ulangi sampai `QUEUED == 0` **dan** `ACTIVE == 0` untuk Stream itu.
+Tarik maks 3 kartu teratas per batch, uji di satu fork blok pin menggunakan pustaka kumulatif `FlowFixtures`, ukur `Observed Live Ceiling` atau `Proven Potential Ceiling` (*rational victim seeding*), wajib kontrol positif, dan parent menjalankan ulang seluruh tes forge hingga **gas IDENTIK**. Jalankan `python3 tools/verify_flow.py check-e audit/E<NN>-<STR>-<Lk>-BATCH<M>-PROOF.md`. Ulangi sampai `QUEUED == 0` **dan** `ACTIVE == 0` untuk Stream itu.
 
 **STEP F-INCREMENTAL — komposisi inkremental.**
 Bila Stream aktif menyentuh baris `B07-STATE-BRIDGES.md` yang sisi pasangannya sudah terpetakan, atau berbagi kolam dana dengan Stream sebelumnya, **jalankan** evaluasi komposisi inkremental saat itu juga (`flow-f-compose`) — jangan menunda ke akhir proyek.
@@ -102,7 +102,7 @@ Adili seluruh kartu Stream aktif ke wadah `06 / 07 / 08 / 09` dengan tiga verdic
 1. **Parent memegang kendali eksklusif** atas berkas kanonik + `B05` + `B06` + `B07`. Parent satu-satunya penulis berkas kanonik.
 2. **Stream Context Capsule — daftar periksa isi paket konteks subagent** (input selalu ramping dan tajam; brief wajib mandiri, bersih dari riwayat chat):
    - [ ] path proyek + paradigma rantai + invarian inti Stream aktif;
-   - [ ] artefak yang terikat Stream aktif: `C<NN>-<STREAM_ID>-INVENTORY.md` + `C00-SHARED-PRIMITIVES.md` + baris relevan `B07-STATE-BRIDGES.md`;
+   - [ ] artefak yang terikat Stream aktif: `C<NN>-<STR>-<Lk>-INVENTORY.md` + `C00-SHARED-PRIMITIVES.md` + baris relevan `B07-STATE-BRIDGES.md`;
    - [ ] maks 1 tabel Twin-Path (jika pasangan kembar ada);
    - [ ] maks 2–4 plugin di Wave 2 (pilih dari Lazy Skill Router sesuai `SYMPTOM-TAGS`);
    - [ ] format keluaran tahap + label wajib (DIANALISIS/DIEKSEKUSI);

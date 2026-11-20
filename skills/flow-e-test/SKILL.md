@@ -1,6 +1,6 @@
 ---
 name: flow-e-test
-description: "Tahap E — Pembuktian Fork Pin (moneyflow v2.0): pustaka Cumulative Normal-Path Fixtures (FlowFixtures) + dua metrik plafon C10-v2 (Observed Live Ceiling / Proven Potential Ceiling + victim seeding), batch maks 3 per Stream, kontrol positif, rerun forge gas IDENTIK, rantai (a)+(b)+(c) utuh (C11), tiga verdict terpisah. Dipakai saat menguji lead, atau saat user menyebut tahap E, uji, proof, fork."
+description: "Tahap E — Pembuktian Fork Pin (moneyflow v2.1): pustaka Cumulative Normal-Path Fixtures (FlowFixtures) + dua metrik plafon C10-v2 (Observed Live Ceiling / Proven Potential Ceiling + victim seeding), batch maks 3 per Stream, kontrol positif, rerun forge gas IDENTIK, rantai (a)+(b)+(c) utuh (C11), tiga verdict terpisah. Dipakai saat menguji lead, atau saat user menyebut tahap E, uji, proof, fork."
 ---
 
 # Skill flow-e-test — Tahap E (Uji test)
@@ -43,6 +43,7 @@ Pengembang asli harus bisa langsung menjalankannya:
 
 ### Fork multi-chain untuk protokol multi-chain (revisi 19 Nov 2026, mengikat)
 
+- **Fork dua domain (v2.1):** Lintasan `MULTI-DOMAIN` menguji di fork domain sumber **DAN** domain tujuan bila handoff lintas-domain berada di rantai (a)+(b)+(c). Pengiriman pesan disimulasikan dengan **impersonasi pengirim sah** sesuai autentikasi domain (alias L1→L2, `crossChainSender`, messenger), dan dicatat di `E-PROOF`.
 - **Fork mengikuti chain tempat kontrak koridor kartu berada.** Bila rantai (a)+(b)+(c) kartu menyentuh kontrak di lebih dari satu chain (mis. deposit di Polygon → fill di Base), jalankan fork untuk setiap chain yang menyentuh garis aliran dan uji di fork yang sesuai — multi-chain fork (dua anvil instance / satu tes per fork) diizinkan dan wajib dicatat di `E-PROOF`.
 - **Kartu yang menyentuh override/behavior per-chain WAJIB diuji di fork chain tersebut** — bukan di fork Ethereum: contoh yang wajib fork non-Ethereum: `_requireAdminSender` per-varian (aliasing Arbitrum, `callValidated` Polygon, CrossDomainEnabled OP), `_is7702DelegatedWallet` ZkSync (`pure false` — ZkSync_SpokePool.sol:155-157), `_preExecuteLeafHook` Ovm/Linea/Polygon, `_safeTransfer`/`_noRevertTransfer` Tron, light-client Universal (HubPoolStore→SP1Helios).
 - **Dasar pengetahuan per-chain = implementasi yang sudah dibaca di Tahap B/C** (sensus 100% varian + inventaris koridor). Fork Tahap E mengonfirmasi **eksekusi** behavior itu; fork bukan sumber pertama pengetahuan behavior.
@@ -146,7 +147,7 @@ Ambang: potensi kerugian **≥ $1 = bukan debu** (kandidat sah, disimpan). Hanya
 
 ## Keluaran
 
-- `E<NN>-<STREAM_ID>-BATCH<M>-PROOF.md` — PoC + kontrol + P&L (kedua metrik plafon dicatat: mana yang dipakai dan angkanya) + tiga verdict + label bukti.
+- `E<NN>-<STR>-<Lk>-BATCH<M>-PROOF.md` — PoC + kontrol + P&L (kedua metrik plafon dicatat: mana yang dipakai dan angkanya) + tiga verdict + label bukti.
 - `poc/<stream_id>/` — berkas tes forge + log eksekusi lengkap (gas tercatat); helper transaksi normal ditambahkan ke `poc/FlowFixtures`.
 
 ## Definition of done Tahap E (per batch per Stream)
