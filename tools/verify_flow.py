@@ -476,7 +476,8 @@ def cmd_check_final(args):
 
 
 LEGACY_MARKER = "LEGACY-v2.0"
-MODES = ("TUNGGAL", "BERINSTANS", "MULTI-DOMAIN")
+MODES = ("TUNGGAL-BERINSTANS", "MULTI-DOMAIN", "TUNGGAL")  # urutan: paling spesifik dulu
+IN_CLASSES = ("USER", "ACTOR", "CALLBACK", "PASSIVE", "ACCRUAL", "ADMIN")
 
 
 def _is_legacy(ad):
@@ -528,17 +529,25 @@ def cmd_check_b0(args):
     if not mode:
         v.append("B00-TOPOLOGY.md: mode topologi tidak dinyatakan (TUNGGAL / BERINSTANS / MULTI-DOMAIN)")
 
-    for i in range(1, 7):
-        if not re.search(rf"IN-{i}\b", t):
-            v.append(f"B00-TOPOLOGY.md: kelas ingress IN-{i} tidak dicek (B17 — wajib ADA/TIDAK ADA + alasan)")
+    # B17 v2.1: enam KELAS ingress wajib muncul (USER/ACTOR/CALLBACK/PASSIVE/ACCRUAL/ADMIN)
+    for hit in ("DOM-", "VK-", "VC-"):
+        if hit not in t:
+            v.append(f"B00-TOPOLOGY.md: hitungan {hit}x tidak ada (B0)")
 
-    if mode == "BERINSTANS":
+    for cls in IN_CLASSES:
+        if not re.search(rf"\b{cls}\b", t):
+            v.append(f"B00-TOPOLOGY.md: kelas ingress {cls} tidak tercatat (B17)")
+
+    if mode == "TUNGGAL-BERINSTANS":
         if "Selisih Varian" not in t:
-            v.append("B00-TOPOLOGY.md: mode BERINSTANS tanpa Tabel Selisih Varian (B21)")
+            v.append("B00-TOPOLOGY.md: mode TUNGGAL-BERINSTANS tanpa Tabel Selisih Varian (B20)")
         else:
-            for tok in ("TIDAK-DIBACA", "BEDA-KODE", "SAMA"):
+            for tok in ("BEDA", "SAMA"):
                 if tok not in t:
-                    v.append(f"Tabel Selisih Varian: enum {tok} tidak muncul (B21)")
+                    v.append(f"Tabel Selisih Varian: enum {tok} tidak muncul (B20)")
+    # v2.1: Matriks Domain wajib untuk MULTI-DOMAIN
+    if mode == "MULTI-DOMAIN" and "Matriks Domain" not in t:
+        v.append("B00-TOPOLOGY.md: mode MULTI-DOMAIN tanpa Matriks Domain (B0)")
 
     if mode == "MULTI-DOMAIN":
         if not re.search(r"LINT-\d+", t):

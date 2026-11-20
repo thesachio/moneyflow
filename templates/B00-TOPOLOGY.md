@@ -2,56 +2,64 @@
 
 Proyek: `<nama>` · Repo: `<repo> @ <commit>` · Tanggal: `<ISO-8601>`
 
-## 1. Mode terpilih
+Dijalankan **setelah B13 scope lock, sebelum katalog Stream B04**.
+
+## 1. Hitungan mekanis
+
+| Hitungan | Jumlah | Daftar |
+| :--- | :--- | :--- |
+| `DOM-x` Domain eksekusi | | `DOM-1` dan seterusnya |
+| `VK-x` Varian kode | | `VK-1` dan seterusnya (berkas/kontrak override per domain/versi) |
+| `VC-x` Varian konfigurasi | | `VC-1` dan seterusnya (instance parameter beda dari kode sama) |
+
+Kelas aset yang diterima (isi per `VC-x`): `native` / `wrapped-native` / `ERC-20 standar` / `fee-on-transfer` / `rebasing` / `hook-callback token` / `desimal non-18`.
+
+## 2. Mode terpilih
 
 | Field | Isi |
 | :--- | :--- |
-| Mode | `TUNGGAL` \| `BERINSTANS` \| `MULTI-DOMAIN` |
-| Alasan | `<fakta deployment yang memicu mode>` |
-| Bukti | `<INTEL baris / deployments/File:Baris / B03 baris>` |
+| Mode | `TUNGGAL` \| `TUNGGAL-BERINSTANS` \| `MULTI-DOMAIN` |
+| Syarat yang terpenuhi | `<DOM/VK/VC vs tabel B0>` |
+| Alasan (bila dinaikkan) | `<alasan tercatat; penurunan di bawah hasil hitungan DILARANG>` |
 
-## 2. Domain (chain/VM/lingkup)
+Bentuk pemecahan: `TUNGGAL` = Lintasan = Stream (pecah per fase bila lewat anggaran B19) · `TUNGGAL-BERINSTANS` = Stream x anggota representatif + Tabel Selisih (B20) · `MULTI-DOMAIN` = Stream pengguna x domain representatif + Stream lintas-domain per keluarga transport + Tabel Selisih per keluarga.
 
-| Domain_ID | Chain/VM | ChainId | Blok referensi | Peran domain | Bukti |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `D1` | | | | `inti` / `turunan` / `luar-scope` | |
+## 3. Matriks Domain (WAJIB bila `MULTI-DOMAIN`)
 
-## 3. Instans per peran
+| Domain | Chain/VM | ChainId | Blok pin | Kontrak inti + alamat | Autentikasi pesan masuk | Transport keluar/masuk | Kelas aset dirutekan | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DOM-1` | | | | | alias / messenger / `crossChainSender` / oracle | | | `LIVE` / `DEAD-CONFIG` / `UNVERIFIED` |
 
-| Peran | Jumlah instans | Alamat (ringkas) | Domain | Catatan varian |
-| :--- | :--- | :--- | :--- | :--- |
-| | | | | |
-
-> Wajib bila mode `BERINSTANS`: isi §5 Tabel Selisih Varian.
+Status dibaca **di domain itu sendiri** (B7), bukan disimpulkan dari rantai utama. Domain representatif = satu per keluarga transport/autentikasi; sisanya masuk Tabel Selisih.
 
 ## 4. Katalog Ingress `IN-x` (B17)
 
-| ID | Kelas | Status | Bukti (`File:Baris`) atau alasan kode |
-| :-- | :--- | :--- | :--- |
-| `IN-1` | Donasi/force-feed native | `ADA` / `TIDAK ADA` | |
-| `IN-2` | Token masuk langsung (transfer pihak ketiga, rebase, yield) | | |
-| `IN-3` | Callback/hook eksternal (ERC-777/1363/1155, bridge, flash-loan) | | |
-| `IN-4` | Keeper/relayer/bot publik (`poke`/`sync`/`harvest`/`update`) | | |
-| `IN-5` | Urutan/insidensi same-block (sandwich, first/last depositor, JIT) | | |
-| `IN-6` | Klaim/pre-mint eksternal (airdrop, merkelless claim, unlock vesting) | | |
+| `IN_ID` | Kelas | Value_Holder | Pintu (fungsi:baris atau "transfer langsung") | Pembaca akuntansi (fungsi:baris) | Lintasan pengikat | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `IN-1` | `USER` | | | | | `BELUM_TERIKAT` / `TERIKAT_DI_<LINTASAN>` |
+| `IN-2` | `ACTOR` | | | | | |
+| `IN-3` | `CALLBACK` | | | | | |
+| `IN-4` | `PASSIVE` | | | | | |
+| `IN-5` | `ACCRUAL` | | | | | |
+| `IN-6` | `ADMIN` | | | | | |
 
-Aturan: kelas `ADA` wajib punya unit penutup di `B05-LEDGER-SISA.md`; kelas `TIDAK ADA` wajib menyebut alasan kode (bukan "tidak terlihat").
+Aturan ikat: `IN-x` terikat ke **Lintasan yang membaca efeknya** (bukan penulisnya). `PASSIVE`/`ACCRUAL` → Lintasan yang rumusnya membaca saldo/waktu. `ADMIN` boleh diikat ke Lintasan admin dan diprioritaskan terakhir. `check-final` menolak sisa `BELUM_TERIKAT` pada `CORE-FLOW`.
 
-## 5. Tabel Selisih Varian (B21 — wajib bila `BERINSTANS`)
+## 5. Tabel Selisih Varian (B20 — wajib bila > 1 anggota per keluarga)
 
-| Varian/Instans | Alamat | Perbedaan kode (`File:Baris`) | Perbedaan konfigurasi | Perbedaan satuan | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| | | | | | `SAMA` / `BEDA-KODE:<fungsi>` / `BEDA-KONFIG:<field>` / `TIDAK-DIBACA` |
+| Anggota | Fungsi override (jangkar) | Autentikasi | Jalur native/wrapped | Transport/route | Kelas aset diterima | Parameter live beda (LP-x) | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| | | | | | | | `SAMA` / `BEDA:<kolom>` |
 
-Aturan: minimal satu instans diperiksa penuh; `TIDAK-DIBACA` pada instans yang dipakai PoC = PoC tidak sah; "berlaku untuk semua instans" dilarang tanpa tabel terisi.
+Baris `BEDA` yang menyentuh **nilai** atau **autentikasi** = wajib jadi kartu Tahap D (Twin-Path Differential otomatis).
 
-## 6. Daftar Lintasan (B20 — wajib bila `MULTI-DOMAIN`)
+## 6. Daftar Lintasan
 
 | Lintasan | Stream | Domain | Ingress | Egress | Segmen | Penyeberangan (`HB-x`) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `LINT-01` | `STR-01` | `D1` | | | `S1..Sn` | `HB-3 → LINT-02` |
+| `STR-01.L1` | `STR-01` | `DOM-1` | | | `S1..Sn` | `HB-3 → STR-01.L2` |
 
-Aturan: satu Lintasan = satu domain; wajib punya Ingress + Egress bernama; urutan = urutan penyeberangan.
+Penamaan: `STR-nn` (Stream), `STR-nn.Lk` (Lintasan), `STR-nn.Lk.Sj` (segmen). Satu sesi kerja = satu Lintasan.
 
 ## 7. Perubahan profil (riwayat)
 

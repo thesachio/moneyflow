@@ -1,6 +1,6 @@
 ---
 name: flow-b-map
-description: Tahap B — Mapping (moneyflow v2.1). Profil topologi B00-TOPOLOGY (TUNGGAL/BERINSTANS/MULTI-DOMAIN, wajib sebelum sensus), sensus statis 100% peristiwa pemindah nilai (B1/B6/B6-v2, 7 konvensi B14, AST hanya untuk lokalisasi), katalog ingress IN-x (B17), sensus live ringan B7 wajib (kolom domain), B04-STREAMS-AND-CLUSTERS (klaster 4 tipe + katalog Stream + Lintasan + Tabel Selisih Varian + Twin-Path) + B07-STATE-BRIDGES (enum Sync_Status + Waktu), cek live-match B8 + TUNDA-LIVE, ledger tiga populasi (B10/B10-v2 rekonsiliasi by-name), handoff dari batas unit (B11), larangan Stream sapu sisa (B22), scope lock (B13). Skill ini memuat aturan yang dibutuhkan sampai Tahap B selesai. Dipakai saat memetakan scope proyek, sensus, atau saat user menyebut tahap B, mapping, sensus, scope.
+description: Tahap B — Mapping (moneyflow v2.1). Profil topologi B00-TOPOLOGY (DOM-x/VK-x/VC-x → mode TUNGGAL/TUNGGAL-BERINSTANS/MULTI-DOMAIN, wajib sebelum sensus), sensus statis 100% peristiwa pemindah nilai (B1/B6/B6-v2, 7 konvensi B14, AST hanya untuk lokalisasi), katalog ingress IN-x (B17), sensus live ringan B7 wajib (kolom domain), B04-STREAMS-AND-CLUSTERS (klaster 4 tipe + katalog Stream + Lintasan + Tabel Selisih Varian + Twin-Path) + B07-STATE-BRIDGES (enum Sync_Status + Waktu), cek live-match B8 + TUNDA-LIVE, ledger tiga populasi (B10/B10-v2 rekonsiliasi by-name), handoff dari batas unit (B11), larangan Stream sapu sisa (B22), scope lock (B13). Skill ini memuat aturan yang dibutuhkan sampai Tahap B selesai. Dipakai saat memetakan scope proyek, sensus, atau saat user menyebut tahap B, mapping, sensus, scope.
 ---
 
 # Skill flow-b-map — Tahap B (Mapping)
@@ -19,7 +19,7 @@ Butuh konteks satu klaster/Stream saja → bukan Tahap B; kerjakan di giliran St
 
 | Artefak | Isi |
 | :--- | :--- |
-| **`B00-TOPOLOGY.md`** (**BARU — v2.1**) | profil topologi (`TUNGGAL`/`BERINSTANS`/`MULTI-DOMAIN`) + bukti domain/instans + katalog `IN-x` (B17) + daftar Lintasan (B20) + Tabel Selisih Varian (B21, wajib bila `BERINSTANS`) |
+| **`B00-TOPOLOGY.md`** (**BARU — v2.1**) | hitungan `DOM-x`/`VK-x`/`VC-x` + mode (`TUNGGAL`/`TUNGGAL-BERINSTANS`/`MULTI-DOMAIN`) + Matriks Domain (bila MULTI-DOMAIN) |
 | `B01-SCOPE.md` | daftar scope + scope lock (B13) + katalog ingress `IN-x` (B17) |
 | `B02-CENSUS-STATIC.md` + `scripts/out/*.jsonl` | sensus statis 100% (satu baris JSON per fungsi) |
 | `B03-CENSUS-LIVE.md` | inventaris alamat live (daftar, **kolom `domain` WAJIB**) + sensus live ringan B7 — **wajib ≤5 menit untuk MAINNET/TESTNET**; hanya ditandai `REPO-ONLY` bila stage Tahap A adalah `PRE-DEPLOY / REPO-ONLY` |
@@ -30,32 +30,44 @@ Butuh konteks satu klaster/Stream saja → bukan Tahap B; kerjakan di giliran St
 
 ## Langkah 0 — B0 Profil Topologi (gerbang masuk PALING AWAL, v2.1)
 
-Tulis `B00-TOPOLOGY.md` dari fakta deployment (INTEL + `deployments/` + klaster kasar), **sebelum** scope lock dan sensus.
+Dijalankan **setelah B13 scope lock, sebelum katalog Stream B04**. Keluaran `B00-TOPOLOGY.md` (template `templates/B00-TOPOLOGY.md`). Tiga hitungan mekanis — AST/grep boleh, hasil diverifikasi parent:
 
-Pilih tepat satu mode:
-
-| Mode | Fakta pemicu | Bentuk pemecahan |
+| Hitungan | Definisi | Sumber |
 | :--- | :--- | :--- |
-| `TUNGGAL` | satu kontrak inti per peran, satu rantai/VM, satu pasar | Stream biasa |
-| `BERINSTANS` | kontrak sama dipasang berkali-kali (market/vault/pool/pair) pada satu rantai | satu Stream lintas-instans + **Tabel Selisih Varian** (B21) |
-| `MULTI-DOMAIN` | >1 domain (rantai/VM/lingkup deployment) dengan koridor nilai melintas | Stream dipotong jadi **Lintasan** per domain (B20) |
+| `DOM-x` Domain eksekusi | tiap lingkungan yang menjalankan kode scope dengan state sendiri (chain/rollup/appchain, atau runtime non-EVM) | `deployments/`, INTEL, routing on-chain (B7) |
+| `VK-x` Varian kode | berkas/kontrak yang meng-override kontrak inti per domain/versi (`*_SpokePool`, `Tron_*`, V1+V2 berdampingan) | sensus + daftar warisan AST |
+| `VC-x` Varian konfigurasi | instance parameter berbeda dari kode sama (market/vault/pool/strategi) + **kelas aset** (native, wrapped, ERC-20, FoT, rebasing, hook token, desimal non-18) | deployment map + LP-x |
 
-Isi minimum `B00-TOPOLOGY.md`: mode + alasan; daftar domain (chain/VM + blok referensi); daftar instans (alamat per peran); jumlah alamat per peran; katalog `IN-x` (B17: ada/tidak ada + `File:Baris` atau alasan kode); daftar Lintasan (bila `MULTI-DOMAIN`); Tabel Selisih Varian (bila `BERINSTANS`).
+Mode ditentukan mekanis (bukan selera agen):
 
-Aturan: (1) mode menentukan bentuk pemecahan, BUKAN isi rule — Stream tetap satu konsep; (2) `B03-CENSUS-LIVE.md` wajib punya kolom `domain`, tanpa itu profil belum sah; (3) perubahan mode/domain dicatat di `B00` + `B05` beserta alasan.
+| Mode | Syarat | Bentuk pemecahan |
+| :--- | :--- | :--- |
+| `TUNGGAL` | 1 domain DAN (`VK` ≤ 1 DAN `VC` ≤ 3) | Lintasan = Stream; dipecah per fase (masuk/akuntansi/keluar) bila melewati anggaran B19 |
+| `TUNGGAL-BERINSTANS` | 1 domain DAN (`VK` > 1 ATAU `VC` > 3) | Stream × anggota representatif + Tabel Selisih Varian (B20) |
+| `MULTI-DOMAIN` | > 1 domain | Stream pengguna × domain representatif + Stream lintas-domain per keluarga transport + Tabel Selisih per keluarga |
+
+Mode boleh **dinaikkan** atas alasan tercatat; **tidak boleh diturunkan** di bawah hasil hitungan. Tidak ada varian → Tabel Selisih kosong, langkah B20 selesai otomatis (beban nol).
+
+Untuk `MULTI-DOMAIN`, `B00` wajib memuat **Matriks Domain**: per `DOM-x` → kontrak inti + alamat, cara autentikasi pesan masuk, transport keluar/masuk, kelas aset yang dirutekan, status `LIVE`/`DEAD-CONFIG`/`UNVERIFIED` (dibaca B7 **di domain itu sendiri**). Domain representatif = satu per keluarga transport/autentikasi.
+
+Aturan: (1) `B03-CENSUS-LIVE.md` wajib kolom `domain`, tanpa itu profil belum sah; (2) profil menentukan bentuk pemecahan, BUKAN isi rule; (3) perubahan profil dicatat di `B00` + `B05` (alasan + tanggal) lalu pemecahan diperiksa ulang; (4) mode `TUNGGAL` tetap wajib mengisi `B00` (satu baris bukti cukup).
 
 ## Langkah 0b — B17 Katalog Ingress `IN-x`
 
-Cek enam kelas nilai masuk tanpa aksi pengguna; tiap kelas: `ADA` (dengan `File:Baris`) atau `TIDAK ADA` (dengan alasan kode). Kelas yang `ADA` wajib punya unit di ledger.
+Tiap cara nilai/klaim bertambah di sebuah `Value_Holder` dicatat satu baris `IN-x` di `B04` Bagian 2b:
 
-| ID | Kelas | Contoh sinyal kode |
-| :-- | :--- | :--- |
-| `IN-1` | Donasi/force-feed native | `receive`/`fallback` tanpa pembukuan, `selfdestruct`, coinbase |
-| `IN-2` | Token masuk langsung | transfer pihak ketiga, rebase/elastic, yield otomatis |
-| `IN-3` | Callback/hook eksternal | ERC-777/1363/1155 hook, callback bridge/messenger, flash-loan |
-| `IN-4` | Keeper/relayer/bot publik | `poke`/`sync`/`harvest`/`update` permissionless yang mengubah akuntansi |
-| `IN-5` | Urutan/insidensi same-block | sandwich, first/last depositor, JIT liquidity |
-| `IN-6` | Klaim/pre-mint eksternal | airdrop, merkelless claim, mint otoritas luar, unlock vesting |
+| Kelas | Contoh | Sumber deteksi |
+| :--- | :--- | :--- |
+| `USER` | deposit, swap, mint via entrypoint | EP+VM |
+| `ACTOR` | keeper/relayer/liquidator/harvester/bot publik memicu perpindahan | EP+VM/EP+SM pemicu non-pengguna |
+| `CALLBACK` | messenger bridge, `lzCompose`, `onERC721Received`, flash-loan callback, oracle push, `handleV3AcrossMessage` | entrypoint dipanggil kontrak eksternal |
+| `PASSIVE` | transfer langsung ERC-20, donasi, `selfdestruct`/force-feed, `receive` kosong, airdrop pihak ketiga | `balanceOf(address(this))` / `address(this).balance` dibaca jalur nilai |
+| `ACCRUAL` | yield/rebase, bunga berbasis waktu, akrual fee per detik | rumus membaca `block.timestamp` / saldo token rebasing |
+| `ADMIN` | top-up/rescue/haircut peran istimewa | fungsi `PRIVILEGED_ONLY` yang mengubah saldo |
+
+Kolom wajib: `IN_ID | Kelas | Value_Holder | Pintu (fungsi:baris atau "transfer langsung") | Pembaca akuntansi (fungsi:baris yang membaca saldo/state yang naik) | Lintasan pengikat | Status`.
+
+Aturan ikat: `IN-x` terikat ke **Lintasan yang membaca efeknya** (bukan penulisnya) — untuk `PASSIVE`/`ACCRUAL` pengikatnya Lintasan yang rumusnya membaca saldo/waktu. Kelas `ADMIN` boleh diikat ke Lintasan admin, diprioritaskan terakhir. Status `BELUM_TERIKAT` → `TERIKAT_DI_<LINTASAN>`; `check-final` menolak sisa `BELUM_TERIKAT` pada `CORE-FLOW`.
 
 ## Langkah 1 — B13 Scope lock (gerbang masuk; sebelum sensus)
 
@@ -229,9 +241,9 @@ Seed memuat **DUA populasi yang mengikat (B14-v2)**:
 - daftar `STR-01..STR-k` berstatus `PENDING`;
 - tabel `HANDOFF_TERBUKA`;
 - tabel pantau `TUNDA-LIVE` dan `DORMAN`;
-- **populasi ketiga (v2.1): seluruh kelas `IN-x` yang `ADA`** dari `B00-TOPOLOGY.md`, masing-masing dengan unit penutup atau status `BELUM_MASUK_STREAM`.
+- **populasi ketiga (v2.1): seluruh baris `IN-x`** (B17) dengan status `BELUM_TERIKAT` → `TERIKAT_DI_<LINTASAN>`; pengikatnya Lintasan yang MEMBACA efeknya.
 
-**Rekonsiliasi by-name (B10-v2):** setiap baris ledger membawa nama unit penutup (`STR-xx`/`LINT-xx`/unit `IN-x`) + kolom `waktu` ISO-8601. Sisa dihitung dengan mencocokkan nama, **bukan** `total − selesai`.
+**Rekonsiliasi berbasis nama (B10 v2.1):** sisa dihitung ulang dari daftar nama `(file, contract, function)` / `IN-x` yang belum `TERPETAKAN_DI_<LINTASAN>` — **bukan** pengurangan angka berjalan. Setiap baris `TERPETAKAN_DI_` wajib menyebut nama, bukan hanya jumlah.
 
 **Aturan penyusutan (moneyflow v2.0):** setiap kali satu `Stream` dipetakan di Tahap C — termasuk fungsi lintas-klaster yang ikut tersapu dalam koridor Stream tersebut — semua `EP+VM` dan `EP+SM` yang dilalui langsung berubah status menjadi `TERPETAKAN_DI_<STREAM_ID>`. Bila saat seluruh `STR` awal habis masih ada `EP+VM(yes)` **atau** `EP+SM(state_mutator)` pada `CORE-FLOW` berstatus belum tercakup, **wajib dibuatkan `Stream` baru** (atau unit pemeriksaan untuk `EP+SM` berdiri sendiri) sampai sisa kedua populasi di `CORE-FLOW` tepat `0`.
 
@@ -283,8 +295,9 @@ Semua ini ada dan bisa ditunjuk:
 - [ ] `B05-LEDGER-SISA.md` seed lengkap (EP+VM `BELUM_MASUK_STREAM` + EP+SM `BELUM_TERCAKUP`, `STR` `PENDING`, `HANDOFF_TERBUKA`, `TUNDA-LIVE`, `DORMAN`)
 - [ ] `B06-REGISTRY-INVARIANT.md` struktur kosong
 - [ ] `B07-STATE-BRIDGES.md` kerangka + header kolom baku: `Bridge_ID | Storage_Var_&_Contract | Writer_Stream_&_Guarantee | Reader_Stream_&_Assumption | Sync_Status`
-- [ ] **`B00-TOPOLOGY.md`** ada: mode + bukti domain/instans + katalog `IN-x` lengkap (+ Tabel Selisih Varian bila `BERINSTANS`, daftar Lintasan bila `MULTI-DOMAIN`)
+- [ ] **`B00-TOPOLOGY.md`** ada: hitungan `DOM-x`/`VK-x`/`VC-x` + mode + Matriks Domain (bila `MULTI-DOMAIN`)
+- [ ] `B04` Bagian 2b: katalog `IN-x` lengkap (6 kelas) + kolom pengikat + status
 - [ ] `B03-CENSUS-LIVE.md` punya kolom `domain` pada setiap alamat
 - [ ] `B05` memuat tiga populasi (EP+VM, EP+SM, `IN-x`) dengan rekonsiliasi by-name + kolom `waktu`
-- [ ] nol Stream "sisa/admin/misc" dibuat (B22); setiap Stream punya Ingress + Egress + rumus plafon
+- [ ] nol Stream "sisa/admin/misc" dan nol Stream hasil "KURAS FINAL" (B22); setiap Stream punya Ingress + Egress + rumus plafon; label admin tidak memuat EP+VM permissionless
 - [ ] nol invariant ditulis; nol buruan; nol PoC

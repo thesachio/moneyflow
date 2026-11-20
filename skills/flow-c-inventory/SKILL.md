@@ -1,42 +1,63 @@
 ---
 name: flow-c-inventory
-description: "Tahap C — Stream-Slice Inventory (moneyflow v2.1). Dua mode terstruktur: C00-SHARED-PRIMITIVES (sekali di awal) + C<NN>-<STREAM_ID>-INVENTORY per Stream ujung-ke-ujung dengan Aturan Koridor Stream (Corridor-Bound Cross-Cluster), format segmen (5 pemicu batas B19)/handoff/simpul/State-Bridge/Titik Serah Kendali CY-x/Lembar Parameter Live lengkap, Lintasan per domain (B20) bila MULTI-DOMAIN, Tabel Selisih Varian (B21) bila BERINSTANS, murni deskriptif — tanpa invariant, tanpa buruan, tanpa PoC. Dipakai saat memetakan Stream/klaster, atau saat user menyebut tahap C, pemetaan mendalam, inventaris alur."
+description: "Tahap C — Stream-Slice Inventory (moneyflow v2.1). Dua mode terstruktur: C00-SHARED-PRIMITIVES (sekali di awal) + C<NN>-<STREAM_ID>-INVENTORY per Stream ujung-ke-ujung dengan Aturan Koridor Stream (Corridor-Bound Cross-Cluster), format segmen (5 pemicu batas B19 a-e)/handoff/simpul/State-Bridge/Titik Serah Kendali CY-x (10 kolom)/Lembar Parameter Live (domain + UNVERIFIED), Lintasan per domain (B19) bila MULTI-DOMAIN, Tabel Selisih Varian (B20) bila TUNGGAL-BERINSTANS, Ingress S0 (B17), murni deskriptif — tanpa invariant, tanpa buruan, tanpa PoC. Dipakai saat memetakan Stream/klaster, atau saat user menyebut tahap C, pemetaan mendalam, inventaris alur."
 ---
 
 # Skill flow-c-inventory — Tahap C (Stream-Slice Inventory)
 
 Tahap C membangun **yang riil/teramati** per Stream: inventaris alur + segmentasi + kontrak handoff **deskriptif** (apa kata kode, bukan apa yang seharusnya) + daftar parameter yang dibaca koridor. Klaster = papan kontrol indeks Tahap B; **Stream = unit kerja** — satu aliran nilai ujung-ke-ujung (`Ingress` → `State/Share Accounting` → `Egress`), moneyflow v2.0.
 Skill ini memuat format dan aturan sampai Tahap C selesai.
-## Profil topologi menentukan bentuk pemecahan (v2.1 — B0/B20/B21)
+## Bentuk pemecahan mengikuti mode B0 (v2.1)
 
-Baca mode dari `B00-TOPOLOGY.md` sebelum menulis inventaris; bentuk berkas mengikuti mode, isi rule tetap sama:
+Baca mode dari `B00-TOPOLOGY.md`; isi rule sama, bentuk berkas menyesuaikan:
 
-| Mode | Bentuk `C<NN>` | Tambahan wajib |
+| Mode | Bentuk inventaris | Tambahan wajib |
 | :--- | :--- | :--- |
-| `TUNGGAL` | 6 bagian seperti biasa | — |
-| `BERINSTANS` | 6 bagian, satu Stream mencakup seluruh instans setara | **Tabel Selisih Varian** (B21): `Varian/Instans | Alamat | Perbedaan kode (File:Baris) | Perbedaan konfigurasi | Perbedaan satuan | Status` dengan `Status` ∈ `SAMA`/`BEDA-KODE:<fungsi>`/`BEDA-KONFIG:<field>`/`TIDAK-DIBACA`. `TIDAK-DIBACA` pada instans yang dipakai PoC = PoC tidak sah |
-| `MULTI-DOMAIN` | 6 bagian + **pemotongan Lintasan** per domain | Daftar `LINT-xx` (satu per domain), tiap Lintasan punya Ingress+Egress sendiri; penyeberangan domain = `HB-x`; DILARANG mencampur dua domain dalam satu Lintasan |
+| `TUNGGAL` | Lintasan = Stream; 6 bagian seperti biasa | — |
+| `TUNGGAL-BERINSTANS` | Stream × anggota representatif | **Tabel Selisih Varian** (B20) untuk anggota lain |
+| `MULTI-DOMAIN` | Stream pengguna × domain representatif + Stream lintas-domain per keluarga transport | **Matriks Domain** + Tabel Selisih per keluarga |
 
-## Batas segmen — 5 pemicu (B19, v2.1)
+## Hierarki unit & penamaan (B19)
 
-Potong segmen pada pemicu mana pun yang lebih dulu muncul: (1) pindah kontrak/domain/alamat; (2) pindah pemilik state (aktor berwenang berubah); (3) panggilan eksternal yang bisa memanggil balik (`CY-x` `REENTRANT-CAPABLE`); (4) perubahan satuan/desimal/skala; (5) cabang yang mengubah **tujuan** dana. Anggaran target: Segmen ≤ 1 fungsi atau ≤ 60 baris badan; Lintasan ≤ 12 Segmen; Stream ≤ 40 unit. Melebihi = potong atau catat alasan.
+**Stream** (siklus hidup nilai) ⊃ **Lintasan** (unit kerja C→D→E satu sesi) ⊃ **Segmen** (unit buruan) ⊃ fungsi (unit sensus).
 
-## Titik Serah Kendali `CY-x` (B18, v2.1 — wajib)
+Penamaan: `STR-nn` (Stream), `STR-nn.Lk` (Lintasan), `STR-nn.Lk.Sj` (segmen). Berkas: `C<NN>-<STR>-<Lk>-INVENTORY.md`, `D<NN>-<STR>-<Lk>-*`, `E<NN>-<STR>-<Lk>-BATCH<M>-PROOF`. **Satu sesi kerja / satu delegasi = satu Lintasan** (C12 Capsule per Lintasan).
 
-Setiap panggilan eksternal / hook / `delegatecall` / callback **di tengah segmen** dicatat sebagai baris `CY-x`:
+## 5 pemicu batas segmen (B19)
+
+Segmen baru dimulai HANYA pada salah satu:
+(a) perpindahan aset/token/native keluar atau masuk `Value_Holder`;
+(b) penulisan variabel akuntansi (saldo, share, supply, reserve, debt, index, rate, klaim) yang terdaftar di C00/LP-x;
+(c) serah kendali ke **domain kepercayaan berbeda** (kontrak eksternal, `EXTERNAL-BOUNDARY`, delegatecall ke kode pilihan admin/caller) — serah kendali ke kode in-scope dengan kepercayaan sama cukup `CY-x`;
+(d) batas transaksi/aktor/waktu → State-Bridge `HB-x` (segmen berhenti);
+(e) perpindahan domain eksekusi (chain/runtime) → handoff lintas-domain.
+
+Bukan pemicu: helper internal `pure`/`view`, panggilan primitif yang sudah di C00 (dirujuk, tidak diulang), modifier, event.
+
+**Anggaran (pedoman kewajaran, bukan ambang kaku):** Segmen wajar ≈ 1–4 fungsi dibaca langsung; Lintasan wajar ≈ 4–8 segmen / ≤ ~12 fungsi (rujukan C00 tidak dihitung) dan 1 keluarga varian; Stream wajar ≈ ≤ 6 Lintasan. Sedikit di atas/di bawah masih sah **selama ada alasan tercatat** di inventaris; yang dilarang adalah menumpuk banyak pemicu batas dalam satu segmen tanpa alasan, atau memecah sampai satu Lintasan kehilangan alur nilai utuh.
+
+## Titik Serah Kendali `CY-x` (B18 — wajib, 10 kolom)
+
+Dicatat untuk tiap titik eksekusi berpindah ke kode yang tidak dikendalikan fungsi itu: `call`/`delegatecall`/`staticcall` eksternal, transfer native (`call{value}`/`transfer`/`send`/`sendValue`), transfer token ber-hook (ERC-721/1155/777/1363), panggilan ke `EXTERNAL-BOUNDARY`/oracle/router, callback ke `msg.sender`, `try/catch`.
 
 | Kolom | Isi |
 | :--- | :--- |
 | `CY_ID` | `CY-1`, `CY-2`, ... |
-| Segmen | `S3` (segmen tempat serah-kendali terjadi) |
-| Target/Selector | kontrak + selector/`delegatecall`/hook |
-| Nilai terkirim | native/token/amount yang ikut keluar |
+| Segmen | `STR-01.L1.S3` |
+| Jangkar | `File:Lxx-Lyy` |
+| Jenis | `call` / `delegatecall` / `staticcall` / native-transfer / token-hook / try-catch |
+| Penerima kendali | `CALLER-INPUT` / `ADMIN-CONFIG` / `IMMUTABLE` / `EXTERNAL` |
 | Storage ditulis SEBELUM | variabel + `File:Baris` |
 | Storage ditulis SESUDAH | variabel + `File:Baris` |
-| Guard pemanggil | modifier/`require` yang berlaku |
-| Return/revert | ditangani atau diabaikan (`success` diabaikan, `try/catch`, dsb.) |
+| Storage dibaca SESUDAH | variabel + `File:Baris` |
+| Guard aktif | `nonReentrant` / `lock` / `none` |
+| Efek bila revert | `propagasi` / `ditelan` / `defer` |
 
-Aturan: segmen wajib **dipotong** di titik `CY-x`; target yang bisa memanggil balik ditandai `REENTRANT-CAPABLE`; Tahap D wajib memakai urutan tulis sebelum/sesudah sebagai kandidat `INV-Sx`. Mencatat panggilan eksternal tanpa kolom urutan tulis = tidak sah.
+`CY-x` **tidak** otomatis memecah segmen (lihat B19 pemicu c). AST wajib dipakai untuk enumerasi kandidat; tiap kandidat dikonfirmasi dari badan fungsi.
+
+## Ingress `S0` di inventaris (B17)
+
+Ingress kelas `PASSIVE`/`ACCRUAL` muncul sebagai **segmen masuk tidak resmi `S0`** di inventaris Lintasan pembacanya — deskriptif: siapa bisa memicu, berapa batasnya, bagaimana akuntansi menyerapnya (mis. `_sync` membaca `balanceOf(address(this))`).
 
 ## Dua mode terstruktur
 
@@ -84,8 +105,9 @@ Tiap segmen = potongan alur yang **bisa diamati** di handoff. Untuk tiap segmen 
 | Batas masuk | apa yang menandai segmen mulai (event, perubahan state, pesan, waktu) |
 | Batas keluar & efek saldo/state | apa yang menandai segmen selesai + efeknya ke saldo/state |
 | Aktor pemicu | siapa yang bisa memicu (user / keeper / relayer / admin / otomatis) |
-| Pemicu potong | pemicu B19 mana yang membatasi segmen ini (1–5) |
+| Pemicu batas | pemicu B19 mana yang memulai segmen ini: (a) aset masuk/keluar Value_Holder / (b) tulis variabel akuntansi / (c) serah kendali domain kepercayaan beda / (d) batas transaksi-aktor-waktu (HB-x) / (e) pindah domain eksekusi |
 | `CY-x` di segmen | ID titik serah kendali yang jatuh di segmen ini (kosong bila tidak ada) |
+| Domain | `DOM-x` tempat segmen dieksekusi |
 
 Keluaran `S(k)` wajib **nyambung ke masukan `S(k+1)`**. Bila tidak bersambung lewat pemanggilan langsung, itu kandidat **State-Bridge** (`HB-x`, Bagian 5) - bukan handoff langsung.
 
@@ -136,6 +158,7 @@ Daftar **setiap variabel storage dan nilai eksternal yang dibaca** fungsi di kor
 | ID | C | `LP-1`, `LP-2`, dan seterusnya |
 | Variabel & Jangkar Baca | C | nama variabel + `Path/File.ext:Lxx-Lyy` tempat dibaca di koridor |
 | Kontrak | C | kontrak pemilik storage (alamat live diisi di B8) |
+| Domain | C | `DOM-x` tempat segmen pembaca dieksekusi (B21 — LP-x dibaca di domain itu, blok pin domain itu) |
 | Pengendali | C | `ADMIN-CONFIG` / `DERIVED(<sumber>)` / `EXTERNAL-ORACLE` / `CALLER-INPUT` (definisi sama dengan Bagian 3) |
 | Penulis di Kode | C | fungsi + `Path/File.ext:Lxx-Lyy` yang menulis variabel ini, + peran yang bisa memanggilnya |
 | Cabang yang Bergantung | C | segmen/handoff/simpul yang perilakunya berubah karena nilai ini (`S2`, `H3`, `F1`) |
@@ -146,14 +169,14 @@ Arti `Status Cabang`:
 
 - `LIVE` — nilai live membuat cabang itu bisa dilalui transaksi normal.
 - `DEAD-CONFIG` — nilai live membuat cabang tidak bisa dilalui (mis. `paused == true`, `feeBps == 0` untuk cabang fee, token tidak di-whitelist, `cap == 0`, adapter `address(0)`).
-- `UNVERIFIED` — nilai tidak bisa dibaca andal di blok pin (RPC/arsip gagal). **BUKAN `LIVE`** dan bukan alasan menunda: lanjutkan uji, tetapi tulis `UNVERIFIED` dan catat apa yang dicoba; klaim apa pun yang bergantung pada nilai ini wajib dilabeli belum terverifikasi.
+- `UNVERIFIED` — nilai tidak bisa dibaca andal di blok pin (RPC/arsip gagal, getter revert). **BUKAN `LIVE`**: Lintasan dengan `LP-x` pengendali nilai berstatus ini tidak lolos Gate D sampai terbaca. Status `TIDAK-TERBACA` dicabut (v2.1).
 
 Aturan Bagian 6:
 
 - **Bukan filter.** Cabang `DEAD-CONFIG` tetap ada di Bagian 2–5; Bagian 6 hanya menandai. Larangan filter di dalam Stream tetap berlaku.
 - Variabel `CALLER-INPUT` dicatat agar Tahap D/E tahu field mana yang **bebas diisi** (termasuk nilai ekstrem); variabel `ADMIN-CONFIG` dicatat agar Tahap D/E **memakai nilai live**, bukan nilai karangan.
 - Bila satu variabel dibaca di beberapa tempat di koridor, cukup satu baris `LP-x` dengan semua jangkar baca disebut.
-- **Lokasi LP-x (B22, v2.1):** LP-x dibaca pada **domain tempat kontrak koridor hidup**. Untuk `MULTI-DOMAIN`, setiap Lintasan mengisi LP-x domainnya sendiri (saldo/config/blok pin domain itu); LP-x yang hanya dibaca di rantai utama lalu dipakai menyimpulkan Lintasan lain = `TIDAK-DIBACA`.
+- **Lokasi LP-x (B21, v2.1):** tiap `LP-x` dibaca **di domain tempat segmen pembacanya dieksekusi**, pada blok pin domain itu. Getter yang revert → baca slot storage (`cast storage`) dari layout AST. Bila tetap tidak terbaca → status **`UNVERIFIED`** (bukan `LIVE`). Lintasan dengan `LP-x` pengendali nilai berstatus `UNVERIFIED` **tidak lolos Gate D**.
 - Nol penilaian bahaya, nol invariant — tetap deskriptif.
 
 ## Yang TIDAK dilakukan di Tahap C
@@ -184,8 +207,10 @@ Aturan Bagian 6:
 - [ ] Bagian 6 Lembar Parameter Live: tiap variabel storage/eksternal yang dibaca di koridor dan memengaruhi aliran nilai terdaftar sebagai `LP-x` dengan jangkar baca + pengendali + penulis + cabang yang bergantung; kolom nilai = `DIISI_B8`
 - [ ] koridor: fungsi lintas-klaster di garis aliran sudah masuk sebagai `S(k+1)`; nol pelebaran horizontal
 - [ ] segmen dipotong menurut 5 pemicu B19; tiap `CY-x` punya kolom urutan tulis sebelum/sesudah + tanda `REENTRANT-CAPABLE` bila berlaku
-- [ ] bila `BERINSTANS`: Tabel Selisih Varian terisi, nol `TIDAK-DIBACA` pada instans yang dipakai PoC
-- [ ] bila `MULTI-DOMAIN`: daftar `LINT-xx` ada, tiap Lintasan punya Ingress+Egress, LP-x per domain terisi
+- [ ] bila `TUNGGAL-BERINSTANS`: Tabel Selisih Varian (8 kolom B20) terisi; tiap baris `BEDA` yang menyentuh nilai/autentikasi punya kartu Tahap D
+- [ ] nol `LP-x` pengendali nilai berstatus `UNVERIFIED` pada Lintasan yang dipakai Gate D
+- [ ] bila `MULTI-DOMAIN`: Matriks Domain ada, tiap Lintasan (`STR-nn.Lk`) punya Ingress+Egress, LP-x dibaca di domainnya sendiri
+- [ ] Ingress `PASSIVE`/`ACCRUAL` muncul sebagai segmen `S0` di Lintasan pembacanya
 - [ ] nol invariant, nol buruan, nol PoC
 - [ ] `B05-LEDGER-SISA.md` diperbarui: semua EP+VM koridor ini berstatus `TERPETAKAN_DI_<STREAM_ID>` (sisa menyusut)
 - [ ] `B07-STATE-BRIDGES.md` diperbarui bila Stream menyentuh/membaca jembatan state

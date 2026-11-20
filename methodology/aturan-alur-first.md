@@ -82,39 +82,52 @@ salah, koreksi dicatat eksplisit dan terbuka, tidak diam-diam. Diputus 22:33 WIB
 
 ## B. Scope Mapping
 
-B0. PROFIL TOPOLOGI (moneyflow v2.1 — paket "Universal Topology", diputus
-20 Nov 2026, MENGIKAT; WAJIB ditetapkan SEBELUM sensus statis):
+B0. PROFIL TOPOLOGI (moneyflow v2.1, WAJIB — dijalankan setelah B13 scope
+lock dan sebelum katalog Stream B04). Keluaran `B00-TOPOLOGY.md`. Tiga
+hitungan mekanis (AST/grep boleh; hasil diverifikasi parent):
 
-Rule tetap satu dan universal; yang menyesuaikan diri adalah **bentuk
-pemecahan**. Tiga mode, dipilih dari fakta deployment (INTEL +
-`deployments/` + `B03-CENSUS-LIVE.md`), BUKAN dari selera agen:
-- `TUNGGAL` — satu domain, satu instans: satu kontrak inti per peran,
-  satu rantai/VM, satu pasar. Pemecahan = Stream biasa.
-- `BERINSTANS` — satu domain, banyak instans setara: kontrak yang sama
-  dipasang berkali-kali (banyak market/vault/pool/pair) pada satu
-  rantai/VM. Pemecahan = satu Stream mencakup seluruh instans setara +
-  **Tabel Selisih Varian** (B21) wajib diisi.
-- `MULTI-DOMAIN` — lebih dari satu domain (rantai, VM, atau lingkup
-  deployment terpisah) dengan koridor nilai melintas di antaranya.
-  Pemecahan = Stream dipotong menjadi **Lintasan** per domain (B20).
+- **Domain eksekusi (`DOM-x`)**: tiap lingkungan yang menjalankan kode
+  scope dengan state sendiri — chain/rollup/appchain, atau runtime
+  non-EVM (Solana program, Move module). Sumber: `deployments/`, INTEL,
+  konfigurasi routing on-chain (dibaca di B7).
+- **Varian kode (`VK-x`)**: berkas/kontrak yang meng-override atau
+  menurunkan kontrak inti per domain atau per versi (mis. `*_SpokePool`,
+  `Tron_*`, V1 & V2 hidup berdampingan).
+- **Varian konfigurasi (`VC-x`)**: instance dengan parameter berbeda dari
+  kode yang sama (market, vault, pool, strategi) + **kelas aset** yang
+  diterima (native, wrapped native, ERC-20 standar, fee-on-transfer,
+  rebasing, hook/callback token, token desimal non-18).
 
-Aturan mengikat:
+Mode ditentukan mekanis:
+
+| Mode | Syarat | Bentuk pemecahan |
+| --- | --- | --- |
+| `TUNGGAL` | 1 domain DAN (`VK` <= 1 DAN `VC` <= 3) | Lintasan = Stream; dipecah per fase (masuk / akuntansi / keluar) bila melewati anggaran B19 |
+| `TUNGGAL-BERINSTANS` | 1 domain DAN (`VK` > 1 ATAU `VC` > 3) | Stream x anggota representatif + Tabel Selisih Varian (B20) untuk anggota lain |
+| `MULTI-DOMAIN` | > 1 domain | Stream pengguna x domain representatif + Stream lintas-domain per keluarga transport + Tabel Selisih Varian per keluarga |
+
+Mode boleh dinaikkan (TUNGGAL -> BERINSTANS) atas alasan tercatat; tidak
+boleh diturunkan di bawah hasil hitungan. Tidak ada varian -> Tabel
+Selisih kosong dan langkah B20 selesai otomatis — rule sama, beban nol.
+
+Untuk `MULTI-DOMAIN`, B00 wajib memuat **Matriks Domain**: per `DOM-x` ->
+kontrak inti + alamat, cara autentikasi pesan masuk, transport
+keluar/masuk, kelas aset yang dirutekan, status
+`LIVE`/`DEAD-CONFIG`/`UNVERIFIED` (dibaca B7 di domain itu sendiri).
+Domain representatif dipilih satu per keluarga transport/autentikasi;
+sisanya masuk Tabel Selisih.
+
+Aturan mengikat tambahan:
 1. Profil + buktinya ditulis di `B00-TOPOLOGY.md` (template
-   `templates/B00-TOPOLOGY.md`): daftar domain, daftar instans, jumlah
-   alamat per peran, dan mode yang dipilih beserta alasannya.
-2. `B03-CENSUS-LIVE.md` WAJIB memuat kolom `domain` (chain/VM/lingkup)
-   pada setiap alamat. Tanpa kolom ini profil dianggap belum sah dan
-   sensus live tidak boleh ditutup.
-3. Profil menentukan bentuk pemecahan, BUKAN isi rule: Stream tetap
-   satu konsep universal di ketiga mode; yang berubah hanya cara
-   memotongnya. DILARANG membuat rule berbeda per mode.
-4. Profil boleh berubah bila sensus menemukan domain/instans yang belum
-   tercatat. Perubahan dicatat di `B00-TOPOLOGY.md` dan
-   `B05-LEDGER-SISA.md` (alasan + tanggal), dan seluruh pemecahan yang
-   sudah jadi diperiksa ulang terhadap profil baru.
-5. Mode `TUNGGAL` tetap WAJIB mengisi `B00-TOPOLOGY.md` (satu baris
-   bukti cukup) — tujuannya menutup asumsi diam-diam "satu domain",
-   bukan menambah upacara.
+   `templates/B00-TOPOLOGY.md`).
+2. `B03-CENSUS-LIVE.md` WAJIB memuat kolom `domain` pada setiap alamat;
+   tanpa itu profil belum sah.
+3. Profil menentukan bentuk pemecahan, BUKAN isi rule — DILARANG membuat
+   rule berbeda per mode.
+4. Perubahan profil dicatat di `B00-TOPOLOGY.md` + `B05-LEDGER-SISA.md`
+   (alasan + tanggal), lalu pemecahan yang sudah jadi diperiksa ulang.
+5. Mode `TUNGGAL` tetap WAJIB mengisi `B00-TOPOLOGY.md` (satu baris bukti
+   cukup) — menutup asumsi diam-diam "satu domain".
 
 B1. Sensus = 100% peristiwa pemindah nilai (bukan fungsi saja):
 entrypoint + transfer langsung/donasi/force-feed + pergerakan
@@ -123,6 +136,14 @@ transitif + proxy→implementation + callback/hook + transfer SOL/SPL ke
 PDA + langkah off-chain (dilabeli asumsi). Fungsi = unit sensus
 (kelengkapan); segmen = unit buruan (partisi).
 
+**Cara pakai (v2.1):** tiap fungsi di tiap berkas scope dapat satu baris
+JSON dengan verdict `value_moves` (`yes`/`state_mutator`/`no`/`unknown` —
+B14-v2). Peristiwa bukan-fungsi (transfer langsung, donasi, force-feed,
+`selfdestruct`, akrual/rebase, callback eksternal) **tidak lagi hanya
+"permukaan berkas"**: masing-masing wajib dicatat sebagai baris
+**Ingress `IN-x`** (B17) dan menjadi populasi ketiga yang mengikat
+ledger.
+
 **B1-v2 (moneyflow v2.1 — populasi INGRESS, MENGIKAT):** nilai yang
 MASUK tanpa aksi pengguna WAJIB ikut disensus sebagai kelas tersendiri
 (Katalog Ingress `IN-x`, B17), bukan disisipkan sebagai catatan kaki.
@@ -130,8 +151,10 @@ Sensus yang hanya memuat entrypoint + transfer yang dipicu pengguna
 DINYATAKAN BELUM 100%.
 
 B2. Scope menyeluruh diketahui di awal; pemetaan mendalam +
-eksplorasi round per round per klaster alur, diurutkan EV live;
-rolling Tahap C → Tahap D → Tahap E per klaster. Urutan
+eksplorasi round per round **per Lintasan di dalam Stream** (B19),
+diurutkan menurut B2a / B2a-v2 / B2a-PostAudit. [RIWAYAT: versi 15 Nov
+2026 memakai "per klaster, diurutkan EV live" — diganti B2a 17 Nov 2026
+dan B2a-v2 18 Nov 2026; kalimat lama tidak berlaku.] Urutan
 EV live = default, bukan gerbang. **DIGANTI oleh B2a di bawah** untuk
 penentuan urutan (17 Nov 2026); kalimat ini disimpan sebagai riwayat.
 Bila EV tidak dipakai (data live
@@ -271,17 +294,33 @@ B5. Peta utuh, bukti just-in-time: mapping awal jalur dan relasi harus
 menyeluruh (cakupan); kerja yang bisa dikerjakan di fase/klaster
 spesifik TIDAK dijalankan di scope besar.
 
-B6. Sensus statis: baca manual penuh — semua fungsi di semua berkas
-dibaca dan dapat verdict (`yes`/`state_mutator`/`no`/`unknown`, B14-v2), seperti pilot Across
-(1.230 baris, 196 berkas, ~23 menit — masih toleransi). Verifikasi
-parent + kontrol positif tetap jalan. TIDAK pakai AST (diputus Kim
-15 Nov 2026): penghitung AST sempat dibangun dan divalidasi terhadap
-sensus pilot (AST 1.245 = manual 1.230 + 15 deklarasi interface, 0
-manual terlewat, kontrol positif 9/9, 6/6 baris hantu bersih,
-deterministik) tapi TIDAK dipakai — berkasnya tetap ada di folder
-pilot sebagai referensi (`B07-AST-COUNTER.md`), bukan bagian dari
-metode. B9 (usaha yang cukup) TIDAK berlaku untuk kedalaman sensus
-statis — di sini tidak diambil risiko.
+B6-v2. Sensus statis: **baca badan penuh, AST sebagai alat bantu**
+(moneyflow v2.1; menggantikan larangan AST 15 Nov 2026).
+
+- **Yang boleh dikerjakan AST/parser** (solc `--ast-compact-json`,
+  Slither printer `function-summary` / `entry-points` / `vars-and-auth` /
+  `call-graph`, Aderyn, tree-sitter untuk non-Solidity): melokalisasi
+  fungsi (file, contract, function, line, end_line, visibility,
+  mutability, payable, modifiers), daftar warisan + override (bahan
+  B14.6/B14.7 & B0 `VK-x`), daftar panggilan eksternal + delegatecall +
+  transfer native (bahan B18 `CY-x`), daftar storage yang ditulis/dibaca
+  per fungsi (bahan B19 pemicu batas & B21 LP-x), deteksi
+  `receive`/`fallback`/`selfdestruct`/`balanceOf(address(this))` (bahan
+  B17 `IN-x`).
+- **Yang TIDAK boleh diisi AST:** verdict `value_moves` (4 nilai B14-v2),
+  tag `PRIVILEGED_ONLY:`/`COSMETIC_NON_ECONOMIC:`, kelas Ingress B17, dan
+  seluruh kolom deskriptif Tahap C (jaminan produsen / asumsi konsumen).
+  Semua itu diisi **setelah badan fungsi dibaca penuh**. Output AST =
+  daftar periksa + saran, bukan keputusan.
+- **Rekonsiliasi wajib:** jumlah fungsi dari AST vs jumlah baris sensus
+  per berkas; selisih != 0 wajib dijelaskan per baris (mis. deklarasi
+  interface, fungsi warisan B14.6). Selisih yang tidak dijelaskan = sensus
+  belum lulus.
+- Kontrol positif 9/9, nol mekanis wajib dipecahkan, dan verifikasi parent
+  tetap jalan (lantai bawah). B9 (usaha yang cukup) tetap TIDAK berlaku
+  untuk kedalaman sensus statis.
+- Verdict `value_moves` = **4 nilai** `yes | state_mutator | no | unknown`
+  (B14-v2). Penyebutan "yes/no/unknown" di dokumen mana pun = riwayat v1.
 
 **B6-v2 — AST DIIZINKAN (moneyflow v2.1, diputus 20 Nov 2026;
 menggantikan larangan 15 Nov 2026 untuk keperluan LOKALISASI):** AST
@@ -333,18 +372,23 @@ eksplorasi lewat: (1) baca ulang mendalam per klaster; (2) cek handoff
 + konservasi (delta tak terjawab diselidiki); (3) jejak event live
 sebagai enumerasi independen; (4) cek penutupan graf. Penopang wajib:
 sapuan akhir dengan enumerasi independen kedua dibanding ledger
-akhir. Caranya: enumerasi independen kedua boleh memakai AST/call-graph
-(B6-v2, diizinkan v2.1) atau rerun sensus manual — DILARANG memakai
-regex yang sama dengan sensus pertama (terbukti cacat di pilot). Sensus di
+akhir. Cara yang diterima (moneyflow v2.1): **enumerasi AST independen**
+(alat berbeda dari yang dipakai melokalisasi sensus bila memungkinkan,
+mis. sensus pakai solc AST -> sapuan pakai Slither `entry-points`)
+dibandingkan per nama `(file, contract, function)` dengan ledger akhir;
+rerun sensus manual tetap sah sebagai alternatif. Regex yang sama dengan
+sensus tetap tidak sah. Sapuan juga membandingkan katalog `IN-x` (B17)
+dan `CY-x` (B18) terhadap daftar panggilan eksternal / `receive` /
+`balanceOf(this)` dari AST. Sensus di
 depan adalah rencana + daftar periksa, bukan bukti kelengkapan;
 buktinya datang dari eksplorasi + sapuan akhir. Diputus 22:33 WIB 16 Nov 2026: rerun sensus manual DITERIMA sebagai enumerasi independen kedua (pilot: rerun menemukan 15 baris yang sensus pertama lewatkan). Cara parser independen tetap terbuka sebagai riset, bukan rule.
 
 B10. Ledger "sisa" sesudah tiap round (entrypoint belum masuk alur,
-handoff terbuka, klaster belum dikerjakan; **B14-v2: ledger mengikat
-DUA populasi — semua `EP+VM(yes)` berstatus `BELUM_MASUK_STREAM` dan
-semua `EP+SM(state_mutator)` yang belum masuk koridor Stream /
-`B07-STATE-BRIDGES.md` berstatus `BELUM_TERCAKUP`; keduanya wajib
-habis di `CORE-FLOW` sebelum penutupan**). Round selesai hanya bila
+handoff terbuka, klaster belum dikerjakan; **v2.1: ledger mengikat TIGA
+populasi** — `EP+VM(yes)` berstatus `BELUM_MASUK_STREAM`,
+`EP+SM(state_mutator)` berstatus `BELUM_TERCAKUP`, dan **`IN-x`
+(Ingress B17) berstatus `BELUM_TERIKAT`**; ketiganya wajib habis di
+`CORE-FLOW` sebelum penutupan). Round selesai hanya bila
 sisa menyusut. Target buruan harus ada di sensus — kalau tidak, di
 luar scope menurut konstruksi.
 **B10-v2 (moneyflow v2.1):** penyusutan ledger dihitung dengan
@@ -354,17 +398,28 @@ daftar nama; DILARANG menghitung sisa dengan pengurangan aritmetika
 (`total − selesai`) karena baris ganda/typo tidak terdeteksi.
 Kolom `waktu` (ISO-8601) wajib ada pada setiap baris ledger.
 
+**Rekonsiliasi berbasis nama (v2.1):** sisa ledger dihitung ulang dari
+daftar nama `(file, contract, function)` / `IN-x` yang belum berstatus
+`TERPETAKAN_DI_<LINTASAN>`, **bukan** dari pengurangan angka berjalan.
+Setiap baris status `TERPETAKAN_DI_` wajib menyebut nama, bukan hanya
+jumlah. (Pemicu: across_hermes C10 menemukan trail angka 45/20 vs
+enumerasi nama 49/36.)
+
 B11. Inventaris handoff dienumerasi dari batas unit (rantai linear N
 unit → N−1 handoff), bukan dilabeli tangan. Simpul fork/join jadi unit
 sendiri.
+
+Batas unit (segmen) ditentukan oleh **5 pemicu batas B19**, bukan pilihan
+bebas agen. Titik serah kendali di tengah segmen yang tidak memicu batas
+tetap dicatat sebagai `CY-x` (B18).
 
 B12. Invariant TIDAK dinyatakan di Tahap B atau Tahap C (direvisi
 15 Nov 2026 atas perintah Kim — menggantikan 'invariant DINYATAKAN
 dulu'; pemetaan mendalam pindah ke Tahap C, 15 Nov 2026, perintah Kim
 'nomor baru saja'): Tahap B hanya membangun yang riil/teramati untuk
-seluruh protokol — sensus, klaster, dan koridor Stream (B16 tidak
-dipakai, lihat catatannya). Tahap C
-membangun yang riil/teramati per klaster — inventaris alur,
+seluruh protokol — sensus, profil topologi (B0), klaster, katalog
+Ingress (B17), daftar handoff kasar (B11). (B16 tidak dipakai.) Tahap C
+membangun yang riil/teramati per Lintasan (B19) — inventaris alur,
 segmentasi, kontrak handoff deskriptif (jaminan produsen + asumsi
 konsumen sebagaimana teramati di kode: nama+tipe+satuan field).
 Invariant adalah klaim asumsi agen tentang apa yang SEHARUSNYA
@@ -410,9 +465,16 @@ pengubah state berdampak finansial sebagai `no`**):
     di kode dikunci rapat modifier peran istimewa murni (`onlyOwner`,
     `onlyAdmin`, `onlyGovernance`, `onlyTimelock`) TANPA jalur
     pemicu publik — WAJIB mengisi `notes` dengan format
-    `PRIVILEGED_ONLY: <nama_modifier_atau_guard>`. Fungsi
-    `initialize` TIDAK BOLEH diberi `PRIVILEGED_ONLY` kecuali sudah
-    dikunci konstruktor/`disableInitializers` dan terverifikasi
+    `PRIVILEGED_ONLY: <nama_modifier_atau_guard>`.
+  (iv) fungsi yang HANYA menulis storage non-ekonomi — WAJIB `notes` =
+    `COSMETIC_NON_ECONOMIC: <storage yang ditulis> | pembaca: <hasil
+    grep/AST pembaca>`. Sah hanya bila storage itu **tidak dibaca** oleh
+    fungsi mana pun yang memindahkan nilai, menghitung
+    saldo/share/rate/fee/batas, memeriksa izin/peran, atau menentukan
+    alamat tujuan. Ragu -> `state_mutator`. (Selaras dengan
+    `flow-b-map` + `check-b`; sebelumnya hanya ada di skill.)
+    Fungsi `initialize` TIDAK BOLEH diberi `PRIVILEGED_ONLY` kecuali
+    sudah dikunci konstruktor/`disableInitializers` dan terverifikasi
     pada objek live di B8.
 - Receive badan kosong = value_moves no. Menerima saja bukan
   memindahkan; value_moves dinilai dari badan — ada perpindahan
@@ -442,6 +504,14 @@ pengubah state berdampak finansial sebagai `no`**):
   milik-sendiri + permukaan warisan. Inventaris alur memakai lapis
   warisan untuk permukaan deployed, lapis milik-sendiri untuk lokasi
   kode.
+- **Konvensi 8 (v2.1) — modifier peran non-standar:** `onlyHubPool`,
+  `onlyRole(X)`, `onlySelf`, `onlyFromCrossDomainAdmin`, dan guard
+  setara **bukan** `PRIVILEGED_ONLY` otomatis. Sah `PRIVILEGED_ONLY`
+  hanya bila pemegang peran dibuktikan aktor istimewa
+  (owner/admin/governance/timelock) dari kode + B7. Bila pemegang peran
+  adalah kontrak lain yang bisa dipicu publik (mis. HubPool yang
+  dieksekusi permissionless) -> `state_mutator` atau `yes`, dan masuk
+  koridor Lintasan pemicunya.
 - **Ikatan cakupan ledger (B14-v2):** sensus mengikat dua populasi —
   `EP+VM(yes)` dan `EP+SM(state_mutator)`. Semua `EP+VM(yes)` wajib
   masuk koridor `Stream` (`STR-xx`). Semua `EP+SM(state_mutator)`
@@ -497,100 +567,114 @@ penutupan akhir (B9) memverifikasi semua jahitan TERTUTUP. Biaya:
 sensus sedikit lebih dalam untuk fungsi EP+VM (waktu sensus perlu
 diukur ulang — angka 13m36s rerun tidak memuat field 'keluar').
 
-B17. KATALOG INGRESS `IN-x` (moneyflow v2.1, MENGIKAT — wajib di
-`B01-SCOPE.md` dan `B05-LEDGER-SISA.md`). Enam kelas nilai masuk tanpa
-aksi pengguna yang WAJIB dicek satu per satu (ada/tidak ada, dengan
-bukti kode `File:Baris`):
-- `IN-1 Donasi/force-feed native` — `receive`/`fallback` tanpa
-  pembukuan, `selfdestruct` paksa, coinbase, precompile transfer.
-- `IN-2 Token masuk langsung` — `transfer`/`transferFrom` pihak ketiga
-  ke kontrak, rebase/elastic supply, yield/distribusi otomatis.
-- `IN-3 Callback/hook eksternal` — hook token (ERC-777/1363/1155),
-  callback bridge/messenger, flash-loan callback, `onERC721Received`
-  dan sejenisnya yang dieksekusi di tengah segmen.
-- `IN-4 Keeper/relayer/bot publik` — fungsi pemeliharaan permissionless
-  (`poke`, `sync`, `harvest`, `update`, `execute`) yang mengubah
-  akuntansi tanpa input pengguna.
-- `IN-5 Urutan/insidensi same-block` — nilai masuk karena posisi
-  transaksi (sandwich, first/last depositor, JIT liquidity).
-- `IN-6 Klaim/pre-mint eksternal` — airdrop, merkelless claim, mint
-  otoritas luar, unlock vesting yang menyuntik saldo.
-Aturan: setiap kelas yang ADA wajib punya minimal satu unit di ledger
-(Stream/Lintasan atau unit khusus) dan satu baris `IN-x` di
-`B00-TOPOLOGY.md`; kelas yang TIDAK ADA wajib ditulis eksplisit
-"tidak ada + alasan kode". Populasi ketiga ledger = `IN-x`.
+B17. Katalog Ingress (`IN-x`) — nilai masuk tanpa aksi pengguna langsung
+(moneyflow v2.1, MENGIKAT). Tiap cara nilai/klaim bisa bertambah di
+sebuah `Value_Holder` dicatat satu baris `IN-x` di `B04` Bagian 2b,
+dengan **kelas**:
 
-B18. TITIK SERAH KENDALI `CY-x` (moneyflow v2.1, MENGIKAT untuk Tahap C).
-Setiap panggilan eksternal / hook / `delegatecall` / callback yang
-berada DI TENGAH segmen dicatat sebagai `CY-x` pada inventaris Stream,
-deskriptif (bukan hipotesis):
-`CY_ID | Segmen | Target/Selector | Nilai terkirim | Storage ditulis
-sebelum | Storage ditulis sesudah | Guard pemanggil | Penanganan
-return/revert`.
-Aturan: (1) segmen dengan `CY-x` WAJIB memotong segmennya di titik itu
-(tidak boleh menyembunyikan serah-kendali di dalam satu segmen panjang);
-(2) `CY-x` yang targetnya bisa memanggil balik ke kontrak scope WAJIB
-ditandai `REENTRANT-CAPABLE`; (3) Tahap D wajib memeriksa urutan
-tulis-storage sebelum/sesudah `CY-x` sebagai kandidat invariant
-`INV-Sx`. Larangan: mencatat `CY-x` sebagai "panggilan eksternal biasa"
-tanpa kolom urutan tulis = tidak sah.
+| Kelas | Contoh | Sumber deteksi |
+| --- | --- | --- |
+| `USER` | deposit, swap, mint via entrypoint | EP+VM |
+| `ACTOR` | keeper/relayer/liquidator/harvester/bot publik memicu perpindahan | EP+VM/EP+SM dengan pemicu non-pengguna |
+| `CALLBACK` | messenger bridge, `lzCompose`, `onERC721Received`, flash-loan callback, oracle push, `handleV3AcrossMessage` | entrypoint yang dipanggil kontrak eksternal |
+| `PASSIVE` | transfer langsung ERC-20, donasi, `selfdestruct`/force-feed ETH, `receive` kosong, airdrop pihak ketiga | `balanceOf(address(this))` / `address(this).balance` dibaca di jalur nilai |
+| `ACCRUAL` | yield/rebase token, bunga berbasis waktu, akrual fee per detik | rumus yang membaca `block.timestamp` atau saldo token rebasing |
+| `ADMIN` | top-up/rescue/haircut oleh peran istimewa | fungsi `PRIVILEGED_ONLY` yang mengubah saldo |
 
-B19. BATAS SEGMEN + ANGGARAN (moneyflow v2.1, MENGIKAT). Segmen
-dipotong pada 5 pemicu (mana pun lebih dulu):
-1. pindah kontrak/domain/alamat;
-2. pindah pemilik state (aktor yang berwenang berubah, mis. `msg.sender`
-   → `onlyRole` → keeper);
-3. panggilan eksternal yang bisa memanggil balik (`CY-x`
-   `REENTRANT-CAPABLE`);
-4. perubahan satuan/desimal/skala (wei↔share, 6↔18 desimal, bps↔1e18);
-5. cabang yang mengubah TUJUAN dana (bukan sekadar nilai).
-Anggaran (target, bukan gerbang keras): Segmen ≤ 1 fungsi atau ≤ 60
-baris badan; Lintasan ≤ 12 Segmen; Stream ≤ 40 unit. Melebihi anggaran
-= wajib memotong atau mencatat alasan di inventaris. Segmen yang
-menggabungkan dua pemicu dalam satu blok = cacat partisi.
+Kolom wajib: `IN_ID | Kelas | Value_Holder | Pintu (fungsi:baris atau
+"transfer langsung") | Pembaca akuntansi (fungsi:baris yang membaca
+saldo/state yang naik) | Lintasan pengikat | Status`.
+Aturan ikat: tiap `IN-x` wajib terikat ke **Lintasan yang membaca
+efeknya** (bukan Lintasan penulisnya) — untuk `PASSIVE`/`ACCRUAL`
+pengikatnya adalah Lintasan yang rumusnya membaca saldo/waktu itu.
+`IN-x` kelas `ADMIN` boleh diikat ke Lintasan admin dan diprioritaskan
+terakhir. Status: `BELUM_TERIKAT` -> `TERIKAT_DI_<LINTASAN>`.
+`check-final` menolak sisa `BELUM_TERIKAT` pada `CORE-FLOW`.
+Konsekuensi Tahap C: Ingress `PASSIVE`/`ACCRUAL` muncul sebagai **segmen
+masuk tidak resmi** `S0` di inventaris Lintasan pembacanya (deskriptif:
+siapa bisa memicu, berapa batasnya, bagaimana akuntansi menyerapnya).
 
-B20. LINTASAN — unit kerja mode `MULTI-DOMAIN` (moneyflow v2.1,
-MENGIKAT bila B0 = `MULTI-DOMAIN`). Definisi: satu Stream dipotong
-menjadi Lintasan per domain; tiap Lintasan = rangkaian Segmen
-ujung-ke-ujung DI SATU domain, dari Ingress domain itu sampai Egress
-domain itu. Penyeberangan domain dicatat sebagai `HB-x`
-(`B07-STATE-BRIDGES.md`) dengan arah, pembawa pesan/bridge, dan
-jaminan produsen vs asumsi konsumen. Aturan: (1) DILARANG mencampur
-dua domain dalam satu Lintasan; (2) satu Lintasan WAJIB punya minimal
-satu Ingress dan satu Egress bernama; (3) urutan Lintasan = urutan
-penyeberangan (domain sumber lebih dulu); (4) unit rolling C→D→E tetap
-Stream, tetapi bukti fork per Lintasan (fork domain masing-masing).
+B18. Titik Serah Kendali (`CY-x`) (moneyflow v2.1, MENGIKAT).
+Tiap titik di dalam segmen tempat eksekusi berpindah ke kode yang tidak
+dikendalikan fungsi itu dicatat satu baris `CY-x`: `call`/`delegatecall`/
+`staticcall` eksternal, transfer native (`call{value}`, `transfer`,
+`send`, `sendValue`), transfer token yang bisa memanggil hook
+(`safeTransfer*` ERC-721/1155, ERC-777, ERC-1363, token ber-hook),
+panggilan ke `EXTERNAL-BOUNDARY`/oracle/router, callback ke `msg.sender`,
+`try/catch`.
+Kolom wajib (deskriptif, tanpa penilaian): `CY_ID | Segmen | Jangkar |
+Jenis | Penerima kendali (siapa yang bisa mengatur kodenya: CALLER-INPUT
+/ ADMIN-CONFIG / IMMUTABLE / EXTERNAL) | Storage ditulis SEBELUM |
+Storage ditulis SESUDAH | Storage dibaca SESUDAH | Guard aktif
+(nonReentrant/lock/none) | Efek bila revert (propagasi / ditelan /
+defer)`.
+`CY-x` **tidak** otomatis memecah segmen (lihat B19 pemicu c). AST wajib
+dipakai untuk enumerasi kandidat `CY-x` (daftar panggilan eksternal per
+fungsi koridor); agen wajib mengonfirmasi tiap kandidat dari badan.
 
-B21. TABEL SELISIH VARIAN + STATUS SINKRON (moneyflow v2.1, MENGIKAT
-bila B0 = `BERINSTANS`). Satu Stream mencakup banyak instans setara;
-perbedaan antar-instans WAJIB ditabulasi, bukan disimpulkan dari satu
-sampel:
-`Varian/Instans | Alamat | Perbedaan kode (fungsi/baris) | Perbedaan
-konfigurasi | Perbedaan satuan | Status`.
-Kolom `Status` memakai enum baku: `SAMA` (kode+konfigurasi identik),
-`BEDA-KODE:<fungsi>` (berbeda badan), `BEDA-KONFIG:<field>` (beda nilai
-admin), `TIDAK-DIBACA` (belum diperiksa — dilarang dianggap sama).
-Aturan: (1) minimal satu instans diperiksa penuh dan setiap perbedaan
-dibuktikan `File:Baris`; (2) `TIDAK-DIBACA` pada instans yang dipakai
-PoC = PoC tidak sah; (3) kesimpulan "berlaku untuk semua instans"
-DILARANG tanpa tabel terisi.
+B19. Batas Segmen & Anggaran Unit (moneyflow v2.1, MENGIKAT).
+Hierarki unit: **Stream** (siklus hidup nilai, indeks cakupan) >
+**Lintasan** (unit kerja C->D->E satu sesi) > **Segmen** (unit buruan) >
+fungsi (unit sensus).
+Segmen baru dimulai HANYA pada salah satu **5 pemicu batas**:
+(a) perpindahan aset/token/native keluar atau masuk `Value_Holder`;
+(b) penulisan variabel akuntansi (saldo, share, supply, reserve, debt,
+index, rate, klaim) yang terdaftar di C00/LP-x;
+(c) serah kendali ke **domain kepercayaan berbeda** (kontrak eksternal,
+`EXTERNAL-BOUNDARY`, delegatecall ke kode yang dipilih admin/caller) —
+serah kendali ke kode in-scope dengan kepercayaan sama cukup `CY-x`;
+(d) batas transaksi/aktor/waktu -> State-Bridge `HB-x` (segmen berhenti);
+(e) perpindahan domain eksekusi (chain/runtime) -> handoff lintas-domain.
+Bukan pemicu: helper internal `pure`/`view`, panggilan primitif yang sudah
+di C00 (dirujuk, tidak diulang), modifier, event.
+**Anggaran** (pedoman kewajaran, dicek `check-c` secara lunak):
 
-B22. LOKASI LP-x + LARANGAN STREAM SAPU SISA (moneyflow v2.1,
-MENGIKAT). Dua aturan yang menutup dua cacat run sebelumnya:
-1. **Lokasi LP-x:** Lembar Parameter `LP-x` dibaca pada **domain tempat
-   kontrak koridor hidup**, bukan hanya rantai utama. Untuk
-   `MULTI-DOMAIN`, setiap Lintasan wajib mengisi LP-x domainnya sendiri
-   (saldo, config, blok pin). LP-x yang hanya dibaca di rantai utama
-   dan dipakai menyimpulkan Lintasan lain = `TIDAK-DIBACA`.
-2. **Larangan Stream sapu sisa:** DILARANG membuat Stream berjenis
-   "sisa", "lain-lain", "admin/sapu", atau "misc" yang mengumpulkan
-   fungsi tanpa alur nilai. Setiap Stream WAJIB punya Ingress dan
-   Egress bernama serta rumus plafon. Fungsi admin/rescue masuk Stream
-   tempat asetnya berada; bila benar-benar berdiri sendiri, ia menjadi
-   Stream tersendiri dengan Ingress eksplisit (mis. `rescueAddress`)
-   dan Egress eksplisit — bukan wadah sisa. Konsekuensi: ledger
-   `BELUM_MASUK_STREAM` tidak boleh "diselesaikan" dengan membuat
-   Stream penampung.
+| Unit | Batas bawah | Batas atas (wajar) | Bila jauh melewati |
+| --- | --- | --- | --- |
+| Segmen | >= 1 pemicu batas | sekitar 1-4 fungsi dibaca langsung | pecah di pemicu berikutnya |
+| Lintasan | >= 1 perpindahan nilai + >= 1 batas kepercayaan | sekitar 4-8 segmen, sekitar <= 12 fungsi dibaca langsung (rujukan C00 tidak dihitung), 1 keluarga varian | pecah per fase (masuk/akuntansi/keluar) atau per sisi domain (kirim/terima) |
+| Stream | >= 1 Lintasan | sekitar <= 6 Lintasan | pecah menjadi Stream baru dalam satu `Flow Family` |
+
+Angka di tabel adalah **rentang wajar, bukan ambang kaku**: sedikit di
+atas/di bawah masih sah selama ada alasan tercatat di inventaris
+(mis. fungsi koridor panjang tak terpisahkan, atau varian yang menuntut
+satu Lintasan utuh). Yang DILARANG adalah menggabungkan banyak pemicu
+batas dalam satu segmen tanpa alasan, atau memecah sampai satu Lintasan
+kehilangan alur nilai utuh.
+Lintasan di bawah batas bawah digabung ke Lintasan tetangga dalam Stream
+yang sama. **Satu sesi kerja / satu delegasi = satu Lintasan** (C12
+Capsule berlaku per Lintasan).
+Penamaan: `STR-nn` (Stream), `STR-nn.Lk` (Lintasan), `STR-nn.Lk.Sj`
+(segmen). Berkas: `C<NN>-<STR>-<Lk>-INVENTORY.md`, `D<NN>-<STR>-<Lk>-*`,
+`E<NN>-<STR>-<Lk>-BATCH<M>-PROOF`.
+
+B20. Tabel Selisih Varian (moneyflow v2.1, MENGIKAT).
+Untuk tiap Lintasan yang menyentuh `VK-x`/`VC-x`/`DOM-x` dengan > 1
+anggota: satu anggota **representatif** dibedah penuh; anggota lain
+dicatat di Tabel Selisih — satu baris per anggota, kolom: `Anggota |
+Fungsi override (jangkar) | Autentikasi | Jalur native/wrapped |
+Transport/route | Kelas aset diterima | Parameter live beda (LP-x) |
+Status (SAMA / BEDA:<kolom>)`.
+Representatif dipilih per keluarga (sama transport + sama autentikasi).
+Baris `BEDA` yang menyentuh nilai atau autentikasi = **wajib** jadi kartu
+di Tahap D (Twin-Path Differential otomatis). Ini menggantikan praktik
+"varian dibaca pada titik override saja".
+
+B21. Lokasi & status Parameter Live (moneyflow v2.1, MENGIKAT).
+Tiap `LP-x` dibaca **di domain tempat segmen pembacanya dieksekusi**
+(kolom baru `Domain`), pada blok pin domain itu (B00 mencatat blok pin
+per domain). Getter yang revert -> baca slot storage (`cast storage`)
+dari layout AST. Bila tetap tidak terbaca -> status **`UNVERIFIED`**
+(bukan `LIVE`). Lintasan dengan `LP-x` pengendali nilai berstatus
+`UNVERIFIED` tidak lolos Gate D. `TIDAK-TERBACA` sebagai status dicabut.
+
+B22. Larangan Stream sapu sisa (moneyflow v2.1, MENGIKAT).
+Dilarang membentuk Stream penampung yang isinya ditentukan oleh "sisa
+ledger" (contoh terlarang: "KURAS FINAL"). Sisa ledger setelah katalog
+awal habis wajib dikelompokkan ulang menurut **Ingress -> Egress** dan
+**keluarga varian** menjadi Stream/Lintasan baru. Label Stream wajib
+sesuai isinya: Stream berlabel admin tidak boleh berisi EP+VM
+permissionless (dicek `check-c`).
 
 
 ## Tahap B — yang wajib selesai (15 Nov 2026, perintah Kim)
@@ -599,6 +683,8 @@ berikut sebagai INPUT dan tidak bisa direkonstruksi tahap berikut
 tanpa baca ulang seluruh protokol. Yang tidak memenuhi uji itu bukan
 pekerjaan Tahap B.
 Wajib selesai di Tahap B:
+0. Profil Topologi B0 (`B00-TOPOLOGY.md`) — mode + Matriks Domain (bila
+   MULTI-DOMAIN) + daftar `VK-x`/`VC-x`.
 1. Daftar scope + scope lock (B13) — gerbang masuk sensus.
 2. Sensus statis 100% peristiwa pemindah nilai (B1/B6) — fondasi cakupan. (Field 'keluar' tiap fungsi EP+VM TIDAK wajib — B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.)
 3. Inventaris alamat live — daftarnya saja (B3); verifikasi onchain
@@ -611,6 +697,8 @@ EXTERNAL-BOUNDARY / NON-PROD-SKIP). (Daftar jahitan SM-xx lengkap
 TIDAK wajib — B16 tidak dipakai, diputus 22:33 WIB 16 Nov 2026.)
 6. Ledger sisa — seed (B10): semua entrypoint, klaster, jahitan,
 handoff terbuka; diperbarui sesudah tiap round.
+   - Katalog Ingress `IN-x` (B17) — seed di `B04` Bagian 2b; populasi
+     ketiga di ledger.
 7. Struktur registry invariant (B3) — penomoran + registry kosong;
 diisi mulai Tahap D.
 8. B07-STATE-BRIDGES — seed (moneyflow v2.0): tabel variabel storage
@@ -636,6 +724,8 @@ Jangan dilakukan di Tahap B:
 segmentasi + kontrak handoff penuh untuk semua klaster di depan) —
 itu Tahap C per klaster, just-in-time. Alasan: 2–4 jam sebelum eksplorasi
 apa pun; batas bisa bergeser sesudah klaster tetangga dibaca.
+(v2.1: berlaku juga untuk Tabel Selisih — diisi per Lintasan di Tahap C,
+bukan di B.)
 2. Menulis invariant — itu Tahap D (B12). Alasan: asumsi yang ditulis
 sebelum eksplorasi akan basi dan ditulis ulang.
 3. Buruan (mencari celah) saat memetakan — itu Tahap D. Alasan:
@@ -800,9 +890,9 @@ invariant, aturan `HOLD` dan `/stop`.
 Pemetaan huruf (15 Nov 2026, perintah Kim 'ubah tahap jadi huruf saja'): Tahap A = INTEL (dulu Tahap 0), B = Mapping (dulu Tahap 1), C = Pemetaan mendalam per klaster (dulu Tahap 2), D = Eksplorasi (dulu Tahap 3), E = Uji test (dulu Tahap 4), F = Komposisi (dulu Tahap 5, USULAN), G = Verdict (dulu Tahap 6). Output tiap tahap: `<huruf><NN>-<NAMA>`, mis. B01-SCOPE, C01-FLOW-INVENTORY. Penomoran aturan (A1–A5, B0–B22, C1–C12) dan SM/INV tidak berubah — namespace terpisah.
 
 - Tahap B — Mapping: sensus + klaster (4 tipe, B4) + daftar handoff + `B07-STATE-BRIDGES` + ledger sisa + registry (B1–B16). Tanpa invariant (B12), tanpa pemetaan mendalam, tanpa buruan/PoC/verdict.
-- Tahap C — Pemetaan mendalam per klaster (rolling per-Stream): `C00-SHARED-PRIMITIVES.md` sekali di awal Tahap C sebelum Stream pertama; inventaris alur + segmentasi + kontrak handoff deskriptif per Stream (`C<NN>-STREAM-INVENTORY`) mengikuti Aturan Koridor Stream (`Corridor-Bound Cross-Cluster`, B2a-v2). Tanpa invariant, tanpa buruan/PoC/verdict.
-- Tahap D — Eksplorasi: buruan per segmen/handoff/simpul; merumuskan invariant tiap kandidat (wajib cantumkan sumber: field handoff atau docs/NatSpec) + kartu lead (tiap kartu lead wajib klaim finansial sendiri). Tanpa PoC. Diputus 22:33 WIB 16 Nov 2026: unit round = per-alur, dua gelombang (buta → berpengetahuan + katalog 52 plugin); daftar alur (enumerasi + EV, dari B02+B04) adalah prasyarat sebelum D. Diputus 17 Nov 2026: gate finansial — plafon live 0 TIDAK lagi membuat lead DORMAN; yang menentukan kerugian yang bisa dibuktikan (C10). Diputus 17 Nov 2026: standar TERBUKTI — kartu E yang buktinya cuma satu fungsi pendek harus dinilai ulang; Gelombang 1/2 tidak memberi verdict TERBUKTI (C11). Diputus 18 Nov 2026 (moneyflow v2.0): unit round = per-Stream (B2a-v2); urutan kartu QUEUED di dalam Stream menurut bobot struktural — P1 konservasi (INV-Jx, INV-Fx), P2 handoff/state-bridge (INV-Hx, INV-HBx), P3 anomali segmen (INV-Sx, S1→Sn); anti-kuota mutlak sampai QUEUED == 0 dan ACTIVE == 0; Koridor Stream berlaku + 1-hop peek State-Bridge (HB-x). Diputus 19 Nov 2026 (Post-Audit Hot-Zone): urutan Stream mengikuti `B2a-PostAudit` dua tier (Hot Streams `[DELTA]`/`[SCAR]`/`[SEAM]` dulu + `Prerequisite C-Only Pass`, lalu Tier 2 sampai sisa 0); Gelombang 1/2 wajib menjalankan **Tiga Deep-Check** (Handoff & State-Bridge: batas ekstrem input + state interleaving EP+SM; Simpul Fork/Join: pembulatan insolvensi/mengendap + kelabu-klaim via transfer/merge/split; Twin-Path & Patch-Scar: selisih penjaga antar-jalur kembar) — dilarang sekadar merangkum tabel Tahap C; `[SCAR]` memicu `M-004`, `[SEAM]` memicu `M-008` di Lazy Skill Router.
-- Tahap E — Uji test: PoC fork-live + P&L terukur per kandidat; membuktikan/membantah mekanisme. Diputus 22:33 WIB 16 Nov 2026: bentuk rinci = yang sudah dipraktikkan (batch maks 3, fork blok pin + P&L terukur); verdict mengikuti bentuk yang sekarang (06/07/08/09). Diputus 17 Nov 2026: Tahap E membuktikan rantai (a)+(b)+(c) sebagai satu rantai, bukan hanya satu fungsi (C11). Diputus 18 Nov 2026 (moneyflow v2.0): Gate E mengukur plafon di fork blok pin dua mode — `Observed Live Ceiling` (saldo/likuiditas live > 0 → ukur langsung) dan `Proven Potential Ceiling` (saldo live 0 tapi kontrak terbuka menerima aktivitas pengguna normal → simulasi transaksi penyetoran/aktivitas korban secara sah lewat entrypoint normal lebih dulu di atas fork blok pin, lalu eksekusi transaksi akun penguji terpisah tanpa hak istimewa; plafon ≥ $1). Diputus 19 Nov 2026 (fork multi-chain): fork mengikuti chain kontrak koridor kartu; kartu yang menyentuh override/behavior per-chain (admin sender verification, leaf hooks, unwrap fork, gas-token, light client) **wajib diuji di fork chain tersebut** (bukan selalu Ethereum); multi-chain fork diizinkan dan dicatat di `E-PROOF`; dasar pengetahuan per-chain = implementasi yang sudah dibaca di Tahap B/C — fork mengonfirmasi eksekusi.
+- Tahap C — Stream-Slice Inventory (rolling per-Lintasan): `C00-SHARED-PRIMITIVES.md` sekali di awal Tahap C sebelum Stream pertama; inventaris per Lintasan (`C<NN>-<STR>-<Lk>-INVENTORY.md`) — segmen (B19), handoff, simpul, State-Bridge, `CY-x` (B18), Ingress `S0` (B17), Tabel Selisih (B20), Lembar Parameter Live (B21) mengikuti Aturan Koridor Stream (`Corridor-Bound Cross-Cluster`, B2a-v2). Tanpa invariant, tanpa buruan/PoC/verdict.
+- Tahap D — Eksplorasi: buruan per segmen/handoff/simpul; merumuskan invariant tiap kandidat (wajib cantumkan sumber: field handoff atau docs/NatSpec) + kartu lead (tiap kartu lead wajib klaim finansial sendiri). Tanpa PoC. [RIWAYAT 16 Nov 2026: unit round per-alur + EV.] Berlaku v2.1: unit round = per-Lintasan, dua gelombang (buta → berpengetahuan + katalog plugin); prasyarat sebelum D = inventaris Lintasan lulus `check-c` + B8 Live-Match Lintasan. Gerbang tambahan: tiap Lintasan ≥ 1 kartu ATAU catatan `NIHIL_KANDIDAT: <alasan per segmen>`; tiap baris `BEDA` Tabel Selisih yang menyentuh nilai/autentikasi ≥ 1 kartu; tiap `CY-x` dengan `Storage ditulis SESUDAH` ≠ kosong DAN guard `none` ≥ 1 kartu atau catatan. Diputus 17 Nov 2026: gate finansial — plafon live 0 TIDAK lagi membuat lead DORMAN; yang menentukan kerugian yang bisa dibuktikan (C10). Diputus 17 Nov 2026: standar TERBUKTI — kartu E yang buktinya cuma satu fungsi pendek harus dinilai ulang; Gelombang 1/2 tidak memberi verdict TERBUKTI (C11). Diputus 18 Nov 2026 (moneyflow v2.0): unit round = per-Stream (B2a-v2); urutan kartu QUEUED di dalam Stream menurut bobot struktural — P1 konservasi (INV-Jx, INV-Fx), P2 handoff/state-bridge (INV-Hx, INV-HBx), P3 anomali segmen (INV-Sx, S1→Sn); anti-kuota mutlak sampai QUEUED == 0 dan ACTIVE == 0; Koridor Stream berlaku + 1-hop peek State-Bridge (HB-x). Diputus 19 Nov 2026 (Post-Audit Hot-Zone): urutan Stream mengikuti `B2a-PostAudit` dua tier (Hot Streams `[DELTA]`/`[SCAR]`/`[SEAM]` dulu + `Prerequisite C-Only Pass`, lalu Tier 2 sampai sisa 0); Gelombang 1/2 wajib menjalankan **Tiga Deep-Check** (Handoff & State-Bridge: batas ekstrem input + state interleaving EP+SM; Simpul Fork/Join: pembulatan insolvensi/mengendap + kelabu-klaim via transfer/merge/split; Twin-Path & Patch-Scar: selisih penjaga antar-jalur kembar) — dilarang sekadar merangkum tabel Tahap C; `[SCAR]` memicu `M-004`, `[SEAM]` memicu `M-008` di Lazy Skill Router.
+- Tahap E — Uji test: PoC fork-live + P&L terukur per kandidat; membuktikan/membantah mekanisme. v2.1: Lintasan `MULTI-DOMAIN` menguji di fork domain sumber DAN domain tujuan bila handoff lintas-domain berada di rantai (a)+(b)+(c); pengiriman pesan disimulasikan dengan impersonasi pengirim sah sesuai autentikasi domain (alias, `crossChainSender`, messenger), dicatat di `E-PROOF`. Diputus 22:33 WIB 16 Nov 2026: bentuk rinci = yang sudah dipraktikkan (batch maks 3, fork blok pin + P&L terukur); verdict mengikuti bentuk yang sekarang (06/07/08/09). Diputus 17 Nov 2026: Tahap E membuktikan rantai (a)+(b)+(c) sebagai satu rantai, bukan hanya satu fungsi (C11). Diputus 18 Nov 2026 (moneyflow v2.0): Gate E mengukur plafon di fork blok pin dua mode — `Observed Live Ceiling` (saldo/likuiditas live > 0 → ukur langsung) dan `Proven Potential Ceiling` (saldo live 0 tapi kontrak terbuka menerima aktivitas pengguna normal → simulasi transaksi penyetoran/aktivitas korban secara sah lewat entrypoint normal lebih dulu di atas fork blok pin, lalu eksekusi transaksi akun penguji terpisah tanpa hak istimewa; plafon ≥ $1). Diputus 19 Nov 2026 (fork multi-chain): fork mengikuti chain kontrak koridor kartu; kartu yang menyentuh override/behavior per-chain (admin sender verification, leaf hooks, unwrap fork, gas-token, light client) **wajib diuji di fork chain tersebut** (bukan selalu Ethereum); multi-chain fork diizinkan dan dicatat di `E-PROOF`; dasar pengetahuan per-chain = implementasi yang sudah dibaca di Tahap B/C — fork mengonfirmasi eksekusi.
 - Tahap F — Komposisi Inkremental & Akhir (moneyflow v2.0, 18 Nov 2026; meneruskan penerimaan bersyarat 22:33 WIB 16 Nov 2026): bila Stream aktif berbagi `State-Bridge` (`B07`) atau brankas saldo yang sama dengan Stream yang sudah selesai dan keduanya membentuk rantai dampak multi-stream, evaluasi komposisi dijalankan SEGERA setelah Tahap E Stream aktif selesai (selagi konteks segar), tanpa menunggu seluruh proyek; komposisi lintas-Stream akhir tetap di penutupan. Tetap HANYA untuk lead multi-segmen. Uji F TIDAK menjalankan fork ulang dan TIDAK menjalankan PoC ulang — pakai data terbaru (hasil Tahap E); bukti komposisi = lemma (segmen terbukti + handoff cocok + simpul terbukti + jalur gabungan dirangkai dari data terbaru). Lead satu segmen LEWATI Tahap F (PoC Tahap E sudah final).
 - Tahap G — Verdict: verdict per kandidat (06/07/08/09; tiga verdict terpisah; severity dari plafon teramati); distribusi akhir dihitung di seluruh protokol. Diputus 22:33 WIB 16 Nov 2026: bentuk rinci = yang sudah dipraktikkan (verdict mengikuti bentuk yang sekarang). Diputus 17 Nov 2026: verdict 09 TIDAK lagi mensyaratkan P&L live > 0; syaratnya kerugian yang bisa dibuktikan (C10). Diputus 17 Nov 2026: verdict memakai standar TERBUKTI (C11) bersama C10.
 
@@ -811,69 +901,17 @@ Rolling per-Stream (moneyflow v2.0): Tahap C Stream → Tahap D Stream → Tahap
 Just-in-time lintas-klaster (15 Nov 2026, perintah Kim; KOREKSI 15 Nov 2026 — dipindah dari Tahap C ke Tahap D atas pertanyaan Kim 'bukankah ini harusnya pas eksplorasi?'): materi terkait dan urgent dari klaster lain ditarik just-in-time di Tahap D (eksplorasi) — saat memburu satu alur, pemburu mengikuti alur itu melewati klaster, hanya yang dilewati alur itu. DIGANTI moneyflow v2.0 (18 Nov 2026) oleh **Aturan Koridor Stream (`Corridor-Bound Cross-Cluster`, B2a-v2)** — berlaku di Tahap C dan Tahap D Gelombang 1: ikuti garis aliran nilai Stream aktif menembus batas klaster (fungsi penerima = `S(k+1)`, tandai EP+VM selesai di `B05-LEDGER-SISA.md`), tanpa melebar horizontal ke fungsi lain di klaster seberang; jeda aliran pada variabel storage dicatat sebagai `HB-x` di `B07-STATE-BRIDGES.md` dengan `1-hop peek` di Tahap D. [ARSIP RIWAYAT PILOT] Keputusan klaster era pilot yang dipenuhi: (2) round 1 Tahap C = K1 SAJA (loop K1+K2 diburu bersama di Tahap D, dirangkai di Tahap F); (3) K8 = round sendiri di Tahap C (diinventarisasi sekali, dirujuk konsumen). Urutan EV (K1 dulu) tetap sebagai prioritas, bukan pagar.
 
 
-## Diputus 20 Nov 2026 (moneyflow v2.1 — paket "Universal Topology")
+## Diputus 20 Nov 2026 (moneyflow v2.1 — Universal Topology) — MENUNGGU PUTUSAN KIM
 
-Konteks: evaluasi Tahap B/C 20 Nov 2026 + temuan run across_hermes (Stream STR-10 menjadi wadah sisa; LP-x hanya dibaca di rantai utama; Lintasan/instans tidak punya bentuk baku; ingress non-pengguna tidak disensus).
-
-1. **B0 Profil Topologi** — tiga mode (`TUNGGAL` / `BERINSTANS` / `MULTI-DOMAIN`) ditetapkan sebelum sensus, dibuktikan di `B00-TOPOLOGY.md`; rule tetap satu, hanya bentuk pemecahan yang menyesuaikan.
-2. **B17 Katalog Ingress `IN-x`** — 6 kelas nilai masuk tanpa aksi pengguna wajib disensus; populasi ledger menjadi tiga (EP+VM, EP+SM, `IN-x`).
-3. **B18 Titik Serah Kendali `CY-x`** — panggilan eksternal/hook di tengah segmen wajib dicatat dengan urutan tulis-storage sebelum/sesudah; segmen wajib dipotong di titik itu.
-4. **B19 Batas segmen + anggaran** — 5 pemicu potong; anggaran Segmen ≤ 1 fungsi/60 baris, Lintasan ≤ 12 Segmen, Stream ≤ 40 unit.
-5. **B20 Lintasan** — unit kerja mode `MULTI-DOMAIN`: satu Stream dipotong per domain; lintas-domain = `HB-x`; dilarang mencampur domain.
-6. **B21 Tabel Selisih Varian** — mode `BERINSTANS` wajib menabulasi perbedaan antar-instans dengan enum `SAMA` / `BEDA-KODE:<fungsi>` / `BEDA-KONFIG:<field>` / `TIDAK-DIBACA`.
-7. **B22 Lokasi LP-x + larangan Stream sapu sisa** — LP-x dibaca di domain kontrak koridor; dilarang Stream "sisa/admin/misc"; setiap Stream wajib punya Ingress + Egress + rumus plafon.
-8. **B6-v2 AST diizinkan** untuk lokalisasi, call-graph, deteksi `CY-x`, dan sapuan akhir B9 — verdict `value_moves` tetap dari baca badan utuh.
-9. **Enum & istilah baku**: `Sync_Status` = `OPEN`/`READ`/`MATCH`/`DIVERGENT`/`UNVERIFIED` + kolom `Waktu`; `TIDAK-TERBACA` TIDAK boleh diperlakukan sebagai `LIVE`; ledger direkonsiliasi **by-name**, bukan pengurangan aritmetika; istilah B8 tunggal = "live-match di awal Tahap D per Stream, diulang sebelum PoC" (menghapus "awal D" vs "sebelum PoC").
-10. **Kamus nama artefak** (satu ejaan untuk dokumen + skill): `B00-TOPOLOGY`, `B01-SCOPE`, `B02-CENSUS-STATIC`, `B03-CENSUS-LIVE`, `B04-STREAMS-AND-CLUSTERS`, `B05-LEDGER-SISA`, `B06-REGISTRY-INVARIANT`, `B07-STATE-BRIDGES`, `C00-SHARED-PRIMITIVES`, `C<NN>-<STREAM_ID>-INVENTORY`, `D<NN>-<STREAM_ID>-WAVE1-BLIND` / `-WAVE2-QUEUED` / `-LEAD-CARDS`, `E<NN>-<STREAM_ID>-BATCH<M>-PROOF`, `F<NN>-<COMPOSITION_ID>`, `G<NN>-VERDICT`.
-11. **Verdict tetap tiga nilai wadah** (`06`/`07`/`08`/`09` = empat wadah, tiga verdict terpisah: mekanisme / eligibility / dampak) — dokumen dan skill wajib memakai istilah yang sama; "per klaster/EV" pada teks lama dibaca sebagai "per Stream, urutan pintu-masuk pertama" (B2a).
-
-## Diputus 16 Nov 2026 (22:33 WIB)
-
-Diputus Kim atas daftar 10 butir yang belum diputus:
-1. B16 TIDAK DIPAKAI ('B16 tidak perlu') — mekanisme jahitan lengkap + urutan hulu→hilir + field 'keluar' tidak menjadi rule; urutan klaster default tetap EV (B2); daftar jahitan pilot tetap artefak eksekusi.
-2. Tahap F DITERIMA BERSYARAT ('terima jika memang penting dan urgent') — isi F diterima; F hanya dijalankan bila penting dan urgent.
-3. Tahap D: unit round = per-alur, dua gelombang (buta → berpengetahuan + katalog 52).
-4. Tahap E/G: bentuk rinci = yang sudah dipraktikkan; verdict mengikuti bentuk yang sekarang; uji F TIDAK menjalankan fork ulang dan TIDAK menjalankan PoC ulang — pakai data terbaru.
-5. B9: rerun sensus manual DITERIMA sebagai enumerasi independen kedua (YA).
-6. A5: dua celah DITERIMA (YA) — pin HEAD saat penemuan; blok referensi ditentukan di Tahap B.
-7. Arah metode: 'pakai paling mutakhir' — flow money first menjadi metode kerja aktif; Segitiga menjadi rujukan/legacy.
-8. Deep-run per jalur DITERIMA — mode eksekusi per jalur; berlaku mulai jalur berikut (P4).
-9. Larangan filter di dalam klaster DITULIS ke berkas ini (butir 11 seksi 'Tahap B — yang TIDAK dilakukan').
-10. [ARSIP RIWAYAT PILOT] SM-05 (pilot): tetap dieksplorasi ketika terkait — konsumennya tidak dipatok sekarang.
-
-## Diputus 18 Nov 2026 (moneyflow v2.0 — Lapis Konstitusi)
-
-1. Arsitektur Stream-first: Klaster = indeks cakupan (papan kontrol Tahap B); Stream = unit rolling C→D→E (B2a-v2).
-2. Klasifikasi klaster 4 tipe generik: CORE-FLOW / SHARED-PRIMITIVE / EXTERNAL-BOUNDARY / NON-PROD-SKIP (B4) — menghapus bias proyek tunggal; penyebutan klaster/SM era pilot hanya sah sebagai [ARSIP RIWAYAT PILOT].
-3. Artefak standar baru: B07-STATE-BRIDGES.md (Tahap B, diperbarui C/D) + C00-SHARED-PRIMITIVES.md (awal Tahap C, sekali).
-4. Aturan Koridor Stream (Corridor-Bound Cross-Cluster) menggantikan 'jahitan adalah batas mati' di Tahap C dan Tahap D Gelombang 1; State-Bridge Handoff HB-x + 1-hop peek di Tahap D.
-5. B2a-v2 dua lapis: antar-Stream = B2a; dalam-Stream = bobot struktural (P1 konservasi INV-Jx/Fx → P2 handoff/state-bridge INV-Hx/HBx → P3 anomali segmen INV-Sx S1→Sn); anti-kuota mutlak (QUEUED == 0 dan ACTIVE == 0).
-6. C10-v2 Permissionless & Reachable Potential Ceiling + Gate D/Gate E terpisah + dua mode plafon (Observed Live Ceiling / Proven Potential Ceiling) + DORMAN = blokir konfigurasi admin aktif saja.
-7. B7 WAJIB untuk MAINNET/TESTNET (repo-only satu-satunya pengecualian) — selaras B15; aturan B7-opsional era v1.0 dicabut.
-8. Tahap F = Komposisi Inkremental & Akhir (evaluasi segera setelah Tahap E Stream aktif bila berbagi State-Bridge/brankas).
-9. C12 Stream Context Capsule — brief delegasi terikat Stream aktif; lantai bawah tetap utuh.
-10. Dokumen era Segitiga selaras huruf metode aktif: Tahap D = Eksplorasi, Tahap E = Uji Fork/PoC; triase fork-testability di transisi B8 / akhir D menuju E; rujukan verifier = tools/verify_flow.py.
-
-## Belum diputus (bukan rule)
-
-- Inventory per-alur (Tahap C) — dievaluasi, tidak diadopsi untuk sekarang; bisa dibuka lagi.
-- ~~Cara parser independen untuk sapuan akhir (B9)~~ — **DITUTUP v2.1**: AST/call-graph diizinkan sebagai enumerasi independen (B6-v2), atau rerun sensus manual (22:33 WIB 16 Nov 2026).
-- Skill per tahap A–G + `verify_flow.py` — item pembangunan repo (bukan rule); bentuk rinci Tahap D–G sudah diputus sehingga skill kini tidak lagi terblokir bentuk.
-
-## Diputus tidak dipakai
-
-- Baca bertingkat untuk sensus statis (DITOLAK 15 Nov 2026, keputusan
-  Kim): mengganti baca manual dengan classifier AST + baca sebagian.
-  Alasan: Kim tidak mau ambil risiko pada scope mapping statis;
-  classifier belum ada dan belum tervalidasi. Yang dipakai: B6 (baca
-  manual penuh). **DIPERBARUI v2.1 (20 Nov 2026): AST kini DIIZINKAN
-  untuk lokalisasi/call-graph/deteksi `CY-x`/sapuan akhir (B6-v2),
-  tetapi verdict `value_moves` tetap wajib dari baca badan utuh —
-  larangan "AST memberi verdict" tetap berlaku.**
-- Penghitung AST sebagai cek kedua sensus statis (DITOLAK 15 Nov 2026,
-  keputusan Kim: "tidak usah pakai AST kalau begitu"): sempat dibangun
-  dan divalidasi terhadap sensus pilot (1.245 vs 1.230 + 15, 9/9
-  kontrol, 6/6 hantu bersih, deterministik) tapi tidak dipakai.
-  Berkasnya tetap di folder pilot sebagai referensi, bukan bagian
-  dari metode. Konsekuensi: B9 (sapuan akhir) butuh cara enumerasi
-  independen lain — masih terbuka.
+1. B0 Profil Topologi + 3 mode.
+2. B17 Katalog Ingress `IN-x` + populasi ketiga ledger.
+3. B18 Titik Serah Kendali `CY-x`.
+4. B19 5 pemicu batas segmen + anggaran Segmen/Lintasan/Stream; Lintasan = unit kerja satu sesi.
+5. B20 Tabel Selisih Varian.
+6. B21 LP-x dibaca di domain eksekusi; `UNVERIFIED` menggantikan `TIDAK-TERBACA -> LIVE`.
+7. B22 Larangan Stream sapu sisa.
+8. B6-v2 AST diizinkan untuk lokalisasi & enumerasi; verdict tetap dari baca badan.
+9. B9 sapuan akhir = enumerasi AST independen (atau rerun manual).
+10. B10 rekonsiliasi ledger berbasis nama.
+11. B14 nilai `no` (iv) `COSMETIC_NON_ECONOMIC` + konvensi 8 modifier non-standar.
+12. B07 enum `Sync_Status` + kolom waktu (lihat skill C Bagian 5).
