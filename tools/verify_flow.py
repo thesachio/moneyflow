@@ -322,8 +322,10 @@ def cmd_check_c(args):
                          f"aktual {len(hnd_defs)} (jumlah tidak sesuai)")
         # --- A04: anggaran rentang wajar; di luar rentang wajib KEPUTUSAN_ANGGARAN
         if n and not legacy and not (4 <= n <= 8) and "KEPUTUSAN_ANGGARAN" not in text:
-            v.append(f"N={n} segmen di luar rentang wajar 4-8 — wajib baris "
-                     f"`KEPUTUSAN_ANGGARAN: <alasan>` di Bagian 1 (A04)")
+            v.append(f"CATATAN_ANGGARAN: N={n} segmen di luar rentang wajar 4-8 — "
+                     f"tulis baris `KEPUTUSAN_ANGGARAN: <alasan>` di Bagian 1 "
+                     f"(A04: rentang wajar, bukan ambang kaku; pecah hanya bila "
+                     f"alur nilai utuh masih terjaga)")
         # --- larangan klaim prematur
         for m2 in re.finditer(r"\bTERBUKTI\b", text):
             s = max(0, m2.start() - 30)
