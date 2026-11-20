@@ -299,6 +299,8 @@ def cmd_check_c(args):
                     v.append(f"bagian {i} ({name}) tidak ada — format v2.1 wajib 9 bagian (A04)")
         # --- hitung segmen S1..Sn unik yang DIDEFINISIKAN (bukan disebut)
         seg_defs = set(re.findall(r"^\s*\|?\s*(?:\*\*)?(S\d{1,2})(?:\*\*)?\s*(?:\||:|- )", text, re.M))
+        # A04: S0 = Ingress tidak resmi; TIDAK dihitung dalam rumus handoff
+        seg_defs.discard("S0")
         n = len(seg_defs)
         # --- handoff unik yang DIDEFINISIKAN
         hnd_defs = set(re.findall(r"^\s*\|?\s*(?:\*\*)?(H\d{1,2})(?:\*\*)?\s*(?:\||:|- )", text, re.M))
@@ -318,6 +320,10 @@ def cmd_check_c(args):
             elif len(hnd_defs) != target:
                 v.append(f"N={n} segmen, Sigma(m-1)={sigma} -> target handoff {target}, "
                          f"aktual {len(hnd_defs)} (jumlah tidak sesuai)")
+        # --- A04: anggaran rentang wajar; di luar rentang wajib KEPUTUSAN_ANGGARAN
+        if n and not legacy and not (4 <= n <= 8) and "KEPUTUSAN_ANGGARAN" not in text:
+            v.append(f"N={n} segmen di luar rentang wajar 4-8 — wajib baris "
+                     f"`KEPUTUSAN_ANGGARAN: <alasan>` di Bagian 1 (A04)")
         # --- larangan klaim prematur
         for m2 in re.finditer(r"\bTERBUKTI\b", text):
             s = max(0, m2.start() - 30)
