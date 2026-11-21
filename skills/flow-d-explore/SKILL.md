@@ -73,7 +73,7 @@ Ikuti kode sepanjang `S1 -> H1 -> S2 -> Sn` berikut rentetan handoffnya dengan *
 
 **Lensa 2 (Adu Kontrak Handoff & State-Bridge):** adu kolom `Jaminan Faktual Produsen` melawan `Asumsi Faktual Konsumen` pada setiap `H1..Hn-1`, dengan memperhatikan kolom `Pengendali Field`: asumsi konsumen atas field `CALLER-INPUT` yang tidak dijamin produsen adalah prioritas pertama. Bila Stream menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **`1-hop peek`** diizinkan (baca tepat satu lapis fungsi pasangan penulis/pembaca di stream seberang) agar ketidaksinkronan skala desimal, urutan pembaruan state, atau nilai basi langsung tertangkap selagi konteks panas.
 
-**Lensa 3 (Twin-Path Differential — bila Lintasan punya pasangan di `Twin-Path Group` pada `B04` yang sudah punya inventaris `C`):** sandingkan tabel Handoff, Simpul, urutan pembaruan state, dan arah pembulatan Stream aktif terhadap Stream kembarnya; catat setiap asimetri yang tidak dijelaskan oleh perbedaan rumus dasar.
+**Lensa 3 (Twin-Path Differential — bila Lintasan punya pasangan di `Twin-Path Group` pada `B04` yang sudah punya inventaris `C`):** sandingkan tabel Handoff, Simpul, urutan pembaruan state, dan arah pembulatan Lintasan aktif terhadap Lintasan kembarnya; catat setiap asimetri yang tidak dijelaskan oleh perbedaan rumus dasar.
 
 ### Deep-Check — Tiga Uji Kritis Wajib (Gelombang 1 & 2; berlaku di `MODE: AUTO` maupun memandu peneliti di `MODE: PAIR`)
 
