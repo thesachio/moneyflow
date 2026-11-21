@@ -109,7 +109,7 @@ Satu baris per titik di dalam segmen tempat eksekusi berpindah ke kode yang tida
 | Storage ditulis SEBELUM | variabel + `File:Baris` |
 | Storage ditulis SESUDAH | variabel + `File:Baris` (kosong = pola CEI terpenuhi secara deskriptif) |
 | Storage dibaca SESUDAH | variabel + `File:Baris` |
-| Guard aktif | `nonReentrant` / lock khusus / `none` |
+| Guard aktif | `nonReentrant` / lock khusus / `none` — **modifier yang menulis state wajib disebut namanya + efeknya**, bukan hanya "lock khusus". Contoh wajib: `validateInternalCalls — menulis callValidated selama delegatecall, membuka semua onlyAdmin`. Daftar modifier penulis state ada di `B05` §11b; bila Lintasan menyentuhnya dan kolom hanya ditulis `lock khusus`, Lintasan itu belum selesai |
 | Efek bila revert | `PROPAGASI` / `DITELAN` (try/catch, low-level call tanpa require) / `DEFER` (dicatat utang) |
 
 Aturan:

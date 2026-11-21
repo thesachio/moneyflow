@@ -640,7 +640,12 @@ def cmd_check_final(args):
     # ---- v2.1 KOREKSI-09: F-MR (nol MENUNGGU-RANGKAI) + F-F3 (F antar-varian dievaluasi)
     if not _is_legacy(ad):
         mr_hits = []
+        # dokumen kerangka (konstitusi/metode) menyebut istilah ini sebagai definisi,
+        # bukan sebagai kartu aktif -> dikecualikan agar gate tidak memberi alarm palsu
+        FRAMEWORK_DOCS = {"AGENTS.md", "README.md", "SOUL.md", "INTEL.md", "STATE.md"}
         for f in sorted(ad.glob("*.md")):
+            if f.name in FRAMEWORK_DOCS:
+                continue
             try:
                 t = f.read_text(encoding="utf-8", errors="replace")
             except OSError:
@@ -666,6 +671,21 @@ def cmd_check_final(args):
                 if not has_f3:
                     v.append(f"F-F3: mode {mode.group(1)} (bukan TUNGGAL) tetapi tidak ada "
                              f"berkas/baris F pemicu 3 (antar-varian)")
+
+    # ---- 11d GAP REGISTER: nol sisa pada tiga register Tahap B -> C
+    b05g = ad / "B05-LEDGER-SISA.md"
+    if b05g.is_file() and not _is_legacy(ad):
+        gt = b05g.read_text(encoding="utf-8", errors="replace")
+        if "GAP REGISTER" in gt:
+            for tag, label in (("BELUM_MASUK_STREAM", "11a EP tanpa Lintasan"),
+                               ("BELUM_DIPERIKSA", "11b modifier penulis state"),
+                               ("BELUM_DIPERLUAS", "11c unknown belum diperluas")):
+                # hanya baris tabel register (bukan prosa penjelas)
+                n = sum(1 for ln in gt.splitlines()
+                        if ln.lstrip().startswith("|") and f"`{tag}`" in ln)
+                if n:
+                    v.append(f"GAP-REGISTER {label}: masih {n} baris `{tag}` — "
+                             f"wajib diselesaikan Tahap C sebelum laporan ditutup")
 
     # ---- 07: wajib Disposition: + PERCOBAAN:
     f07 = ad / "07-needs-next-step.md"
