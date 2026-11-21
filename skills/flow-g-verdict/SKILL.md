@@ -1,6 +1,6 @@
 ---
 name: flow-g-verdict
-description: Tahap G — Verdict (moneyflow v2.0). Triage Per-Stream (06/07/08/09 per kartu seusai E/F, antrean Stream bersih 0 sebelum Stream berikut) + Rekapitulasi & Gate Akhir Proyek (G01 setelah seluruh STR + B9). Dua metrik plafon transparan (Observed Live Ceiling / Proven Potential Ceiling), tiga verdict terpisah, severity Impact x Likelihood, HOLD. Dipakai saat mengadili hasil, atau saat user menyebut tahap G, verdict.
+description: Tahap G — Verdict (moneyflow v2.1). Triage per Stream (06/07/08/09 per kartu dari semua Lintasan Stream itu, seusai E + F antar-Lintasan; syarat "Stream tercakup" sebelum pindah Stream) + Rekapitulasi & Gate Akhir Proyek (G01 setelah seluruh STR + B9). Dua metrik plafon transparan (Observed Live Ceiling / Proven Potential Ceiling), tiga verdict terpisah, severity Impact x Likelihood, HOLD. Dipakai saat mengadili hasil, atau saat user menyebut tahap G, verdict.
 ---
 
 # Skill flow-g-verdict — Tahap G (Verdict)
@@ -10,7 +10,17 @@ Skill ini memuat aturan pengadilan sampai Tahap G selesai. `methodology/aturan-a
 
 ## Dua mode eksekusi Tahap G
 
-**1. Triage Per-Stream.** Mengadili **setiap kartu** selesai Tahap E/F ke wadah `06 / 07 / 08 / 09` agar **antrean Stream aktif bersih 0** (kandidat QUEUED/ACTIVE habis) sebelum rolling lanjut ke Stream berikutnya. Triage ini buta cakupan administratif: kandidat `09` diajukan apa adanya, penempatan final 08/09 tetap hak Hakim (rujuk `verify/VERDICT.md`, Langkah 0 & 11 Pernyataan).
+**1. Triage per Stream.** Dijalankan **setelah semua Lintasan Stream itu selesai E** dan **Tahap F pemicu 1 (antar-Lintasan) sudah dievaluasi**. Mengadili **setiap kartu dari semua Lintasan** ke wadah `06 / 07 / 08 / 09`. Rolling lanjut ke Stream berikutnya **hanya bila Stream tercakup** (lihat di bawah). Triage ini buta cakupan administratif: kandidat `09` diajukan apa adanya, penempatan final 08/09 tetap hak Hakim (rujuk `verify/VERDICT.md`, Langkah 0 & 11 Pernyataan).
+
+**Syarat "Stream tercakup"** (semua harus benar sebelum pindah ke Stream berikutnya):
+
+- semua `EP+VM` / `EP+SM` / `IN-x` milik Stream berstatus `TERPETAKAN_DI_` / `TERIKAT_DI_` di `B05` (**per nama**);
+- tiap Lintasan punya **disposisi Tahap D** (kartu / `G` / `NIHIL_KANDIDAT` per segmen);
+- **Tabel Selisih** tiap Lintasan terdisposisi;
+- `QUEUED == 0`, `ACTIVE == 0`, **nol `MENUNGGU-RANGKAI`** di semua Lintasan Stream;
+- kartu `TUNDA-VERIFIKASI` / `TUNDA-LIVE` / `DORMAN` tercatat dengan syarat buka-ulang.
+
+Verdict Stream **final untuk isi Stream itu**, tidak final untuk proyek: bila F pemicu 2 (antar-Stream) di Stream berikutnya menemukan rantai gabungan, Stream lama **dibuka kembali sebatas rantai itu** dan kartunya diadili ulang.
 
 **2. Rekapitulasi & Gate Akhir Proyek.** `G01-VERDICT.md` + distribusi akhir, hanya setelah **seluruh Stream** selesai dan **sapuan akhir `B9`** sudah dijalankan. Mode 1 boleh berulang per Stream; Mode 2 cuma sekali per proyek.
 
@@ -22,6 +32,14 @@ Skill ini memuat aturan pengadilan sampai Tahap G selesai. `methodology/aturan-a
 | **08** | valid tapi tidak dilaporkan | mekanisme terbukti, tapi kelasnya salah satu: `PRE_LIVE_SCOPE` (kode belum di-deploy) · `FIXED_IN_HEAD (DUPLICATE_RISK)` · out-of-scope · known issue · peran terpercaya/admin · debu < $1. **Larangan:** temuan yang `[PASS]` di `FORK_LIVE_PIN` dengan `KORIDOR_SAMA` tidak boleh masuk 08 hanya karena HEAD lebih baru | mekanisme **belum** terbukti (itu pelarian wadah) |
 | **07** | butuh langkah lanjut | logika **belum terbantahkan**, butuh verifikasi lanjutan (state on-chain spesifik, komponen eksternal) | parkir tanpa usaha (LAZY_BAILOUT) |
 | **06** | terbantahkan / tidak valid | mekanisme **patah** saat pembuktian, atau di bawah $1 (DUST) | penolakan kertas tanpa bukti eksekusi |
+
+## Cakupan varian & domain pada verdict (v2.1)
+
+- Wadah **09** diberikan **per anggota yang DIEKSEKUSI** (representatif, atau anggota yang diuji sendiri).
+- Anggota **berlaku-turunan** (`SAMA`, `CODE-REVIEW-ONLY`) dicatat di blok **Cakupan varian** temuan itu sebagai *"diduga terdampak, belum diuji"* — **tidak menaikkan severity**, **tidak menambah plafon**.
+- **Eligibility bounty** dinilai **per domain** bila program membedakan aset/chain dalam scope.
+- Kartu **`MENUNGGU-RANGKAI` tidak boleh diadili** — kembalikan ke F.
+- Kartu **`TUNDA-VERIFIKASI`** masuk distribusi tersendiri, **bukan 07** (07 menuntut blok `PERCOBAAN`).
 
 ### Aturan 07 vs 08 (mengikat)
 
@@ -54,6 +72,8 @@ Wajib cantumkan **keduanya**, terpisah dan jelas:
 - **`Proven Potential Ceiling`** — nilai terukur melalui *rational victim seeding* pada jalur *permissionless* yang aktif di produksi.
 
 Tegas: kandidat `LIVE_MATCH` dengan pemicu *permissionless* dan `Proven Potential Ceiling >= $1` **sah masuk wadah `09`** (selaras Gate `C10-v2`), sambil mencatat `Observed Live Ceiling` apa adanya sebagai **informasi kalibrasi tier** bagi program bounty yang mensyaratkan TVL aktif saat ini. Kandidat `09` berlabel `[NOVEL / NO-CATALOG]` wajib mendapat satu catatan rekomendasi di lampiran internal `audit/notes/novel-plugin-candidates.md` (tanpa mengubah berkas katalog selama audit berjalan) agar temuan baru dapat dipanen menjadi plugin metode seusai proyek.
+
+**Kedua metrik dicatat per domain.** Dilarang menjumlah plafon antar-domain/anggota varian kecuali tiap domain/anggota diuji sendiri (Tahap E, aturan plafon per domain).
 
 Alasan pemisahan: mekanisme bisa TERBUKTI tapi out-of-scope (→08); mekanisme bisa masuk scope tapi dampaknya debu (→06 DUST). Menggabungkan tiga pertanyaan jadi satu label = kehilangan informasi yang menentukan wadah.
 
@@ -100,6 +120,8 @@ Hitung di **seluruh protokol**, bukan per klaster (bagian Rekapitulasi & Gate Ak
 09 = <n>
 TUNDA-LIVE = <n> (nol waktu eksekusi, dibuka bila live muncul)
 DORMAN = <n> (gagal C10, dengan syarat buka-ulang)
+TUNDA-VERIFIKASI = <n> (LP-x UNVERIFIED penghambat, dibuka bila terbaca)
+BERLAKU-TURUNAN  = <n> (anggota varian SAMA, CODE-REVIEW-ONLY — informasi, bukan wadah)
 ```
 
 Angka-angka ini wajib konsisten dengan isi berkas wadah — jangan menulis ringkasan yang tidak cocok dengan daftar.
@@ -121,12 +143,14 @@ Angka-angka ini wajib konsisten dengan isi berkas wadah — jangan menulis ringk
 
 ## Keluaran
 
-- `G01-VERDICT.md` — verdict per kandidat (tiga verdict terpisah) + **kedua metrik plafon** per kandidat + severity berujukan + distribusi akhir (diterbitkan pada Rekapitulasi & Gate Akhir Proyek; triage per-Stream hanya mengisi wadah).
+- `G01-VERDICT.md` — verdict per kandidat (tiga verdict terpisah) + **kedua metrik plafon** per kandidat + severity berujukan + distribusi akhir (diterbitkan pada Rekapitulasi & Gate Akhir Proyek; triage per Stream hanya mengisi wadah).
 - Draf temuan 09 memakai format `templates/` (laporan teknis + email). **Identitas pengirim belum diisi** sampai user memerintah.
 
 ## Definition of done Tahap G
 
-- [ ] Triage Per-Stream mengantre bersih: setiap Stream berakhir dengan wadah final, tanpa kandidat QUEUED/ACTIVE tersisa
+- [ ] Triage per Stream hanya dijalankan setelah **semua Lintasan Stream selesai E** + **F pemicu 1 dievaluasi**; syarat **"Stream tercakup"** terpenuhi sebelum pindah Stream
+- [ ] **nol kartu `MENUNGGU-RANGKAI` diadili** (dikembalikan ke F)
+- [ ] blok **Cakupan varian** ada pada tiap temuan 09 yang menyentuh Lintasan bervarian; plafon **per domain**
 - [ ] Rekapitulasi & Gate Akhir Proyek diterbitkan hanya setelah seluruh `STR` selesai + sapuan `B9` dijalankan
 - [ ] tiap kandidat punya **tiga** verdict terpisah
 - [ ] tiap severity menyebut rujukan; dua sumbu dipertimbangkan
