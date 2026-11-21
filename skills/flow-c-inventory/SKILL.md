@@ -251,3 +251,27 @@ Aturan:
 - nol invariant, nol buruan, nol PoC
 - `B05` diperbarui (nama); `B07` diperbarui bila menyentuh jembatan; `B04` dikoreksi bila Lintasan dipecah/digabung
 - `python3 tools/verify_flow.py check-c <berkas> --repo <repo>` → **LULUS**
+
+### Bagian 10 — Kesiapan Eksplorasi (`SIAP-D`) — **gerbang masuk Tahap D**
+
+Prinsip **kelengkapan bertambah**: B ⊂ C ⊂ D. Sebelum Tahap D menyentuh Lintasan ini, **semua** yang
+terkait Lintasan harus sudah teridentifikasi di C. Bagian ini adalah daftar periksa yang **dihitung**,
+bukan dinarasikan.
+
+| # | Objek | Wajib terisi | Status |
+| :-: | :--- | :--- | :--- |
+| 1 | **Aset** | setiap token/native yang menyentuh `Value_Holder` Lintasan ini: alamat per domain + **kelas aset** (`NATIVE` / `WRAPPED_NATIVE` / `ERC20_STD` / `FEE_ON_TRANSFER` / `REBASING` / `HOOK_TOKEN` / `DECIMALS≠18` / `NON_EVM_ASSET`) + fungsi:baris tempat ia masuk/keluar | `LENGKAP` \| `BELUM: <nama>` |
+| 2 | **Data / storage** | setiap variabel storage yang **ditulis** dan **dibaca** di koridor, dengan `File:Baris` + `HB-x` bila menyeberang Lintasan | `LENGKAP` \| `BELUM: <nama>` |
+| 3 | **Entrypoint** | setiap `EP+VM`/`EP+SM` yang dialokasikan ke Lintasan ini di `B05` muncul di kolom `Fungsi & Jangkar Eksak` minimal satu segmen — **atau** ditulis `DI_LUAR_KORIDOR: <fungsi> — <alasan + jangkar>` | `LENGKAP` \| `BELUM: <nama>` |
+| 4 | **Parameter live** | setiap `LP-x` Bagian 8 punya `Nilai @ blok pin` + `Status Cabang` (`LIVE` / `DEAD-CONFIG` / `UNVERIFIED`) | `LENGKAP` \| `BELUM: <nama>` |
+| 5 | **Serah kendali & ingress** | jumlah `CY-x` Bagian 3 dan `S0` Bagian 2 cocok dengan daftar di Bagian 9, masing-masing punya `Guard aktif` | `LENGKAP` \| `BELUM: <nama>` |
+| 6 | **Bahan invariant** | daftar `INV-` yang akan diuji Lintasan ini (rujuk `B06`), atau `NIHIL_KANDIDAT: <alasan>` | `LENGKAP` \| `BELUM: <nama>` |
+
+**Aturan gerbang:**
+
+1. Baris berstatus `BELUM: …` **memblokir** Tahap D untuk Lintasan ini. `check-c` menolak berkas yang
+   masih memuat `BELUM:` pada Bagian 10.
+2. Baris 3 diuji **mekanis**: gabungan fungsi di kolom `Fungsi & Jangkar Eksak` seluruh segmen harus
+   memuat setiap fungsi yang dilabeli `TERPETAKAN_DI_<STR>.<Lk>` di `B05`. Selisih = segmen bolong.
+3. Baris 1 dan 2 **tidak boleh** disalin dari `B00`/`B07` sebagai prosa — wajib `File:Baris` Lintasan ini.
+4. Bila objek memang tidak ada di Lintasan ini, tulis `TIDAK_ADA: <alasan>` — bukan dikosongkan.

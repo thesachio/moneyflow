@@ -10,6 +10,8 @@ Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-a
 
 ## Prasyarat & Gerbang Awal B8 (tanpa ini D tidak mulai)
 
+- **`SIAP-D` LENGKAP (mengikat, v2.1).** Berkas `C<NN>-<STR>-<Lk>-INVENTORY.md` **Bagian 10 — Kesiapan Eksplorasi** wajib berstatus `LENGKAP` pada keenam objek (aset, data/storage, entrypoint, parameter live, serah kendali & ingress, bahan invariant). Bila masih ada `BELUM:`, **jangan mulai Gelombang 1** — kembalikan ke Tahap C. Alasannya: Tahap D hanya bisa "lengkap terhadap segmen C"; bila C sendiri bolong, D akan rapi tetapi buta. `check-c` menolak berkas yang belum `LENGKAP`, dan uji mekanis cakupan entrypoint (fungsi berlabel `TERPETAKAN_DI_<STR>.<Lk>` di `B05` harus tercakup jangkar segmen) menangkap segmen yang bolong.
+
 - Unit kerja Tahap D = **satu Lintasan (`STR-nn.Lk`)** berdasarkan `C<NN>-<STR>-<Lk>-INVENTORY.md` + `C00-SHARED-PRIMITIVES.md` + baris terkait di `B07-STATE-BRIDGES.md`.
 - Registry invariant (`B06`) sudah punya struktur penomoran.
 - **B8 Live-Match Lintasan** dijalankan sebelum Gelombang 1 dimulai: cek cepat atas kontrak pada koridor Lintasan aktif **di domain tempat tiap segmen berjalan** (kolom `Domain` Bagian 2) — **utamakan desain kode + `cast code`/view di blok pin domain itu**; DILARANG memindai log sejarah panjang (pindai log = verifikator terakhir, Tahap G/sapuan akhir). Bila kontrak target belum live-match: masukkan Lintasan ke `TUNDA-LIVE` di `B05-LEDGER-SISA.md` dan **hentikan putaran Lintasan tersebut** (nol waktu eksekusi). **Lintasan lain dalam Stream yang sama tetap jalan.**

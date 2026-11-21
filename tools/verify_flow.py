@@ -293,10 +293,11 @@ def cmd_check_c(args):
         if not legacy:
             SECTIONS = ("Identitas Lintasan", "Segmen", "Titik Serah Kendali",
                         "Kontrak Handoff", "Simpul", "State-Bridge",
-                        "Tabel Selisih Varian", "Lembar Parameter Live", "Rekonsiliasi Ledger")
+                        "Tabel Selisih Varian", "Lembar Parameter Live", "Rekonsiliasi Ledger",
+                        "Kesiapan Eksplorasi")
             for i, name in enumerate(SECTIONS, start=1):
                 if not re.search(rf"^#+\s*Bagian\s*{i}\b", text, re.M):
-                    v.append(f"bagian {i} ({name}) tidak ada — format v2.1 wajib 9 bagian (A04)")
+                    v.append(f"bagian {i} ({name}) tidak ada — format v2.1 wajib 10 bagian (A04 + SIAP-D)")
         # --- hitung segmen S1..Sn unik yang DIDEFINISIKAN (bukan disebut)
         seg_defs = set(re.findall(r"^\s*\|?\s*(?:\*\*)?(S\d{1,2})(?:\*\*)?\s*(?:\||:|- )", text, re.M))
         # A04: S0 = Ingress tidak resmi; TIDAK dihitung dalam rumus handoff
@@ -321,6 +322,64 @@ def cmd_check_c(args):
                 v.append(f"N={n} segmen, Sigma(m-1)={sigma} -> target handoff {target}, "
                          f"aktual {len(hnd_defs)} (jumlah tidak sesuai)")
         # --- A04: anggaran rentang wajar; di luar rentang wajib KEPUTUSAN_ANGGARAN
+        # ---- SIAP-D (Bagian 10): kelengkapan bertambah B ⊂ C ⊂ D.
+        # Tanpa ini, Tahap D bisa "lengkap" terhadap segmen C yang sendiri bolong.
+        if not legacy:
+            m10 = re.search(r"^#+\s*Bagian\s*10\b.*?(?=^#+\s*Bagian\s|\Z)", text, re.M | re.S)
+            if not m10:
+                v.append("SIAP-D: Bagian 10 (Kesiapan Eksplorasi) tidak ada — "
+                         "Tahap D tidak boleh mulai tanpa daftar periksa ini")
+            else:
+                siap = m10.group(0)
+                belum = re.findall(r"BELUM:\s*([^|\n]+)", siap)
+                if belum:
+                    v.append(f"SIAP-D: masih {len(belum)} objek BELUM teridentifikasi "
+                             f"({', '.join(x.strip()[:24] for x in belum[:3])}"
+                             f"{' ...' if len(belum) > 3 else ''}) — Lintasan belum siap Tahap D")
+                # uji mekanis cakupan entrypoint: fungsi berlabel TERPETAKAN_DI_<Lintasan>
+                # di B05 harus tercakup rentang jangkar segmen di berkas C ini
+                sid = re.search(r"^(C\d{2,})-(STR-\d+)\.(L\d+)-INVENTORY\.md$", fname)
+                b05p = parent / "B05-LEDGER-SISA.md"
+                censusp = parent / "scripts" / "out" / "b02-census.jsonl"
+                if sid and b05p.is_file() and censusp.is_file():
+                    label = f"TERPETAKAN_DI_{sid.group(2)}.{sid.group(3)}"
+                    census = {}
+                    for ln in censusp.read_text(encoding="utf-8", errors="replace").splitlines():
+                        try:
+                            row = json.loads(ln)
+                        except json.JSONDecodeError:
+                            continue
+                        census[(row.get("function"), row.get("file"))] = (
+                            int(row.get("line") or 0), int(row.get("end_line") or row.get("line") or 0))
+                    wanted = set()
+                    for ln in b05p.read_text(encoding="utf-8", errors="replace").splitlines():
+                        if label in ln and ln.lstrip().startswith("|"):
+                            for fn in re.findall(r"([A-Za-z_][\w]*):\d+", ln):
+                                wanted.add(fn)
+                    anchors = []
+                    for am in re.finditer(r"([\w./-]+\.(?:sol|rs)):L(\d+)(?:-L(\d+))?", text):
+                        anchors.append((am.group(1), int(am.group(2)),
+                                        int(am.group(3) or am.group(2))))
+                    if wanted and anchors:
+                        hilang = []
+                        for fn in sorted(wanted):
+                            rng = None
+                            for (cf, cfpath), rr in census.items():
+                                if cf == fn:
+                                    rng = rr
+                                    break
+                            if rng is None:
+                                continue
+                            lo, hi = rng
+                            if not any(a[1] <= lo and hi <= a[2] and
+                                       (a[0].endswith(cfpath.split("/")[-1]) or cfpath.endswith(a[0]))
+                                       for a in anchors):
+                                hilang.append(fn)
+                        if hilang:
+                            v.append(f"SIAP-D cakupan entrypoint: {len(hilang)} fungsi berlabel "
+                                     f"{label} tidak tercakup segmen mana pun "
+                                     f"({', '.join(hilang[:4])}{' ...' if len(hilang) > 4 else ''}) "
+                                     f"— segmen bolong, atau tulis DI_LUAR_KORIDOR")
         if n and not legacy and not (4 <= n <= 8) and "KEPUTUSAN_ANGGARAN" not in text:
             v.append(f"CATATAN_ANGGARAN: N={n} segmen di luar rentang wajar 4-8 — "
                      f"tulis baris `KEPUTUSAN_ANGGARAN: <alasan>` di Bagian 1 "
