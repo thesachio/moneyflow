@@ -28,6 +28,17 @@ A2. Pre-0 = daftar docs pendukung saja, BUKAN verifikasi teknis.
 A3. Stage (MAINNET/TESTNET/DEVNET) = filter pertama yang menentukan Mode
 Uji di D (FORK LIVE_MATCH). HEAD bisa lebih lama atau lebih baru dari
 live — bukan patokan kebenaran. D fokus ke yang cocok LIVE_MATCH.
+HANYA TIGA NILAI stage — tidak ada nilai keempat (`PRE-DEPLOY`/`REPO-ONLY`
+BUKAN stage). Bila sumber resmi tidak menyatakan stage, tulis
+`TIDAK KETEMU` — itu **status penemuan** (A4), bukan nilai stage.
+Stage = **klaim bersumber** dari dokumen resmi proyek, bukan keputusan
+teknis: Tahap A dilarang memverifikasi on-chain (A2), jadi stage di sini
+adalah dugaan terbaik yang boleh dikoreksi di Tahap B (A5).
+Kelangsungan-hidup **per komponen** (kontrak/domain/Lintasan) BUKAN stage:
+ia ditetapkan di **B8 Live-Match Lintasan**, per Lintasan, dan hasilnya
+`TUNDA-LIVE` dengan alasan `REPO_ONLY` bila Lintasan itu belum punya
+target on-chain. Proyek bisa `MAINNET` sementara sebagian Lintasan-nya
+`TUNDA-LIVE (REPO_ONLY)`.
 
 A4. Batas pencarian Tahap A (15 Nov 2026, perintah Kim): peran agen
 Tahap A untuk proyek baru — mulai hanya dari nama proyek (+ tautan
@@ -359,16 +370,31 @@ B7 **WAJIB** untuk proyek MAINNET/TESTNET — ringan (≤5 menit: getCode
 domain), dengan satu domain representatif per keluarga; domain
 non-representatif berstatus `UNVERIFIED` sampai B8 Lintasan yang
 menyentuhnya. Satu blok pin per domain representatif.
-Dilewati HANYA bila proyek murni belum di-deploy (`repo-only`); bila
-dilewati sah, sensus live di Tahap B tinggal inventaris alamat
-klaim-repo (statis) + catatan verifikasi ditunda ke B8; kerja statis
-tetap valid sebagai peta kode (menunggu di TUNDA-LIVE).
+Dilewati **per domain**, bukan per proyek: domain yang belum punya
+target on-chain (belum di-deploy) dilewati B7-nya — sensus live tinggal
+inventaris alamat klaim-repo (statis), verifikasi ditunda ke B8, dan
+Lintasan yang menyentuhnya masuk `TUNDA-LIVE` dengan alasan `REPO_ONLY`.
+Domain lain yang memang live tetap dijalankan B7-nya. Kerja statis tetap
+valid sebagai peta kode.
 
 B8. B8 Live-Match Lintasan — dijalankan di awal Tahap D, wajib lulus sebelum Gate D, per domain eksekusi segmen (B21); sebelum PoC
 ditulis. Yang tidak live-match masuk wadah TUNDA-LIVE: tercatat di
 ledger sisa (tetap terhitung, bukan hilang); nol waktu eksekusi
 (tanpa PoC, tanpa fork); dibuka lagi hanya bila deployment live muncul
 atau Kim memerintah cek ulang; wadah ditinjau ulang di sapuan akhir.
+
+**Dua sebab TUNDA-LIVE — wajib dibedakan di kolom alasan:**
+- `REPO_ONLY` — Lintasan itu **tidak punya target on-chain sama sekali**
+  (komponennya belum di-deploy di domain mana pun). Bukan kegagalan; ini
+  status normal untuk bagian proyek yang belum rilis. Lintasan tetap
+  boleh dipetakan statis (Tahap C) dan dianalisis (Tahap D), tetapi
+  **tidak boleh** ditulis PoC dan tidak masuk Gate D.
+- `LIVE_MISMATCH` — target on-chain **ada** tetapi kode/config live tidak
+  cocok (KORIDOR_BEDA / KORIDOR_TIDAK_TERBUKTI / DEAD-CONFIG).
+
+Keputusan ini **per Lintasan**, bukan per proyek: proyek bisa `MAINNET`
+sementara sebagian Lintasan-nya `TUNDA-LIVE (REPO_ONLY)`. Tidak ada
+stage `PRE-DEPLOY` — stage hanya `MAINNET`/`TESTNET`/`DEVNET` (A3).
 
 Utamakan alur, log untuk verifikator terakhir (diputus 17 Nov 2026 08:26 WIB, perintah Kim, MENGIKAT untuk semua B8 berikut): tahu suatu mekanisme work atau tidak dari tes tool (baca kode + cast/cek live + uji fork di Tahap E), BUKAN dari mengandalkan log tx orang lain di blockchain. Pindai log itu pilihan terakhir yang mahal — hanya untuk verifikator akhir (Tahap G / sapuan akhir), bukan cara kerja B8. Pemicu: B8 P4 memakan ~8,5 jam memindai RelayedRootBundle per rantai (BSC gagal total lewat log, Base gagal per chunk ~20 menit/chunk); koordinator dialihkan 08:26 WIB — hentikan semua pindai log, selesaikan B8 dari alur + 5 rantai yang sudah terukur (ETH 63, OP 63, Polygon 63, Linea 58, BSC 63; slowRelayRoot non-zero 0 di semua).
 

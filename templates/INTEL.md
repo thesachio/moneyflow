@@ -1,14 +1,14 @@
-# PROJECT INTELLIGENCE BRIEF — `INTEL.md` (Prasyarat STAGE-0 / theadvers v2.0)
+# PROJECT INTELLIGENCE BRIEF — `INTEL.md` (moneyflow v2.1, Tahap A)
 
 > **Posisi berkas.** `INTEL.md` diletakkan **di root folder kerja audit**, sejajar dengan `STATE.md`.
 > Ia diisi **sekali** di awal, dan **hanya diperbarui bila jaringan/deployment berubah**.
-> Ia **bukan tahap baru** — ia **prasyarat `--gate 0`**. Selama INTEL belum sah, `--gate 0` FAIL
-> dan STAGE-A tidak boleh dimulai.
+> Ia **bukan tahap baru** — ia **keluaran Tahap A**. Selama INTEL belum sah, Tahap B tidak boleh dimulai.
+> Verifier: `python3 tools/verify_flow.py` (tidak ada `--gate 0` di metode ini).
 
 > **Pembagian tugas (jangan dicampur).**
-> - `INTEL.md` = **fakta proyek yang dapat ditunjuk**: identitas, URL, commit, jaringan, alamat, bukti live.
-> - `STATE.md` = **posisi eksekusi**: wilayah aktif, stage, batch, antrean, gate terlewati.
-> - `path-map.md` = **peta kode**: rekonsiliasi 100% berkas, Tier, Wilayah R_i, 3-edge.
+> - `INTEL.md` = **fakta proyek yang dapat ditunjuk**: identitas, URL, commit, klaim stage, jejak ketiadaan.
+> - `STATE.md` = **posisi eksekusi**: `Active Phase`, `CURRENT_ACTIVE_ITEM`, `Domain Coverage Meter`, `Do-Not-Reopen List`.
+> - `B00`–`B07` = **peta kode + live**: topologi, sensus statis, sensus live, katalog Stream/Lintasan, ledger, invariant, State-Bridge.
 >
 > `INTEL.md` **DILARANG** memuat hipotesis kerentanan, status wilayah, atau hasil audit.
 
@@ -26,11 +26,17 @@
 - Intel Status     : COMPLETE | PARTIAL (catat bagian yang belum ditemukan)
 - Diverifikasi Oleh: <perintah yang dijalankan untuk membuktikan tiap URL/klaim>
 
-## 0. Deployment Stage (WAJIB — menentukan Mode Uji seluruh audit)
+## 0. Deployment Stage (klaim bersumber — BUKAN keputusan teknis)
 
-- Deployment Stage : MAINNET | TESTNET | DEVNET
-- Alasan/Landasan  : <1 baris: mengapa stage itu yang dipakai — rujuk Bukti Live di §5>
+- Deployment Stage : MAINNET | TESTNET | DEVNET | TIDAK KETEMU
+- Sumber Klaim     : <URL/halaman resmi yang menyatakan stage itu, atau TIDAK KETEMU (sumber: <yang dicoba>)>
 - Perubahan Stage  : <tanggal + alasan, bila pernah berubah; selain itu "belum pernah berubah">
+
+> **Batas Tahap A.** Kolom ini mencatat **apa yang diklaim sumber resmi**, bukan hasil verifikasi.
+> Tahap A dilarang menjalankan `cast`/`eth_getCode` (A2). Kelangsungan-hidup **per komponen**
+> ditetapkan nanti di **B8 Live-Match Lintasan** — per Lintasan, dengan alasan `REPO_ONLY` atau
+> `LIVE_MISMATCH`. Proyek bisa `MAINNET` sementara sebagian Lintasan `TUNDA-LIVE (REPO_ONLY)`.
+> **Tidak ada nilai `PRE-DEPLOY`** — stage hanya tiga.
 
 ## 1. Project Identity & Brief Overview
 - Project Name : <Nama Resmi Proyek & Organisasi>
@@ -48,6 +54,10 @@
 - High-Level Scope Note : <1–2 baris catatan faktual bila halaman bounty menyebut repo/kontrak/
   chain spesifik atau aturan pengecualian utama>
 
+## 3b. Brief Severity (butir 9 — hanya bila halaman bounty menyebutnya)
+- Skala / Tier : <ringkasan skala severity yang dipakai program (mis. Critical/High/Medium/Low + ambang), atau TIDAK_DITEMUKAN>
+- Sumber       : <URL halaman bounty yang memuat skala itu — sama dengan §3, bukan pencarian baru>
+
 ## 4. Past Audit Reports (Direct File/Report Links)
 - [<Nama Auditor 1 — Tanggal/Tahun>](<URL langsung ke file PDF / repo / halaman laporan audit>) — Fokus/Versi: <singkat>
 - [<Nama Auditor 2 — Tanggal/Tahun>](<URL langsung ke file PDF / repo / halaman laporan audit>) — Fokus/Versi: <singkat>
@@ -56,13 +66,18 @@
 - *(Bila README hanya MENYEBUT adanya audit tanpa tautan:)*
   `TIDAK_DITEMUKAN — README menyebut "audit by X" tanpa tautan laporan (klaim tak terverifikasi).`
 
-## 5. Deployment & Live Surface (fakta terukur, bukan asumsi)
-- Chain / Network Aktif : <daftar nama + chainId yang benar-benar dipakai, atau TIDAK_DITEMUKAN>
-- Kontrak Utama (alamat) : <alamat entrypoint/proxy + chain, atau TIDAK_DITEMUKAN>
-- Implementation Aktif : <alamat impl di balik proxy (slot EIP-1967), atau "bukan proxy", atau TIDAK_DITEMUKAN>
-- Blok Referensi      : <nomor blok terakhir saat INTEL disusun — dipakai sebagai titik fork awal>
-- VERSION_RELATION    : LIVE_IS_DEPLOYED_COMMIT | LIVE_NEWER_THAN_HEAD | HEAD_NEWER_THAN_LIVE | LIVE_UNVERIFIED
-- Bukti Live : <perintah `cast code` / `eth_getCode` / `getAccountInfo` + hasil ringkas yang membuktikan kode ter-deploy>
+## 5. Deployment & Live Surface — **DIISI DI TAHAP B, BUKAN DI A**
+
+> Tahap A **dilarang** menjalankan `cast`/`eth_getCode` (A2). Semua kolom di bawah diisi di
+> **B03-CENSUS-LIVE (B7)** per domain, dan keputusan per komponen di **B8** per Lintasan.
+> Di Tahap A cukup tulis `DIISI_B7` pada semua baris.
+
+- Chain / Network Aktif : `DIISI_B7`
+- Kontrak Utama (alamat) : `DIISI_B7`
+- Implementation Aktif : `DIISI_B7`
+- Blok Referensi      : `DIISI_B7` (ditetapkan di B7, bukan di A)
+- VERSION_RELATION    : `DIISI_B7`
+- Bukti Live : `DIISI_B7`
 
 ## 6. Catatan Ketiadaan (WAJIB bila Intel Status = PARTIAL)
 | Butir | Status | Alasan + sumber dicoba | Dampak |
@@ -82,25 +97,27 @@
 
 1. **URL harus langsung.** `https://docs.protokol.xyz/security` ✅ — bukan `https://docs.protokol.xyz` bila halaman itu tidak memuat aturan buruannya. DILARANG menaruh URL mesin pencari.
 2. **Setiap URL wajib dibuktikan hidup** pada sesi yang sama (`curl -sI` → status 200/30x, atau pembacaan halaman). Catat perintahnya di baris `Diverifikasi Oleh`. URL mati → `TIDAK_DITEMUKAN`.
-3. **Commit wajib dipin.** `Audited Commit / Branch` harus berisi hash hasil `git rev-parse`, bukan "latest". Ini input langsung untuk `VERSION_RELATION` di `templates/VERDICT.md` §2c.
+3. **Commit wajib dipin.** `Audited Commit / Branch` harus berisi hash hasil `git rev-parse`, bukan "latest". Ini input untuk `VERSION_RELATION` (§5) yang diisi di **B7**, dan untuk gerbang scope di `verify/VERDICT.md` §0.2c.
 4. **Dilarang mengarang nama auditor.** Bila repo/docs menyebut "audit oleh X" tanpa tautan laporan, tulis `TIDAK_DITEMUKAN` di §4 dan sebutkan klaim tak terverifikasi itu di §6.
-5. **§5 bersifat terukur.** Deployment dinyatakan ada hanya bila ada `eth_getCode`/`cast code` non-kosong atau transaksi deploy. "Seharusnya live" bukan bukti.
-6. **§6 tidak boleh kosong** bila `Intel Status = PARTIAL`. Bagian inilah yang melindungi audit dari klaim berlebih di STAGE-E/F.
+5. **§5 diisi di Tahap B, bukan di A.** Deployment dinyatakan ada hanya bila ada `eth_getCode`/`cast code` non-kosong atau transaksi deploy — tetapi pembacaan itu dilakukan di **B7**, bukan di Tahap A (A2 melarang `cast` di A). "Seharusnya live" bukan bukti.
+6. **§6 tidak boleh kosong** bila `Intel Status = PARTIAL`. Bagian inilah yang melindungi audit dari klaim berlebih di Tahap E dan G.
 
 ### Aturan khusus §0 — `Deployment Stage`
 
-`Deployment Stage` **menentukan Mode Uji seluruh audit**, jadi ia wajib dinyatakan, bukan disimpulkan:
+`Deployment Stage` adalah **klaim bersumber**, bukan kesimpulan teknis. Ia menjadi **filter awal** Mode Uji, tetapi keputusan akhir per komponen dibuat di **B8**:
 
 | `Deployment Stage` | Artinya | Akibat pada audit |
 | :--- | :--- | :--- |
-| `MAINNET` | protokol berjalan di jaringan produksi publik | `09` wajib `Mode Uji: FORK_LIVE`; `FORK_TESTNET`/`FORK_DEPLOYED_HEAD`/`LOKAL` **tidak sah** di `09` |
-| `TESTNET` | protokol hanya berjalan di testnet publik (belum produksi) | `09` wajib `Mode Uji: FORK_TESTNET`; `FORK_LIVE` tidak sah |
-| `DEVNET` | jaringan pengembangan privat/terbatas | `09` wajib `Mode Uji: FORK_TESTNET` (fork devnet); dicatat eksplisit di laporan |
+| `MAINNET` | sumber resmi menyatakan protokol berjalan di produksi publik | `09` menuntut `Mode Uji: FORK_LIVE` **untuk Lintasan yang live**; Lintasan `TUNDA-LIVE (REPO_ONLY)` tidak bisa `09` |
+| `TESTNET` | sumber resmi menyatakan hanya testnet publik | `09` menuntut `Mode Uji: FORK_TESTNET` |
+| `DEVNET` | sumber resmi menyatakan jaringan dev privat/terbatas | `09` menuntut fork devnet; dicatat eksplisit |
+| `TIDAK KETEMU` | sumber resmi tidak menyatakan stage | sah sebagai hasil; Tahap B menetapkan per domain, dan B8 memutuskan per Lintasan |
 
 **Larangan:**
-- `Deployment Stage` **DILARANG dikosongkan.** Tidak ada default diam-diam — INTEL tanpa §0 = `--gate 0` FAIL.
-- `Deployment Stage: MAINNET` **DILARANG** bila §5 `Bukti Live` kosong. Mainnet tanpa bukti `cast code` non-kosong = klaim tanpa dasar.
-- Perubahan stage (mis. `TESTNET → MAINNET`) **wajib** mengisi baris `Perubahan Stage` + tanggal, dan **mengulang** `--gate 0` untuk wilayah yang belum ditutup.
+- `Deployment Stage` **DILARANG dikosongkan tanpa alasan** — isi salah satu dari empat nilai di atas; `TIDAK KETEMU` wajib menyebut sumber yang dicoba (A4).
+- **DILARANG** menetapkan `MAINNET` hanya karena "seharusnya live" — tanpa klaim sumber, nilai yang sah adalah `TIDAK KETEMU`.
+- **DILARANG** memakai nilai `PRE-DEPLOY`/`REPO-ONLY` di kolom ini — status itu milik **B8 per Lintasan**.
+- Perubahan stage (mis. `TESTNET → MAINNET`) **wajib** mengisi baris `Perubahan Stage` + tanggal.
 
 ---
 
@@ -121,7 +138,7 @@ Setiap bagian punya **cara sah mengatakan tidak ada**. Dilarang mengosongkan slo
 | 3 · Direct Bounty URL | `TIDAK_DITEMUKAN` | Menunjuk beranda platform, bukan halaman proyek |
 | 3 · High-Level Scope Note | `TIDAK_DITEMUKAN — tidak ada aturan scope tertulis` | **Menyimpulkan scope dari praktik umum** |
 | 4 · Past Audit Reports | `TIDAK_DITEMUKAN` | Menaikkan *"disebut di README"* menjadi laporan |
-| 5 · Chain / Kontrak / Impl / Blok / Bukti Live | `TIDAK_DITEMUKAN` per sub-baris | Menulis alamat tanpa `cast code` non-kosong |
+| 5 · Chain / Kontrak / Impl / Blok / Bukti Live | `DIISI_B7` di Tahap A; di B7 `TIDAK_DITEMUKAN` per sub-baris | Menjalankan `cast` di Tahap A; menulis alamat tanpa `cast code` non-kosong |
 
 ### Empat hukum pengisian
 

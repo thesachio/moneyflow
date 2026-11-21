@@ -31,7 +31,7 @@ Skill ini memuat tangga penemuan dan aturan penulisan sampai Tahap A selesai. `m
 
 1. Nama proyek (singkat) — sertakan nama internal/protokol bila ada.
 2. Deskripsi lingkup (misal: pertukaran aset, pinjaman, jembatan lintas-rantai, brankas nilai, derivatif, atau infrastruktur pembayaran), singkat — **satu paragraf**.
-3. Deployment stage: **MAINNET / TESTNET / DEVNET / PRE-DEPLOY (REPO-ONLY)** — status ke-4 hanya bila sumber resmi menyatakan proyek belum live di jaringan mana pun; stage ini memberi tahu Tahap B bahwa B7 tidak punya target on-chain (repo-only), tanpa mengubah definisi MAINNET / TESTNET / DEVNET.
+3. Deployment stage: **MAINNET / TESTNET / DEVNET** — **hanya tiga nilai, tidak ada nilai keempat.** Catat apa yang **diklaim sumber resmi**; jangan memverifikasi on-chain (A2) dan jangan menyimpulkan "belum live" (A4: `TIDAK KETEMU` bukan `TIDAK ADA`). Bila sumber tidak menyatakan stage → `TIDAK KETEMU (sumber: <yang dicoba>)`. Kelangsungan-hidup per komponen **bukan** urusan Tahap A: ia ditetapkan per Lintasan di **B8 Live-Match** (`TUNDA-LIVE` alasan `REPO_ONLY`).
 4. Repo (alamat github atau setara).
 5. Website (tempat user mengakses & berinteraksi dengan UI aktif).
 6. Docs (link).

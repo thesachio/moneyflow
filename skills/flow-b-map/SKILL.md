@@ -144,7 +144,7 @@ external_calls, storage_writes, ast_hint, domain_variant, notes
 
 ## Langkah 3 — B03 Sensus live ringan (B7)
 
-Wajib untuk MAINNET/TESTNET; `REPO-ONLY` hanya bila stage Tahap A = `PRE-DEPLOY / REPO-ONLY`.
+Wajib untuk MAINNET/TESTNET. Dilewati **per domain**, bukan per proyek: domain yang belum punya target on-chain (belum di-deploy) → sensus live tinggal inventaris alamat klaim-repo (statis), verifikasi ditunda ke B8, Lintasan yang menyentuhnya masuk `TUNDA-LIVE` alasan `REPO_ONLY`. Domain live lain tetap dijalankan. **Stage Tahap A hanya tiga nilai** — tidak ada `PRE-DEPLOY`.
 
 - **`TUNGGAL` / `TUNGGAL-BERINSTANS`:** anggaran **≤ 5 menit**. `getCode` 1–3 alamat inti di blok referensi + satu view murah. Tetapkan blok pin.
 - **`MULTI-DOMAIN`:** anggaran **≤ 5 menit per keluarga domain** (bukan per domain). Untuk domain utama + **satu representatif per keluarga**: `getCode` kontrak inti + satu view murah + penetapan **blok pin per domain**. Isi kolom `Status` Matriks Domain. Domain non-representatif: `UNVERIFIED` sampai B8 Lintasan yang menyentuhnya.
