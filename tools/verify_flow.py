@@ -322,6 +322,23 @@ def cmd_check_c(args):
                 v.append(f"N={n} segmen, Sigma(m-1)={sigma} -> target handoff {target}, "
                          f"aktual {len(hnd_defs)} (jumlah tidak sesuai)")
         # --- A04: anggaran rentang wajar; di luar rentang wajib KEPUTUSAN_ANGGARAN
+        # ---- Langkah 0b: registry resource wajib ada SEBELUM round Lintasan pertama
+        if not legacy:
+            regp = parent / "C00-RESOURCE-REGISTRY.md"
+            if not regp.is_file():
+                v.append("REGISTRY: C00-RESOURCE-REGISTRY.md tidak ada — round Lintasan tidak boleh "
+                         "dimulai sebelum R1..R6 dihimpun (Langkah 0b)")
+            else:
+                rt = regp.read_text(encoding="utf-8", errors="replace")
+                for kode, label in (("R1", "Aset"), ("R2", "Relasi"), ("R3", "Domain"),
+                                    ("R4", "Target eksternal"), ("R5", "Ketersediaan sumber"),
+                                    ("R6", "State-Bridge")):
+                    if not re.search(rf"\b{kode}\b", rt):
+                        v.append(f"REGISTRY: kelompok {kode} ({label}) tidak ada di "
+                                 f"C00-RESOURCE-REGISTRY.md")
+                gapm = re.search(r"^#+\s*7\.\s*Gap Registry.*?(?=^#+\s*\d+\.|\Z)", rt, re.M | re.S)
+                if gapm and re.search(r"\|\s*`?BELUM`?\s*\|", gapm.group(0)):
+                    pass  # gap boleh terbuka; ia memblokir Lintasan tertentu, bukan semua
         # ---- SIAP-D (Bagian 10): kelengkapan bertambah B ⊂ C ⊂ D.
         # Tanpa ini, Tahap D bisa "lengkap" terhadap segmen C yang sendiri bolong.
         if not legacy:

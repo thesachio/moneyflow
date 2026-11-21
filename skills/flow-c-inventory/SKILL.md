@@ -23,6 +23,33 @@ Mode topologi dari `B00-TOPOLOGY.md` menentukan bentuk Lintasan; format dan gerb
 | `C00-SHARED-PRIMITIVES.md` | inventaris deskriptif seluruh unit `SHARED-PRIMITIVE` (sekali, sebelum Lintasan pertama) + titik serah kendali per primitif (`C00-Uxx/CY`) |
 | `C<NN>-<STR>-<Lk>-INVENTORY.md` | inventaris Lintasan (9 bagian di bawah) |
 
+## Langkah 0b — `C00-RESOURCE-REGISTRY` (prasyarat SEMUA round Lintasan, mengikat)
+
+Sebelum round Lintasan **pertama**, himpun seluruh resource yang akan dipakai semua round. Alasannya:
+bila resource dicari di dalam round, round berhenti di tengah, dan "lengkap" hanya berlaku untuk
+bagian yang sempat dikerjakan. Registry membuat kelengkapan **mendahului** pekerjaan.
+
+Berkas: `C00-RESOURCE-REGISTRY.md` + `scripts/out/resource-*.json`. Enam kelompok wajib:
+
+| Kode | Resource | Wajib berisi | Sumber |
+| :--- | :--- | :--- | :--- |
+| `R1` | **Aset** | setiap token/native per domain: alamat, `decimals()` **terukur live**, `symbol()` terukur, kelas aset | `generated/constants.json` + `cast call` per domain |
+| `R2` | **Relasi** | Stream → kontrak → berkas → jumlah `EP`; seluruh `EP` sensus wajib punya rumah (Stream atau `C00-SHARED-PRIMITIVE`) | `B02` + `B04` |
+| `R3` | **Domain** | chainId, blok pin, SpokePool, implementation EIP-1967, **RPC yang terbukti menjawab**, status | `B03` |
+| `R4` | **Target eksternal** | setiap ujung `HB-x`: alamat per domain | `L1_ADDRESS_MAP` / `L2_ADDRESS_MAP` / `OP_STACK_ADDRESS_MAP` |
+| `R5` | **Ketersediaan sumber** | kontrak mana yang sumbernya ada di pin (bisa `KORIDOR_SAMA`) vs tidak (wajib `KORIDOR_TIDAK_TERBUKTI`) | `B01` `NO_SOURCE` |
+| `R6` | **State-Bridge** | rujukan `SB-xx` dari `B07` | `B07` |
+
+**Aturan pakai:**
+1. Setiap `C<NN>-<STR>-<Lk>-INVENTORY.md` **mengambil** dari registry, bukan mencari ulang.
+2. Resource yang tidak ada → masuk **Gap Registry** di `C00` §7. **Dilarang** improvisasi di dalam round.
+3. `Bagian 10` baris 1 (Aset) dan baris 4 (Parameter live) merujuk ID registry (`R1:<symbol>@<chain>`,
+   `R3:<chain>`), bukan menyalin ulang alamat.
+4. Registry **append-only**; entri lama tidak boleh diubah tanpa catatan alasan.
+
+**Gerbang:** Lintasan yang membutuhkan resource masih berstatus `BELUM` di Gap Registry **tidak boleh**
+dimulai. Contoh nyata: Lintasan non-EVM menunggu `R1` untuk TRON/Solana.
+
 ## Langkah 0 — Tetapkan batas Lintasan (sebelum menulis segmen)
 
 1. Ambil usulan Lintasan dari `B04`. Lakukan **perluasan warisan/implementasi** (B14.6/B14.7) dan **penguraian dispatcher `unknown`** (B14.4) untuk entrypoint Lintasan.
