@@ -16,12 +16,12 @@ Repo ini **bukan** proyek audit: tidak memuat kode kontrak target dan tidak memu
 | A | INTEL | `INTEL.md` (brief 9 butir), `A01-INTEL.md`, `A02-INTEL-discovery.md` | Brief saja; **tanpa cek onchain**, tanpa verifikasi teknis (A2) |
 | B | Mapping | `B00-TOPOLOGY`, `B01-SCOPE`, `B02-CENSUS-STATIC`, `B03-CENSUS-LIVE`, `B04-STREAMS-AND-CLUSTERS` (klaster 4 tipe + katalog Stream/Lintasan + Katalog Ingress `IN-x`), `B05-LEDGER-SISA` (3 populasi), `B06-REGISTRY-INVARIANT`, `B07-STATE-BRIDGES` | Tanpa invariant, tanpa pemetaan mendalam, tanpa buruan/PoC/verdict; AST boleh untuk lokalisasi (B6-v2) |
 | C | Stream-Slice Inventory (rolling per-Lintasan) | `C00-SHARED-PRIMITIVES` (sekali), `C<NN>-<STR>-<Lk>-INVENTORY` | Deskriptif saja; koridor (`Corridor-Bound Cross-Cluster`); segmen menurut 5 pemicu B19; `CY-x`, Ingress `S0`, Tabel Selisih, LP-x per domain |
-| D | Eksplorasi | Kartu lead + invariant (`INV-Sx/Hx/HBx/Jx/Fx` + `INV-CYx` serah kendali + `INV-Vx` selisih varian) | Per-Lintasan; dua gelombang; gerbang ≥1 kartu atau `NIHIL_KANDIDAT`; mode `AUTO`/`PAIR` tetap |
+| D | Eksplorasi | Kartu lead + invariant (`INV-Sx/Hx/HBx/Jx/Fx` + `INV-CYx` serah kendali + `INV-INx` ingress tak resmi + `INV-Vx` selisih varian) | Per-Lintasan; dua gelombang; lima lensa; disposisi wajib (kartu / `G` berjangkar / `NIHIL_KANDIDAT` per segmen) — bukan kuota; kandidat bergantung `LP-x` `UNVERIFIED` → `TUNDA-VERIFIKASI`; mode `AUTO`/`PAIR` tetap |
 | E | Pembuktian fork | `E<NN>-<STR>-<Lk>-BATCH<M>-PROOF` + pustaka `FlowFixtures` kumulatif | Fork blok pin per domain Lintasan; rantai utuh (a)+(b)+(c); batch maks 3; standar C10-v2 |
-| F | Komposisi Inkremental (bersyarat) | `F<NN>-<COMPOSITION_ID>` + pembaruan `Sync_Status` di `B07` | Dua pemicu: inkremental seusai E per Stream (menyentuh State-Bridge/brankas bersama) + sapuan akhir multi-stream; Lemma 4 Syarat tanpa fork ulang |
-| G | Verdict | Verdict 06/07/08/09 per kandidat + distribusi akhir | Triage per-Stream + rekapitulasi akhir; tiga verdict terpisah |
+| F | Komposisi Tiga Lapis | `F<NN>-<ID>` + pembaruan `Sync_Status` (enum v2.1) di `B07` | (1) antar-Lintasan saat penutupan wadah — wajib dievaluasi, menutup `MENUNGGU-RANGKAI`; (2) antar-Stream inkremental; (3) antar-varian + siklus di sapuan akhir. Lemma 4 Syarat tanpa fork ulang |
+| G | Verdict | Verdict 06/07/08/09 per kandidat + distribusi akhir | Triage per wadah Stream setelah semua Lintasan selesai E + F antar-Lintasan; syarat "Stream tercakup"; rekap proyek di penutupan; tiga verdict terpisah |
 
-Rolling **vertikal per Lintasan**: `C -> B8 -> D -> E -> F inkremental -> G triage` — satu Lintasan per sesi; semua Lintasan satu Stream tuntas sebelum Stream berikutnya; sapuan akhir `B9` (enumerasi AST independen) + rekapitulasi di penutupan. Pra-cek: `python3 tools/verify_flow.py` (check-staging / **check-b0** / check-b / check-c / check-d / check-e / check-final).
+Rolling **vertikal per Lintasan**: `C -> B8 -> D -> E` per Lintasan; penutupan wadah `F antar-Lintasan -> G triage -> F antar-Stream`; satu Lintasan per sesi; semua Lintasan satu Stream tuntas sebelum Stream berikutnya; sapuan akhir `B9` (enumerasi AST independen) + rekapitulasi di penutupan. Pra-cek: `python3 tools/verify_flow.py` (check-staging / **check-b0** / check-b / check-c / check-d / **check-stream** / check-e / check-final).
 
 ---
 
@@ -36,7 +36,7 @@ Rolling **vertikal per Lintasan**: `C -> B8 -> D -> E -> F inkremental -> G tria
 | `SOUL.md` | Identitas + hukum kognitif metode flow |
 | `AGENTS.md` | Konstitusi operasional: tahap, delegasi, gerbang, preferensi, lantai bawah |
 | `verify/VERDICT.md`, `verify/SEVERITY-RUBRIC.md` | Standar verdict + severity (dipakai Tahap G) + blok penyetaraan metode Flow Money First v2.0 |
-| `tools/verify_flow.py` | Pemeriksa gerbang deterministik (exit 0 lulus / 1 gagal): check-staging, **check-b0**, check-b, check-c, check-d, check-e, check-final |
+| `tools/verify_flow.py` | Pemeriksa gerbang deterministik (exit 0 lulus / 1 gagal): check-staging, **check-b0**, check-b, check-c, check-d, **check-stream**, check-e, check-final |
 | `templates/B00-TOPOLOGY.md` | Template profil topologi (B0) — hitungan `DOM-x`/`VK-x`/`VC-x`, Matriks Domain, Katalog `IN-x`, Tabel Selisih Varian, daftar Lintasan |
 | `skills/flow-*` | Skill per tahap + autopilot |
 
