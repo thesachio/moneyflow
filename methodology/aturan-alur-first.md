@@ -629,18 +629,18 @@ fungsi koridor); agen wajib mengonfirmasi tiap kandidat dari badan.
 
 B19-0. Paradigma Unit (moneyflow v2.1, MENGIKAT).
 
-Tabel acuan istilah — supaya **Stream (wadah)** dan **domain (chain)** tidak tertukar lagi:
+Tabel acuan istilah — supaya **Stream** dan **domain (chain)** tidak tertukar lagi:
 
 | Istilah | Peran | Dipakai di |
 | --- | --- | --- |
-| **Stream** | **wadah**: siklus hidup nilai (`Ingress → Egress`), indeks cakupan, unit urutan dan penutupan | `B04` katalog; urutan B2a; penutupan: F antar-Lintasan → G triage → F antar-Stream |
+| **Stream** | siklus hidup nilai (`Ingress → Egress`), indeks cakupan, unit urutan dan penutupan | `B04` katalog; urutan B2a; penutupan: F antar-Lintasan → G triage → F antar-Stream |
 | **Lintasan** | **unit kerja** satu sesi `C → B8 → D → E` | C/D/E; satu delegasi = satu Lintasan |
 | **Segmen** | sasaran buruan di dalam Lintasan | C Bagian 2; D lensa & kartu |
-| **Domain** | chain/runtime tempat kode berjalan; **sifat** Lintasan/segmen, bukan wadah | `B00`; `LP-x`; fork E |
+| **Domain** | chain/runtime tempat kode berjalan; **sifat** Lintasan/segmen | `B00`; `LP-x`; fork E |
 | **Keluarga transport/varian** | sumbu pengelompokan Lintasan (bukan unit) | `B00`; Tabel Selisih |
 | **Fungsi** | unit sensus (kelengkapan), bukan unit kerja | `B02` |
 
-**Alur:** per wadah Stream, kerjakan Lintasan satu per satu (urut aliran). Setelah semua Lintasan selesai E → **F antar-Lintasan** → **G triage** → syarat "Stream tercakup" → **F antar-Stream** → Stream berikutnya. Setelah semua Stream → **F antar-varian + B9** → `G01`.
+**Alur:** per Stream, kerjakan Lintasan satu per satu (urut aliran). Setelah semua Lintasan selesai E → **F antar-Lintasan** → **G triage** → syarat "Stream tercakup" → **F antar-Stream** → Stream berikutnya. Setelah semua Stream → **F antar-varian + B9** → `G01`.
 
 **Status kartu baru:** `MENUNGGU-RANGKAI` (rantai melewati batas Lintasan yang belum dipetakan; ditutup F pemicu 1) dan `TUNDA-VERIFIKASI` (bergantung `LP-x` `UNVERIFIED`).
 
