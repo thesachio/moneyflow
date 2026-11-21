@@ -1,11 +1,11 @@
 ---
 name: flow-d-explore
-description: "Tahap D — Eksplorasi per-Lintasan (moneyflow v2.1) di dalam wadah Stream; sasaran = segmen dan titik sambungnya. Dua gelombang: Gelombang 1 bebas/buta dengan 5 Lensa (Konservasi, Handoff & State-Bridge, Selisih Varian, Serah Kendali CY-x, Ingress tak resmi S0) + SYMPTOM-TAGS; Gelombang 2 Symptom-Triggered Lazy Skill Router (maks 2-4 plugin). Kartu lead + invariant tiga lapis (INV-S/H/HB/CY/IN/J/F/V), Gate D C10-v2 statis dengan TUNDA-VERIFIKASI untuk LP UNVERIFIED, disposisi wajib (kartu / G / NIHIL_KANDIDAT) — bukan kuota kartu. Label DIANALISIS wajib (C11). Dipakai saat memburu Lintasan, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead."
+description: "Tahap D — Eksplorasi per-Lintasan (moneyflow v2.1); sasaran = segmen dan titik sambungnya. Dua gelombang: Gelombang 1 bebas/buta dengan 5 Lensa (Konservasi, Handoff & State-Bridge, Selisih Varian, Serah Kendali CY-x, Ingress tak resmi S0) + SYMPTOM-TAGS; Gelombang 2 Symptom-Triggered Lazy Skill Router (maks 2-4 plugin). Kartu lead + invariant tiga lapis (INV-S/H/HB/CY/IN/J/F/V), Gate D C10-v2 statis dengan TUNDA-VERIFIKASI untuk LP UNVERIFIED, disposisi wajib (kartu / G / NIHIL_KANDIDAT) — bukan kuota kartu. Label DIANALISIS wajib (C11). Dipakai saat memburu Lintasan, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead."
 ---
 
 # Skill flow-d-explore — Tahap D (Eksplorasi)
 
-Tahap D = buruan **per Lintasan** (moneyflow v2.1). Unit round = **satu Lintasan (`STR-nn.Lk`)**; sasaran di dalamnya = segmen dan titik sambungnya (handoff, `CY-x`, Fork/Join, `S0`, baris `BEDA`). Stream adalah **wadah**: Lintasan dalam satu Stream dikerjakan berurutan, dan wadah ditutup lewat F antar-Lintasan + triage G. Dua gelombang (bebas/buta → lazy skill augmentation).
+Tahap D = buruan **per Lintasan** (moneyflow v2.1). Unit round = **satu Lintasan (`STR-nn.Lk`)**; sasaran di dalamnya = segmen dan titik sambungnya (handoff, `CY-x`, Fork/Join, `S0`, baris `BEDA`). Dua gelombang (bebas/buta → lazy skill augmentation).
 Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-alur-first.md` (seksi D — Tahap D, B12, C10, C11) hanya rujukan sengketa.
 
 ## Prasyarat & Gerbang Awal B8 (tanpa ini D tidak mulai)
