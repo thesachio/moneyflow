@@ -1,20 +1,20 @@
 ---
 name: flow-d-explore
-description: "Tahap D — Eksplorasi per-Stream (moneyflow v2.0), dua gelombang: Gelombang 1 bebas/buta dengan 3 Lensa Fisika Nilai + SYMPTOM-TAGS; Gelombang 2 Symptom-Triggered Lazy Skill Router (maks 2-4 plugin). Kartu lead + invariant tiga lapis + INV-HBx, Gate D C10-v2 statis, label DIANALISIS wajib (C11). Dipakai saat memburu alur/Stream, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead."
+description: "Tahap D — Eksplorasi per-Lintasan (moneyflow v2.1), dua gelombang: Gelombang 1 bebas/buta dengan 3 Lensa Fisika Nilai + SYMPTOM-TAGS; Gelombang 2 Symptom-Triggered Lazy Skill Router (maks 2-4 plugin). Kartu lead + invariant tiga lapis + INV-HBx, Gate D C10-v2 statis, label DIANALISIS wajib (C11). Dipakai saat memburu alur/Stream, atau saat user menyebut tahap D, eksplorasi, gelombang, kartu lead."
 ---
 
 # Skill flow-d-explore — Tahap D (Eksplorasi)
 
-Tahap D = buruan **per Stream** (moneyflow v2.0). Unit round = **satu `Stream` ujung-ke-ujung (`STR-xx`)**, dua gelombang (bebas/buta → lazy skill augmentation).
+Tahap D = buruan **per Lintasan** (moneyflow v2.1, B19). Unit round = **satu `Lintasan` (`STR-nn.Lk`)** — bukan satu Stream utuh, dua gelombang (bebas/buta → lazy skill augmentation).
 Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-alur-first.md` (seksi D — Tahap D, B12, C10, C11) hanya rujukan sengketa.
 
 ## Prasyarat & Gerbang Awal B8 (tanpa ini D tidak mulai)
 
 - Unit kerja Tahap D = **satu Lintasan (`STR-nn.Lk`)** berdasarkan `C<NN>-<STR>-<Lk>-INVENTORY.md` + `C00-SHARED-PRIMITIVES.md` + baris terkait di `B07-STATE-BRIDGES.md`.
 - Registry invariant (`B06`) sudah punya struktur penomoran.
-- **B8 Live-Match Stream** dijalankan sebelum Gelombang 1 dimulai: cek cepat atas kontrak pada koridor Stream aktif — **utamakan desain kode + `cast code`/view di blok pin**; DILARANG memindai log sejarah panjang (pindai log = verifikator terakhir, Tahap G/sapuan akhir). Bila kontrak target belum live-match: masukkan Stream ke `TUNDA-LIVE` di `B05-LEDGER-SISA.md` dan **hentikan putaran Stream tersebut** (nol waktu eksekusi).
+- **B8 Live-Match Lintasan** dijalankan sebelum Gelombang 1 dimulai: cek cepat atas kontrak pada koridor Lintasan aktif — **utamakan desain kode + `cast code`/view di blok pin**; DILARANG memindai log sejarah panjang (pindai log = verifikator terakhir, Tahap G/sapuan akhir). Bila kontrak target belum live-match: masukkan Stream ke `TUNDA-LIVE` di `B05-LEDGER-SISA.md` dan **hentikan putaran Stream tersebut** (nol waktu eksekusi).
 - **B8 mengisi Lembar Parameter Live** (`C<NN>-<STR>-<Lk>-INVENTORY.md` Bagian 6): untuk tiap `LP-x`, baca nilai di blok pin (`cast call` / `cast storage`), isi kolom `Nilai @ blok pin` dan `Status Cabang` (`LIVE` / `DEAD-CONFIG` / `UNVERIFIED`). Ini pembacaan state blok pin, bukan pindai log — tetap dalam batas B8. Perubahan pada berkas C ini adalah pengisian kolom yang memang disediakan untuk B8, bukan revisi inventaris.
-- **B8 mengisi `Live_Balance@pin`** Stream aktif di `B04` (saldo `Value_Holder` per token pada blok pin). Nilai ini menjadi masukan `Observed Live Ceiling` (C10-v2) di Tahap E. Stream berstatus `SINK_BELUM_JELAS` tidak boleh memulai Gelombang 1.
+- **B8 mengisi `Live_Balance@pin`** Lintasan aktif di `B04` (saldo `Value_Holder` per token pada blok pin). Nilai ini menjadi masukan `Observed Live Ceiling` (C10-v2) di Tahap E. Stream berstatus `SINK_BELUM_JELAS` tidak boleh memulai Gelombang 1.
 
 ## Mode Eksekusi Tahap D: AUTO vs PAIR (Co-Audit)
 
@@ -73,7 +73,7 @@ Ikuti kode sepanjang `S1 -> H1 -> S2 -> Sn` berikut rentetan handoffnya dengan *
 
 **Lensa 2 (Adu Kontrak Handoff & State-Bridge):** adu kolom `Jaminan Faktual Produsen` melawan `Asumsi Faktual Konsumen` pada setiap `H1..Hn-1`, dengan memperhatikan kolom `Pengendali Field`: asumsi konsumen atas field `CALLER-INPUT` yang tidak dijamin produsen adalah prioritas pertama. Bila Stream menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **`1-hop peek`** diizinkan (baca tepat satu lapis fungsi pasangan penulis/pembaca di stream seberang) agar ketidaksinkronan skala desimal, urutan pembaruan state, atau nilai basi langsung tertangkap selagi konteks panas.
 
-**Lensa 3 (Twin-Path Differential — bila Stream punya pasangan di `Twin-Path Group` pada `B04` yang sudah punya inventaris `C`):** sandingkan tabel Handoff, Simpul, urutan pembaruan state, dan arah pembulatan Stream aktif terhadap Stream kembarnya; catat setiap asimetri yang tidak dijelaskan oleh perbedaan rumus dasar.
+**Lensa 3 (Twin-Path Differential — bila Lintasan punya pasangan di `Twin-Path Group` pada `B04` yang sudah punya inventaris `C`):** sandingkan tabel Handoff, Simpul, urutan pembaruan state, dan arah pembulatan Stream aktif terhadap Stream kembarnya; catat setiap asimetri yang tidak dijelaskan oleh perbedaan rumus dasar.
 
 ### Deep-Check — Tiga Uji Kritis Wajib (Gelombang 1 & 2; berlaku di `MODE: AUTO` maupun memandu peneliti di `MODE: PAIR`)
 
@@ -95,7 +95,7 @@ Keluaran wajib Gelombang 1 — `D<NN>-<STR>-<Lk>-WAVE1-BLIND.md`, seluruhnya ber
 | `OBS` | observasi anomali kode bernomor `Path/File.ext:Lxx-Lyy` (fakta kode, belum jalur) |
 | `G` | jalur yang terbukti tertutup oleh penjaga kode eksak `Path/File.ext:Lxx-Lyy` |
 | `Q` | pertanyaan mekanis tajam / celah asumsi yang harus dipastikan di Gelombang 2 |
-| `SYMPTOM-TAGS` | daftar tag gejala faktual yang ditemukan di kode Stream aktif untuk memicu pemuatan malas di Gelombang 2 |
+| `SYMPTOM-TAGS` | daftar tag gejala faktual yang ditemukan di kode Lintasan aktif untuk memicu pemuatan malas di Gelombang 2 |
 
 Tiap `OBS` dan `Q` mencantumkan `LP-x` yang relevan beserta `Status Cabang`-nya bila observasi bergantung pada parameter.
 
@@ -137,7 +137,7 @@ Keluaran Gelombang 2 — `D<NN>-<STR>-<Lk>-WAVE2-QUEUED.md`: kandidat `QUEUED` (
 
 ### Urutan QUEUED menuju Tahap E (B2a-v2 Lapis 2 — ketajaman struktural)
 
-Urutkan kartu di dalam Stream aktif menurut ketajaman struktural:
+Urutkan kartu di dalam Lintasan aktif menurut ketajaman struktural:
 
 1. **`INV-Jx` / `INV-Fx`** — kegagalan konservasi simpul fork/join atau komposisi multi-segmen;
 2. **`INV-Hx` / `INV-HBx`** — patahan kontrak handoff atau ketidaksinkronan `State-Bridge`;
@@ -220,10 +220,10 @@ Konsekuensi yang sering dilanggar:
 - `D<NN>-<STR>-<Lk>-LEAD-CARDS.md` — kartu 1:1 dengan rantai (a)+(b)+(c) + klaim finansial >= $1 + daftar `LP-x` yang dipakai.
 - Registry invariant (`B06-REGISTRY-INVARIANT.md`) terisi dengan sumber tiap invariant (termasuk `INV-HBx`).
 
-## Definition of done Tahap D (per Stream)
+## Definition of done Tahap D (per Lintasan)
 
-- [ ] B8 Live-Match Stream lulus (atau Stream masuk `TUNDA-LIVE` di `B05`, nol waktu eksekusi)
-- [ ] Bagian 6 inventaris Stream terisi kolom nilai + status cabang oleh B8; nol `DIISI_B8` tersisa
+- [ ] B8 Live-Match Lintasan lulus (atau Lintasan masuk `TUNDA-LIVE` di `B05`, nol waktu eksekusi)
+- [ ] Bagian 8 inventaris Lintasan (`Lembar Parameter Live`, A04) terisi kolom nilai + status cabang oleh B8; nol `DIISI_B8` tersisa
 - [ ] gelombang 1 dijalankan **tanpa** membuka katalog/_ROUTER/plugin/laporan audit lama, mengikuti Urutan perhatian Gelombang 1
 - [ ] Tiga Lensa dijalankan: konservasi simpul, adu handoff+State-Bridge (1-hop peek bila perlu), Twin-Path bila ada
 - [ ] gelombang 2 memuat maks 2-4 plugin via Lazy Skill Router; 1 CHAIN-\* dan 1 DOM-\* bila relevan
