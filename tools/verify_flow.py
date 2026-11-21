@@ -746,14 +746,26 @@ def cmd_check_b0(args):
     if len(hits) < 3:
         v.append(f"B00-TOPOLOGY.md: kelas aset belum dinyatakan (A03 — minimal 3 dari {len(ASSET_CLASSES)} token baku; MUNGKIN sah)")
 
-    # B17 v2.1: enam KELAS ingress wajib muncul (USER/ACTOR/CALLBACK/PASSIVE/ACCRUAL/ADMIN)
     for hit in ("DOM-", "VK-", "VC-"):
         if hit not in t:
             v.append(f"B00-TOPOLOGY.md: hitungan {hit}x tidak ada (B0)")
 
-    for cls in IN_CLASSES:
-        if not re.search(rf"\b{cls}\b", t):
-            v.append(f"B00-TOPOLOGY.md: kelas ingress {cls} tidak tercatat (B17)")
+    # B17 v2.1: katalog IN-x berdomisili di B04 Bagian 2b. B00 hanya wajib memuat daftar
+    # kelas bila ia MEMANG mencantumkan bagian katalog IN-x; bila tidak, pemeriksaan
+    # kelas ingress menjadi tanggung jawab check-b (yang membaca B04).
+    b04 = ad / "B04-STREAMS-AND-CLUSTERS.md"
+    b04_text = b04.read_text(encoding="utf-8", errors="replace") if b04.is_file() else ""
+    b00_has_catalog = bool(re.search(r"Katalog Ingress|IN-x", t))
+    if b00_has_catalog:
+        for cls in IN_CLASSES:
+            if not re.search(rf"\b{cls}\b", t):
+                v.append(f"B00-TOPOLOGY.md: memuat Katalog Ingress tetapi kelas {cls} "
+                         f"tidak tercatat (B17)")
+    elif b04.is_file():
+        missing = [c for c in IN_CLASSES if not re.search(rf"\b{c}\b", b04_text)]
+        if missing:
+            v.append(f"B04-STREAMS-AND-CLUSTERS.md: kelas ingress belum lengkap "
+                     f"{missing} (B17 — katalog ada di B04 Bagian 2b)")
 
     if mode == "TUNGGAL-BERINSTANS":
         if "Selisih Varian" not in t:
@@ -767,8 +779,10 @@ def cmd_check_b0(args):
         v.append("B00-TOPOLOGY.md: mode MULTI-DOMAIN tanpa Matriks Domain (B0)")
 
     if mode == "MULTI-DOMAIN":
-        if not re.search(r"LINT-\d+", t):
-            v.append("B00-TOPOLOGY.md: mode MULTI-DOMAIN tanpa daftar Lintasan LINT-xx (B20)")
+        # v2.1: penamaan resmi Lintasan = STR-nn.Lk (A04/B19-0). LINT-nn = warisan, tetap diterima.
+        if not re.search(r"STR-\d+\.L\d+", t) and not re.search(r"LINT-\d+", t):
+            v.append("B00-TOPOLOGY.md: mode MULTI-DOMAIN tanpa daftar Lintasan "
+                     "(harus `STR-nn.Lk`, mis. `STR-01.L1`; `LINT-nn` hanya warisan) (B19-0)")
 
     b03 = ad / "B03-CENSUS-LIVE.md"
     if b03.is_file():
