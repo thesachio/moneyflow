@@ -395,6 +395,72 @@ def cmd_check_d(args):
                     if not re.search(rf"\b{re.escape(inv)}\b", regtext):
                         v.append(f"{cards.name} kartu '{cid}': invariant {inv} "
                                  f"tidak tercatat di B06-REGISTRY-INVARIANT.md")
+
+    # ---- v2.1 KOREKSI-09: gerbang D = DISPOSISI (bukan kuota kartu), + Lintasan rambatan
+    if card_files and not _is_legacy(ad):
+        cards_text = "\n".join(c.read_text(encoding="utf-8", errors="replace") for c in card_files)
+        w2 = sorted(ad.glob(f"D*-{sid}-WAVE2-QUEUED.md"))
+        w2_text = w2[0].read_text(encoding="utf-8", errors="replace") if w2 else ""
+        # berkas C milik Stream ini (per-Lintasan atau legacy per-Stream)
+        c_files = sorted(list(ad.glob(f"C*-{sid}-*-INVENTORY.md")) + list(ad.glob(f"C*-{sid}-INVENTORY.md")))
+        c_text = "\n".join(c.read_text(encoding="utf-8", errors="replace") for c in c_files)
+
+        # D-MIN: Lintasan tanpa kartu DAN tanpa NIHIL_KANDIDAT berjangkar per segmen
+        if not re.search(r"\bNIHIL_KANDIDAT\b", w2_text + cards_text) and not _split_entries(cards_text):
+            v.append("D-MIN: Lintasan tanpa kartu DAN tanpa 'NIHIL_KANDIDAT:' berjangkar per segmen")
+
+        # D-V: baris BEDA di kolom nilai/autentikasi wajib punya kartu ATAU G berjangkar
+        COLS = ("autentikasi", "jalur native", "native/wrapped", "transport", "route",
+                "kelas aset", "parameter live beda")
+        for line in c_text.splitlines():
+            if "BEDA" not in line:
+                continue
+            low = line.lower()
+            if not any(c in low for c in COLS):
+                continue
+            cell = line.strip()
+            # kartu yang merujuk baris ini (potongan kunci) atau G berjangkar penjaga
+            key = re.sub(r"\s+", " ", cell)[:40]
+            has_card = key[:24] in re.sub(r"\s+", " ", cards_text)
+            has_g = bool(re.search(r"\bG\b", cards_text)) and bool(
+                re.search(r"[A-Za-z0-9_]+\.sol:\d+", cards_text))
+            if not (has_card or has_g):
+                v.append(f"D-V: baris BEDA nilai/autentikasi tanpa kartu DAN tanpa G berjangkar: {cell[:90]}")
+
+        # D-CY: CY-x tulis-sesudah != kosong DAN guard none -> kartu ATAU G berjangkar
+        for line in c_text.splitlines():
+            if "CY-" not in line:
+                continue
+            low = line.lower()
+            if "none" not in low:
+                continue
+            cells = [x.strip() for x in line.split("|")]
+            # kolom 'Storage ditulis SESUDAH' harus terisi (bukan '-' / kosong)
+            sesudah = [c for c in cells if "sesudah" in c.lower()]
+            filled = bool(sesudah) or len([c for c in cells if c and c != "-"]) >= 8
+            if filled and not (re.search(r"\bCY-\d+\b", cards_text)
+                               and re.search(r"[A-Za-z0-9_]+\.sol:\d+", cards_text)):
+                v.append(f"D-CY: CY-x tulis-sesudah + guard none tanpa kartu DAN tanpa G berjangkar: {line.strip()[:90]}")
+
+        # D-LP: kartu QUEUED yang rantainya memakai LP-x UNVERIFIED harus TUNDA-VERIFIKASI
+        unv = set()
+        for m in re.finditer(r"\bLP-\d+\b[^|\n]{0,120}?UNVERIFIED", c_text):
+            unv.add(m.group(0).split()[0])
+        if unv:
+            for cid, chunk in _split_entries(cards_text):
+                used = set(re.findall(r"\bLP-\d+\b", chunk))
+                if used & unv and "TUNDA-VERIFIKASI" not in chunk:
+                    v.append(f"D-LP: kartu '{cid}' memakai LP-x UNVERIFIED "
+                             f"({', '.join(sorted(used & unv))}) tanpa status TUNDA-VERIFIKASI")
+
+        # D-RMB: jangkar (b)/(c) di berkas Lintasan lain -> kolom Lintasan rambatan wajib terisi
+        for cid, chunk in _split_entries(cards_text):
+            anchors = set(re.findall(r"[A-Za-z0-9_]+\.sol:\d+", chunk))
+            # nama berkas C lain yang disebut di kartu
+            other_c = [n for n in re.findall(r"C\d+-STR-\d+-L\d+-INVENTORY\.md", chunk)]
+            if other_c and not re.search(r"Lintasan rambatan\s*[:|]", chunk):
+                v.append(f"D-RMB: kartu '{cid}' merujuk berkas Lintasan lain ({other_c[0]}) "
+                         f"tetapi kolom 'Lintasan rambatan' kosong")
     return _report("check-d", f"{ad} [stream {sid}]", v)
 
 
@@ -422,7 +488,98 @@ def cmd_check_e(args):
     if not re.search(r"\bgas\b", text, re.IGNORECASE):
         v.append("tidak mencatat nilai gas eksekusi")
 
+    # ---- v2.1 KOREKSI-09: cakupan varian, MENUNGGU-RANGKAI, plafon per domain
+    ad = Path(args.file).parent
+    if not _is_legacy(ad):
+        # E-UNV: kartu di batch bergantung LP-x UNVERIFIED
+        if re.search(r"\bLP-\d+\b[^|\n]{0,120}?UNVERIFIED", text) and "TUNDA-VERIFIKASI" not in text:
+            v.append("E-UNV: batch bergantung LP-x UNVERIFIED tanpa penanganan TUNDA-VERIFIKASI")
+
+        # E-MR: kartu MENUNGGU-RANGKAI tidak boleh berverdict TERBUKTI
+        if "MENUNGGU-RANGKAI" in text and re.search(r"\bTERBUKTI\b", text):
+            v.append("E-MR: kartu MENUNGGU-RANGKAI tidak boleh berverdict TERBUKTI")
+
+        # E-VAR: anggota varian selain yang diuji tidak boleh dilabeli DIEKSEKUSI
+        if "DIEKSEKUSI" in text:
+            # baris yang menyebut anggota (SAMA / BEDA) tapi dilabeli DIEKSEKUSI
+            for line in text.splitlines():
+                low = line.lower()
+                if ("sama" in low or "beda" in low) and "dieksesekusi" in low:
+                    continue
+                if ("sama" in low or "beda" in low) and "DIEKSEKUSI" in line:
+                    v.append(f"E-VAR: anggota varian dilabeli DIEKSEKUSI padahal bukan yang diuji: {line.strip()[:90]}")
+
+        # E-SUM: plafon total lintas domain tanpa rincian per domain
+        has_total = bool(re.search(r"\b(total|plafon total|agregat)\b[^\n]{0,60}(USD|\$)", text, re.IGNORECASE))
+        has_perdom = bool(re.search(r"\bDOM-\d+\b", text))
+        if has_total and not has_perdom:
+            v.append("E-SUM: angka plafon total lintas domain tanpa rincian per domain yang diuji")
+
     return _report("check-e", args.file, v)
+
+
+def cmd_check_stream(args):
+    """check-stream <audit_dir> --stream ID — gerbang penutupan Stream sebelum triage G.
+
+    KOREKSI-09 K3: S-1 F antar-Lintasan dievaluasi, S-2 nol MENUNGGU-RANGKAI,
+    S-3 Stream tercakup, S-4 enum Sync_Status v2.1.
+    """
+    v = []
+    ad = Path(args.audit_dir)
+    if not ad.is_dir():
+        print(f"GAGAL check-stream: direktori {ad} tidak ada")
+        return 1
+    sid = args.stream
+    if _is_legacy(ad):
+        return _report("check-stream", f"{ad} [stream {sid}]", [])
+
+    # ---- S-1: F antar-Lintasan dievaluasi (berkas F<NN>-* lapis ANTAR-LINTASAN atau baris TIDAK MENYALA)
+    f_files = sorted(ad.glob("F*.md"))
+    f_text = "\n".join(f.read_text(encoding="utf-8", errors="replace") for f in f_files)
+    b05 = ad / "B05-LEDGER-SISA.md"
+    b05_text = b05.read_text(encoding="utf-8", errors="replace") if b05.is_file() else ""
+    has_f1 = ("ANTAR-LINTASAN" in f_text) or re.search(
+        r"F-ANTAR-LINTASAN:\s*TIDAK MENYALA", b05_text + f_text)
+    if not has_f1:
+        v.append(f"S-1: F antar-Lintasan belum dievaluasi untuk {sid} — tidak ada berkas "
+                 f"F<NN>-* lapis ANTAR-LINTASAN maupun baris 'F-ANTAR-LINTASAN: TIDAK MENYALA'")
+
+    # ---- S-2: nol kartu MENUNGGU-RANGKAI di Lintasan Stream itu
+    mr = []
+    for f in sorted(ad.glob("*.md")):
+        try:
+            t = f.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if sid not in t:
+            continue
+        for i, l in enumerate(t.splitlines(), 1):
+            if "MENUNGGU-RANGKAI" in l and not re.search(
+                    r"\b(selesai|ditutup|0|nol|TIDAK ADA|status)\b", l, re.I):
+                mr.append(f"{f.name}:{i}")
+    if mr:
+        v.append(f"S-2: masih ada kartu MENUNGGU-RANGKAI di {sid}: "
+                 f"{', '.join(mr[:5])}{' ...' if len(mr) > 5 else ''}")
+
+    # ---- S-3: Stream tercakup (EP+VM / EP+SM / IN-x per B04 belum TERPETAKAN_/TERIKAT_)
+    b04 = ad / "B04-STREAMS-AND-CLUSTERS.md"
+    if b04.is_file() and b05.is_file():
+        for i, l in enumerate(b05_text.splitlines(), 1):
+            if sid not in l:
+                continue
+            if re.search(r"\b(BELUM_TERCAKUP|BELUM_MASUK_STREAM|BELUM_TERIKAT)\b", l):
+                v.append(f"S-3: {sid} belum tercakup — B05:{i}: {l.strip()[:90]}")
+
+    # ---- S-4: enum Sync_Status v2.1
+    b07 = ad / "B07-STATE-BRIDGES.md"
+    if b07.is_file():
+        bt = b07.read_text(encoding="utf-8", errors="replace")
+        for bad in ("OPEN", "COMPOSED", "CONSUMED"):
+            if re.search(rf"\b{bad}\b", bt):
+                v.append(f"S-4: B07 memakai nilai Sync_Status lama '{bad}' "
+                         f"(enum v2.1: SEED/WRITER_MAPPED/READER_MAPPED/SINKRON/"
+                         f"DESINKRON:<OBS-id>/TERBUKA_EKSTERNAL)")
+    return _report("check-stream", f"{ad} [stream {sid}]", v)
 
 
 def cmd_check_final(args):
@@ -479,6 +636,36 @@ def cmd_check_final(args):
                 if "BUKTI_SIMULASI:" not in chunk:
                     v.append(f"06 '{eid}': penolakan POC_FAILS/NEGATIVE_EV/DUST tanpa blok BUKTI_SIMULASI: "
                              f"(anti PAPER_REFUTATION_DETECTED)")
+
+    # ---- v2.1 KOREKSI-09: F-MR (nol MENUNGGU-RANGKAI) + F-F3 (F antar-varian dievaluasi)
+    if not _is_legacy(ad):
+        mr_hits = []
+        for f in sorted(ad.glob("*.md")):
+            try:
+                t = f.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            for i, l in enumerate(t.splitlines(), 1):
+                if "MENUNGGU-RANGKAI" in l and not re.search(r"\b(selesai|ditutup|0|nol|TIDAK ADA)\b", l, re.I):
+                    mr_hits.append(f"{f.name}:{i}")
+        if mr_hits:
+            v.append(f"F-MR: masih ada kartu MENUNGGU-RANGKAI di proyek: "
+                     f"{', '.join(mr_hits[:5])}{' ...' if len(mr_hits) > 5 else ''}")
+        # F-F3: mode != TUNGGAL wajib ada jejak F pemicu 3
+        b00 = ad / "B00-TOPOLOGY.md"
+        if b00.is_file():
+            bt = b00.read_text(encoding="utf-8", errors="replace")
+            mode = re.search(r"\b(TUNGGAL-BERINSTANS|MULTI-DOMAIN|TUNGGAL)\b", bt)
+            if mode and mode.group(1) != "TUNGGAL":
+                has_f3 = False
+                b05p = ad / "B05-LEDGER-SISA.md"
+                if b05p.is_file():
+                    has_f3 = has_f3 or ("ANTAR-VARIAN" in b05p.read_text(encoding="utf-8", errors="replace"))
+                for ff in sorted(ad.glob("F*.md")):
+                    has_f3 = has_f3 or ("ANTAR-VARIAN" in ff.read_text(encoding="utf-8", errors="replace"))
+                if not has_f3:
+                    v.append(f"F-F3: mode {mode.group(1)} (bukan TUNGGAL) tetapi tidak ada "
+                             f"berkas/baris F pemicu 3 (antar-varian)")
 
     # ---- 07: wajib Disposition: + PERCOBAAN:
     f07 = ad / "07-needs-next-step.md"
@@ -665,6 +852,11 @@ def main():
     p.add_argument("--stream", required=True)
     p.add_argument("--repo")
     p.set_defaults(func=cmd_check_d)
+
+    p = sub.add_parser("check-stream", help="gerbang penutupan Stream sebelum triage G (S-1..S-4)")
+    p.add_argument("audit_dir")
+    p.add_argument("--stream", required=True)
+    p.set_defaults(func=cmd_check_stream)
 
     p = sub.add_parser("check-e", help="berkas bukti batch Tahap E")
     p.add_argument("file")
