@@ -20,7 +20,7 @@ Skill ini memuat aturan dan format sampai Tahap D selesai. `methodology/aturan-a
 
 Tahap D mendukung **dua mode eksekusi**. Pemilihan mode hanya dilakukan oleh user:
 
-- **`MODE: AUTO`** (default — dipakai `flow-autopilot` dan bila user tidak meminta partisipasi interaktif): agen menyelesaikan Gelombang 1, Gelombang 2, Kartu Lead, dan Invariant untuk satu Lintasan secara penuh seperti aturan standar di bawah — tanpa berhenti menunggu input manusia.
+- **`MODE: AUTO`** (default — dipakai `flow-autopilot` dan bila user tidak meminta partisipasi interaktif): agen menyelesaikan Gelombang 1, Gelombang 2, Kartu Lead, dan Invariant untuk satu Stream secara penuh seperti aturan standar di bawah — tanpa berhenti menunggu input manusia.
 - **`MODE: PAIR`** (Co-Audit — **hanya aktif bila user secara eksplisit meminta**: menyebut `pair`, `bareng`, `co-audit`, `interaktif`, atau `pandu per fungsi`; perintah autopilot proyek penuh TIDAK mengaktifkan PAIR): peneliti manusia berpartisipasi membaca kode fungsi demi fungsi bersama agen utama. Aturan rinci:
 
 ### PAIR — Gelombang 1 (Tanpa Katalog)
@@ -73,7 +73,7 @@ Ikuti kode sepanjang `S1 -> H1 -> S2 -> Sn` berikut rentetan handoffnya dengan *
 
 **Lensa 1 (Konservasi Simpul & Akuntansi):** lacak setiap satuan nilai dari `Ingress` hingga `Egress`. Uji apakah pada setiap percabangan (`Fx`) berlaku `total_keluaran + fee == masukan`, dan pada setiap penggabungan/klaim (`Jx`) penanda state mengunci konsumsi tepat satu kali — tanpa celah klaim ulang, pencetakan hak berlebih, atau saldo mengendap permanen.
 
-**Lensa 2 (Adu Kontrak Handoff & State-Bridge):** adu kolom `Jaminan Faktual Produsen` melawan `Asumsi Faktual Konsumen` pada setiap `H1..Hn-1`, dengan memperhatikan kolom `Pengendali Field`: asumsi konsumen atas field `CALLER-INPUT` yang tidak dijamin produsen adalah prioritas pertama. Bila Lintasan menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **`1-hop peek`** diizinkan (baca tepat satu lapis fungsi pasangan penulis/pembaca di stream seberang) agar ketidaksinkronan skala desimal, urutan pembaruan state, atau nilai basi langsung tertangkap selagi konteks panas.
+**Lensa 2 (Adu Kontrak Handoff & State-Bridge):** adu kolom `Jaminan Faktual Produsen` melawan `Asumsi Faktual Konsumen` pada setiap `H1..Hn-1`, dengan memperhatikan kolom `Pengendali Field`: asumsi konsumen atas field `CALLER-INPUT` yang tidak dijamin produsen adalah prioritas pertama. Bila Stream menyentuh `State-Bridge (HB-x)` di `B07-STATE-BRIDGES.md`, **`1-hop peek`** diizinkan (baca tepat satu lapis fungsi pasangan penulis/pembaca di stream seberang) agar ketidaksinkronan skala desimal, urutan pembaruan state, atau nilai basi langsung tertangkap selagi konteks panas.
 
 **Lensa 3 (Selisih Varian & Twin-Path):** sumber utama = **Tabel Selisih Bagian 7 Lintasan aktif** — untuk tiap baris `BEDA`, sandingkan perilaku anggota itu dengan representatif yang dibedah di Bagian 2–6 (tidak perlu menunggu anggota punya inventaris sendiri). Sumber tambahan = pasangan `Twin-Path Group` di `B04` yang sudah punya inventaris `C`: sandingkan tabel Handoff, Simpul, urutan pembaruan state, dan arah pembulatan Lintasan aktif terhadap Lintasan kembarnya; catat setiap asimetri yang tidak dijelaskan oleh perbedaan rumus dasar.
 
@@ -83,7 +83,7 @@ Ikuti kode sepanjang `S1 -> H1 -> S2 -> Sn` berikut rentetan handoffnya dengan *
 
 ### Deep-Check — Tiga Uji Kritis Wajib (Gelombang 1 & 2; berlaku di `MODE: AUTO` maupun memandu peneliti di `MODE: PAIR`)
 
-Dilarang sekadar merangkum ulang tabel Tahap C. Pada setiap Lintasan, Gelombang 1 **wajib** menjalankan tiga uji kritis berikut dan mencatat hasilnya sebagai `OBS`/`G`/`Q`:
+Dilarang sekadar merangkum ulang tabel Tahap C. Pada setiap Stream, Gelombang 1 **wajib** menjalankan tiga uji kritis berikut dan mencatat hasilnya sebagai `OBS`/`G`/`Q`:
 
 1. **Deep-Check Handoff & State-Bridge:**
    - Uji silang batas ekstrem input (`0`, `1 wei`, batas maksimum tipe, dan ketidaksamaan desimal token seperti `6` vs `18`) antara `Jaminan Faktual Produsen` dan `Asumsi Faktual Konsumen` pada setiap `Hk` dan `HB-x`. Nilai ekstrem dipakai untuk field `CALLER-INPUT`; untuk field `ADMIN-CONFIG` pakai nilai `Nilai @ blok pin` dari Bagian 8.
