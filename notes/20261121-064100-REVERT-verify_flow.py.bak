@@ -1,0 +1,986 @@
+#!/usr/bin/env python3
+"""verify_flow.py — pemeriksa deterministik gerbang metode moneyflow v2.0 (Flow Money First).
+
+Pustaka bawaan Python 3 saja (argparse, json, pathlib, re, sys) — tanpa dependensi eksternal.
+Kode keluar: 0 = LULUS, 1 = GAGAL (daftar pelanggaran dicetak ke stdout/stderr).
+
+Sub-perintah:
+  check-staging <file> [--repo DIR]   staging subagent sebelum merge ke berkas kanonik
+  check-b <audit_dir> [--repo DIR]    artefak Tahap B (B01..B07 + sensus statis JSONL)
+  check-c <file> [--repo DIR]         inventaris Tahap C (C00 atau per-Stream)
+  check-d <audit_dir> --stream ID [--repo DIR]   gelombang + kartu lead per Stream
+  check-e <file> [--repo DIR]         berkas bukti batch Tahap E
+  check-final <audit_dir> [--repo DIR]  gerbang penutupan proyek
+"""
+
+import argparse
+import json
+import re
+from pathlib import Path
+from sys import exit as sysexit
+
+# ---------------------------------------------------------------------------
+# 1. Deteksi token kompresi malas
+# ---------------------------------------------------------------------------
+
+# Pola berjaga-jaga (di luar pola spesifikasi; dipakai oleh check-staging): variasi
+# singular/plural "and so on" / "rest of". Sub-perintah lain memakai pola atas.
+_TOKEN_LAZY_WIDE = re.compile(
+    r"(\.\.\.)|(…)|(\bdll\.?\b)|(\bdst\.?\b)|(\bdsb\.?\b)|(\betc\.?\b)"
+    r"|(\band so on\b)|(\brest of logic\b)|(\brest of code\b)|(\brest of the\b)",
+    re.IGNORECASE,
+)
+
+# Pola spesifikasi tepat untuk check-c / check-d / check-e / check-final
+# (case-insensitive; match utuh kata / simbol):
+#   ... , … , dll. / dll , dst. / dst , dsb. / dsb , etc. / etc ,
+#   "and so on", "rest of logic", "rest of code"
+# dengan abaikan URL http:// / https:// dan hash heksadesimal panjang (>=32) tanpa elipsis.
+_TOKEN_LAZY_SPEC = re.compile(
+    r"(\.{3,}|…|\bdll\.?\b|\bdst\.?\b|\bdsb\.?\b|\betc\.?\b|\band so on\b|\brest of logic\b|\brest of code\b)",
+    re.IGNORECASE,
+)
+
+_URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
+_LONG_HEX_RE = re.compile(r"\b[0-9a-fA-F]{32,}\b")
+
+
+def _strip_ignorable(text):
+    """Hapus URL dan hash panjang sebelum pencocokan token malas."""
+    text = _URL_RE.sub(" ", text)
+    text = _LONG_HEX_RE.sub(" ", text)
+    return text
+
+
+def scan_lazy_tokens(text):
+    """Pola spesifikasi. Return (jumlah_pelanggaran, [ringkasan token])."""
+    cleaned = _strip_ignorable(text)
+    return len(_TOKEN_LAZY_SPEC.findall(cleaned)), _summary(_TOKEN_LAZY_SPEC, cleaned)
+
+
+def scan_lazy_tokens_wide(text):
+    """Pola berjaga-jaga (check-staging): + 'rest of the'."""
+    cleaned = _strip_ignorable(text)
+    return len(_TOKEN_LAZY_WIDE.findall(cleaned)), _summary(_TOKEN_LAZY_WIDE, cleaned)
+
+
+def _summary(rx, text):
+    out = []
+    for m in rx.finditer(text):
+        s = max(0, m.start() - 30)
+        ctx = text[s:m.end() + 30].replace("\n", " ")
+        out.append(f"token='{m.group(0)}' konteks='…{ctx}…'")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 2. Validasi jangkar kode  path/to/File.ext:Lxx-Lyy  |  path/to/File.ext:Lxx
+# ---------------------------------------------------------------------------
+
+_ANCHOR_RE = re.compile(
+    r"(?P<path>[\w./\-]+\.[A-Za-z0-9]{1,8}):L(?P<start>\d+)(?:-L(?P<end>\d+))?"
+)
+
+_CODE_DEF_RE = re.compile(r"^\s*(function|contract|library|interface|abstract contract|mod|fn|pub fn|def|class|impl)\b")
+
+
+def scan_code_anchors(text):
+    return list(_ANCHOR_RE.finditer(text))
+
+
+def validate_anchor(m, repo, violations, where):
+    path = m.group("path")
+    start = int(m.group("start"))
+    end = int(m.group("end")) if m.group("end") else start
+    tag = f"{where}: jangkar {m.group(0)}"
+    if start > end:
+        violations.append(f"{tag}: start ({start}) > end ({end})")
+        return
+    if repo is None:
+        return
+    srcp = Path(repo) / path
+    if not srcp.is_file():
+        # tolerir jangkar yang menunjuk artefak audit/metode repo kerja itu sendiri
+        if Path(path).is_file():
+            srcp = Path(path)
+        else:
+            violations.append(f"{tag}: berkas sumber tidak ada di --repo ({path})")
+            return
+    try:
+        lines = srcp.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as exc:
+        violations.append(f"{tag}: tidak bisa dibaca ({exc})")
+        return
+    if end > len(lines):
+        violations.append(
+            f"{tag}: baris {end} melebihi jumlah baris {path} ({len(lines)})"
+        )
+        return
+    seg = lines[start - 1 : end]
+    if not any(_CODE_DEF_RE.match(l) for l in seg):
+        nonblank = [l for l in seg if l.strip()]
+        if not nonblank:
+            violations.append(f"{tag}: rentang baris kosong murni")
+        elif len(seg) == 1 and not _CODE_DEF_RE.match(seg[0]):
+            # jangkar satu baris diizinkan walau bukan baris pembuka
+            # definisi — cukup harus tak kosong.
+            pass
+
+
+# ---------------------------------------------------------------------------
+# 3. Util pembaca berkas
+# ---------------------------------------------------------------------------
+
+def _read(path):
+    try:
+        return Path(path).read_text(encoding="utf-8", errors="replace"), None
+    except OSError as exc:
+        return None, str(exc)
+
+
+# ---------------------------------------------------------------------------
+# 4. Sub-perintah
+# ---------------------------------------------------------------------------
+
+def cmd_check_staging(args):
+    """check-staging <file> [--repo DIR]"""
+    v = []
+    text, err = _read(args.file)
+    if err:
+        print(f"GAGAL check-staging: {err}")
+        return 1
+    lines = text.splitlines()
+    if not lines or not lines[0].startswith("## STAGING MANIFEST"):
+        v.append("baris pertama wajib dimulai '## STAGING MANIFEST'")
+    else:
+        n = 0
+        for l in lines[1:]:
+            if l.startswith("## "):
+                break
+            n += 1
+        if n > 16:
+            v.append(f"blok manifes pembuka {n} baris (batas 16) sebelum heading berikutnya")
+
+    n_lazy, details = scan_lazy_tokens_wide(text)
+    for d in details:
+        v.append(f"token kompresi malas [{d}]")
+
+    for m in scan_code_anchors(text):
+        validate_anchor(m, args.repo, v, "staging")
+
+    return _report("check-staging", args.file, v)
+
+
+def cmd_check_b(args):
+    """check-b <audit_dir> [--repo DIR]"""
+    v = []
+    ad = Path(args.audit_dir)
+    if not ad.is_dir():
+        print(f"GAGAL check-b: direktori {ad} tidak ada")
+        return 1
+
+    required = [
+        "B01-SCOPE.md",
+        "B02-CENSUS-STATIC.md",
+        "B03-CENSUS-LIVE.md",
+        "B04-STREAMS-AND-CLUSTERS.md",
+        "B05-LEDGER-SISA.md",
+        "B06-REGISTRY-INVARIANT.md",
+        "B07-STATE-BRIDGES.md",
+    ]
+    for name in required:
+        if not (ad / name).is_file():
+            v.append(f"artefak Tahap B hilang: {name}")
+
+    # ---- v2.1: B00-TOPOLOGY wajib (proyek lama boleh ditandai LEGACY-v2.0)
+    if not (ad / "B00-TOPOLOGY.md").is_file() and not _is_legacy(ad):
+        v.append("B00-TOPOLOGY.md hilang (v2.1 B0) — atau tandai proyek lama dengan LEGACY-v2.0")
+
+    # ---- sensus statis JSONL
+    # v2.0 (LEGACY): 14 kunci. v2.1 (A03): 18 kunci (+modifiers, storage_writes,
+    # ast_hint, domain_variant).
+    JSONL_FIELDS_V20 = [
+        "file", "contract", "function", "line", "end_line", "visibility",
+        "mutability", "payable", "entrypoint", "value_moves", "mechanisms",
+        "events_emitted", "external_calls", "notes",
+    ]
+    JSONL_FIELDS = JSONL_FIELDS_V20 if _is_legacy(ad) else JSONL_FIELDS_V20 + [
+        "modifiers", "storage_writes", "ast_hint", "domain_variant",
+    ]
+    # v2.1: hanya berkas SENSUS yang divalidasi; ledger/seed/artefak lain dikecualikan by-name
+    NON_CENSUS = ("b05-ledger", "ledger-seed", "b05-", "delta-", "scar-", "oz-audit")
+    jsonl_files = [f for f in sorted(ad.glob("*.jsonl"))
+                   if not any(k in f.name for k in NON_CENSUS)]
+    out_dir = ad / "scripts" / "out"
+    if out_dir.is_dir():
+        jsonl_files += [f for f in sorted(out_dir.glob("*.jsonl"))
+                        if not any(k in f.name for k in NON_CENSUS)]
+    if not jsonl_files:
+        v.append("tidak ada berkas *.jsonl sensus statis di audit_dir (cari juga scripts/out/)")
+    for jf in jsonl_files:
+        for i, raw in enumerate(jf.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                row = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                v.append(f"{jf.name}:{i}: JSON tidak valid ({exc})")
+                continue
+            if not isinstance(row, dict):
+                v.append(f"{jf.name}:{i}: baris bukan objek JSON")
+                continue
+            missing = [f for f in JSONL_FIELDS if f not in row]
+            if missing:
+                v.append(f"{jf.name}:{i}: field wajib hilang {missing}")
+                continue
+            if row.get("value_moves") not in ("yes", "state_mutator", "no", "unknown"):
+                v.append(f"{jf.name}:{i}: value_moves='{row.get('value_moves')}' (harus yes|state_mutator|no|unknown — B14-v2)")
+                continue
+            if row["value_moves"] == "unknown" and not str(row.get("notes", "")).strip():
+                v.append(f"{jf.name}:{i}: value_moves='unknown' tanpa notes")
+            if row["value_moves"] == "state_mutator" and row.get("entrypoint") is not True:
+                v.append(f"{jf.name}:{i}: value_moves='state_mutator' hanya sah untuk entrypoint:true (B14-v2)")
+            if row["value_moves"] == "state_mutator" and not str(row.get("notes", "")).strip():
+                v.append(f"{jf.name}:{i}: value_moves='state_mutator' tanpa notes (wajib sebut storage yang ditulis)")
+            # --- B14-v2 strict rule: larangan label 'no' pada entrypoint yang bisa menulis state
+            if (row["value_moves"] == "no" and row.get("entrypoint") is True
+                    and str(row.get("mutability", "")).lower() not in ("view", "pure")):
+                fname_lc = str(row.get("function", "")).lower()
+                notes = str(row.get("notes", ""))
+                is_empty_receive = fname_lc == "receive"
+                has_tag = ("PRIVILEGED_ONLY:" in notes) or ("COSMETIC_NON_ECONOMIC:" in notes)
+                if not (is_empty_receive or has_tag):
+                    v.append(
+                        f"{jf.name}:{i}: B14-v2 pelanggaran — entrypoint:true + mutability="
+                        f"'{row.get('mutability')}' (bisa menulis state) + value_moves='no' "
+                        f"tanpa tag PRIVILEGED_ONLY:/COSMETIC_NON_ECONOMIC: dan bukan receive kosong "
+                        f"(fungsi='{row.get('function')}')"
+                    )
+
+    # ---- artefak B bebas token malas
+    for name in required:
+        p = ad / name
+        if p.is_file():
+            n_lazy, details = scan_lazy_tokens(p.read_text(encoding="utf-8", errors="replace"))
+            for d in details:
+                v.append(f"{name}: token kompresi malas [{d}]")
+
+    return _report("check-b", str(ad), v)
+
+
+def cmd_check_c(args):
+    """check-c <file> [--repo DIR]"""
+    v = []
+    text, err = _read(args.file)
+    if err:
+        print(f"GAGAL check-c: {err}")
+        return 1
+
+    n_lazy, details = scan_lazy_tokens(text)
+    for d in details:
+        v.append(f"token kompresi malas [{d}]")
+
+    for m in scan_code_anchors(text):
+        validate_anchor(m, args.repo, v, "check-c")
+
+    fname = Path(args.file).name
+    is_stream = re.match(r"^C\d{2,}-.*-INVENTORY\.md$", fname) and not fname.startswith("C00-")
+    if is_stream:
+        # ---- v2.1 (A04): inventaris per-Lintasan wajib 9 bagian (dilewati utk LEGACY-v2.0)
+        parent = Path(args.file).parent
+        legacy = _is_legacy(parent)
+        if not legacy:
+            SECTIONS = ("Identitas Lintasan", "Segmen", "Titik Serah Kendali",
+                        "Kontrak Handoff", "Simpul", "State-Bridge",
+                        "Tabel Selisih Varian", "Lembar Parameter Live", "Rekonsiliasi Ledger",
+                        "Kesiapan Eksplorasi")
+            for i, name in enumerate(SECTIONS, start=1):
+                if not re.search(rf"^#+\s*Bagian\s*{i}\b", text, re.M):
+                    v.append(f"bagian {i} ({name}) tidak ada — format v2.1 wajib 10 bagian (A04 + SIAP-D)")
+        # --- hitung segmen S1..Sn unik yang DIDEFINISIKAN (bukan disebut)
+        seg_defs = set(re.findall(r"^\s*\|?\s*(?:\*\*)?(S\d{1,2})(?:\*\*)?\s*(?:\||:|- )", text, re.M))
+        # A04: S0 = Ingress tidak resmi; TIDAK dihitung dalam rumus handoff
+        seg_defs.discard("S0")
+        n = len(seg_defs)
+        # --- handoff unik yang DIDEFINISIKAN
+        hnd_defs = set(re.findall(r"^\s*\|?\s*(?:\*\*)?(H\d{1,2})(?:\*\*)?\s*(?:\||:|- )", text, re.M))
+        # --- jumlah handoff = N - 1 + Sigma(m - 1); m dibaca dari baris `Masukan: S.., S..`
+        # pada tiap Join (J tanpa baris Masukan dianggap m = 1, kontribusi 0)
+        sigma = 0
+        for mm in re.finditer(r"Masukan:\s*((?:S\d{1,2}\s*,\s*)*S\d{1,2})", text):
+            ids = {s.strip() for s in mm.group(1).split(",")}
+            sigma += max(0, len(ids) - 1)
+        if n >= 2:
+            target = n - 1 + sigma
+            need = set(f"H{i}" for i in range(1, target + 1))
+            missing = sorted(need - hnd_defs)
+            if missing:
+                v.append(f"N={n} segmen, Sigma(m-1)={sigma} -> target handoff {target}, "
+                         f"aktual {len(hnd_defs)}; yang belum terdefinisi: {', '.join(missing)}")
+            elif len(hnd_defs) != target:
+                v.append(f"N={n} segmen, Sigma(m-1)={sigma} -> target handoff {target}, "
+                         f"aktual {len(hnd_defs)} (jumlah tidak sesuai)")
+        # --- A04: anggaran rentang wajar; di luar rentang wajib KEPUTUSAN_ANGGARAN
+        # ---- Langkah 0b: registry resource wajib ada SEBELUM round Lintasan pertama
+        if not legacy:
+            regp = parent / "C00-RESOURCE-REGISTRY.md"
+            if not regp.is_file():
+                v.append("REGISTRY: C00-RESOURCE-REGISTRY.md tidak ada — round Lintasan tidak boleh "
+                         "dimulai sebelum R1..R6 dihimpun (Langkah 0b)")
+            else:
+                rt = regp.read_text(encoding="utf-8", errors="replace")
+                for kode, label in (("R1", "Aset"), ("R2", "Relasi"), ("R3", "Domain"),
+                                    ("R4", "Target eksternal"), ("R5", "Ketersediaan sumber"),
+                                    ("R6", "State-Bridge")):
+                    if not re.search(rf"\b{kode}\b", rt):
+                        v.append(f"REGISTRY: kelompok {kode} ({label}) tidak ada di "
+                                 f"C00-RESOURCE-REGISTRY.md")
+                gapm = re.search(r"^#+\s*7\.\s*Gap Registry.*?(?=^#+\s*\d+\.|\Z)", rt, re.M | re.S)
+                if gapm and re.search(r"\|\s*`?BELUM`?\s*\|", gapm.group(0)):
+                    pass  # gap boleh terbuka; ia memblokir Lintasan tertentu, bukan semua
+        # ---- SIAP-D (Bagian 10): kelengkapan bertambah B ⊂ C ⊂ D.
+        # Tanpa ini, Tahap D bisa "lengkap" terhadap segmen C yang sendiri bolong.
+        if not legacy:
+            m10 = re.search(r"^#+\s*Bagian\s*10\b.*?(?=^#+\s*Bagian\s|\Z)", text, re.M | re.S)
+            if not m10:
+                v.append("SIAP-D: Bagian 10 (Kesiapan Eksplorasi) tidak ada — "
+                         "Tahap D tidak boleh mulai tanpa daftar periksa ini")
+            else:
+                siap = m10.group(0)
+                belum = re.findall(r"BELUM:\s*([^|\n]+)", siap)
+                if belum:
+                    v.append(f"SIAP-D: masih {len(belum)} objek BELUM teridentifikasi "
+                             f"({', '.join(x.strip()[:24] for x in belum[:3])}"
+                             f"{' ...' if len(belum) > 3 else ''}) — Lintasan belum siap Tahap D")
+                # uji mekanis cakupan entrypoint: fungsi berlabel TERPETAKAN_DI_<Lintasan>
+                # di B05 harus tercakup rentang jangkar segmen di berkas C ini
+                sid = re.search(r"^(C\d{2,})-(STR-\d+)\.(L\d+)-INVENTORY\.md$", fname)
+                b05p = parent / "B05-LEDGER-SISA.md"
+                censusp = parent / "scripts" / "out" / "b02-census.jsonl"
+                if sid and b05p.is_file() and censusp.is_file():
+                    label = f"TERPETAKAN_DI_{sid.group(2)}.{sid.group(3)}"
+                    census = {}
+                    for ln in censusp.read_text(encoding="utf-8", errors="replace").splitlines():
+                        try:
+                            row = json.loads(ln)
+                        except json.JSONDecodeError:
+                            continue
+                        census[(row.get("function"), row.get("file"))] = (
+                            int(row.get("line") or 0), int(row.get("end_line") or row.get("line") or 0))
+                    wanted = set()
+                    for ln in b05p.read_text(encoding="utf-8", errors="replace").splitlines():
+                        if label in ln and ln.lstrip().startswith("|"):
+                            for fn in re.findall(r"([A-Za-z_][\w]*):\d+", ln):
+                                wanted.add(fn)
+                    anchors = []
+                    for am in re.finditer(r"([\w./-]+\.(?:sol|rs)):L(\d+)(?:-L(\d+))?", text):
+                        anchors.append((am.group(1), int(am.group(2)),
+                                        int(am.group(3) or am.group(2))))
+                    if wanted and anchors:
+                        hilang = []
+                        for fn in sorted(wanted):
+                            rng = None
+                            for (cf, cfpath), rr in census.items():
+                                if cf == fn:
+                                    rng = rr
+                                    break
+                            if rng is None:
+                                continue
+                            lo, hi = rng
+                            if not any(a[1] <= lo and hi <= a[2] and
+                                       (a[0].endswith(cfpath.split("/")[-1]) or cfpath.endswith(a[0]))
+                                       for a in anchors):
+                                hilang.append(fn)
+                        if hilang:
+                            v.append(f"SIAP-D cakupan entrypoint: {len(hilang)} fungsi berlabel "
+                                     f"{label} tidak tercakup segmen mana pun "
+                                     f"({', '.join(hilang[:4])}{' ...' if len(hilang) > 4 else ''}) "
+                                     f"— segmen bolong, atau tulis DI_LUAR_KORIDOR")
+        if n and not legacy and not (4 <= n <= 8) and "KEPUTUSAN_ANGGARAN" not in text:
+            v.append(f"CATATAN_ANGGARAN: N={n} segmen di luar rentang wajar 4-8 — "
+                     f"tulis baris `KEPUTUSAN_ANGGARAN: <alasan>` di Bagian 1 "
+                     f"(A04: rentang wajar, bukan ambang kaku; pecah hanya bila "
+                     f"alur nilai utuh masih terjaga)")
+        # --- larangan klaim prematur
+        for m2 in re.finditer(r"\bTERBUKTI\b", text):
+            s = max(0, m2.start() - 30)
+            v.append(f"klaim prematur 'TERBUKTI' di berkas Tahap C: konteks='…{text[s:m2.end()+30]}…'")
+        for m2 in re.finditer(r"\bINV-", text):
+            s = max(0, m2.start() - 30)
+            v.append(f"penomoran invariant dilarang di Tahap C: konteks='…{text[s:m2.end()+30]}…'")
+
+    return _report("check-c", args.file, v)
+
+
+def cmd_check_d(args):
+    """check-d <audit_dir> --stream ID [--repo DIR]"""
+    v = []
+    ad = Path(args.audit_dir)
+    if not ad.is_dir():
+        print(f"GAGAL check-d: direktori {ad} tidak ada")
+        return 1
+    sid = args.stream
+    reg = ad / "B06-REGISTRY-INVARIANT.md"
+    regtext = reg.read_text(encoding="utf-8", errors="replace") if reg.is_file() else None
+    if regtext is None:
+        v.append("B06-REGISTRY-INVARIANT.md tidak ada; rujukan INV- kartu tidak bisa diverifikasi")
+
+    # pola nama eksak: D<NN>-<STREAM_ID>-WAVE1-BLIND.md / -WAVE2-QUEUED.md / -LEAD-CARDS.md
+    groups = (
+        ("Gelombang 1", f"D*-{sid}-WAVE1-BLIND.md", False),
+        ("Gelombang 2", f"D*-{sid}-WAVE2-QUEUED.md", False),
+        ("Lead Cards", f"D*-{sid}-LEAD-CARDS.md", True),
+    )
+    card_files = []
+    for lab, pat, allow_terbukti in groups:
+        found = sorted(ad.glob(pat), key=lambda x: x.name)
+        if not found:
+            v.append(f"berkas {lab} milik Stream {sid} tidak ditemukan (pola: {pat})")
+            continue
+        if lab == "Lead Cards":
+            card_files = found
+        for p in found:
+            text = p.read_text(encoding="utf-8", errors="replace")
+            n_lazy, details = scan_lazy_tokens(text)
+            for d in details:
+                v.append(f"{p.name}: token kompresi malas [{d}]")
+            for m in scan_code_anchors(text):
+                validate_anchor(m, args.repo, v, p.name)
+            if not allow_terbukti and re.search(r"\bTERBUKTI\b", text):
+                _once(v, f"{p.name}: Gelombang 1/2 TIDAK memberi verdict TERBUKTI (C11)")
+
+    for cards in card_files:
+        body = cards.read_text(encoding="utf-8", errors="replace")
+        chunks = _split_entries(body)
+        if not chunks:
+            v.append(f"{cards.name}: tidak ada kartu (heading '## ')")
+        for cid, chunk in chunks:
+            miss = [k for k in ("a", "b", "c") if not re.search(rf"\(\s*{k}\s*\)", chunk)]
+            if miss:
+                v.append(f"{cards.name} kartu '{cid}': komponen rantai hilang "
+                         f"{', '.join('(' + m + ')' for m in miss)}")
+            if re.search(r"\bINV-(?:S|H|HB|J|F)x\b", chunk):
+                v.append(f"{cards.name} kartu '{cid}': masih memakai placeholder INV-?x, bukan ID nyata")
+            invs = set(re.findall(r"\bINV-[A-Za-z]*-?\d+\b", chunk))
+            if not invs:
+                v.append(f"{cards.name} kartu '{cid}': tanpa rujukan ID invariant INV- bernomor")
+                continue
+            if regtext is not None:
+                for inv in sorted(invs):
+                    if not re.search(rf"\b{re.escape(inv)}\b", regtext):
+                        v.append(f"{cards.name} kartu '{cid}': invariant {inv} "
+                                 f"tidak tercatat di B06-REGISTRY-INVARIANT.md")
+
+    # ---- v2.1 KOREKSI-09: gerbang D = DISPOSISI (bukan kuota kartu), + Lintasan rambatan
+    if card_files and not _is_legacy(ad):
+        cards_text = "\n".join(c.read_text(encoding="utf-8", errors="replace") for c in card_files)
+        w2 = sorted(ad.glob(f"D*-{sid}-WAVE2-QUEUED.md"))
+        w2_text = w2[0].read_text(encoding="utf-8", errors="replace") if w2 else ""
+        # berkas C milik Stream ini (per-Lintasan atau legacy per-Stream)
+        c_files = sorted(list(ad.glob(f"C*-{sid}-*-INVENTORY.md")) + list(ad.glob(f"C*-{sid}-INVENTORY.md")))
+        c_text = "\n".join(c.read_text(encoding="utf-8", errors="replace") for c in c_files)
+
+        # D-MIN: Lintasan tanpa kartu DAN tanpa NIHIL_KANDIDAT berjangkar per segmen
+        if not re.search(r"\bNIHIL_KANDIDAT\b", w2_text + cards_text) and not _split_entries(cards_text):
+            v.append("D-MIN: Lintasan tanpa kartu DAN tanpa 'NIHIL_KANDIDAT:' berjangkar per segmen")
+
+        # D-V: baris BEDA di kolom nilai/autentikasi wajib punya kartu ATAU G berjangkar
+        COLS = ("autentikasi", "jalur native", "native/wrapped", "transport", "route",
+                "kelas aset", "parameter live beda")
+        for line in c_text.splitlines():
+            if "BEDA" not in line:
+                continue
+            low = line.lower()
+            if not any(c in low for c in COLS):
+                continue
+            cell = line.strip()
+            # kartu yang merujuk baris ini (potongan kunci) atau G berjangkar penjaga
+            key = re.sub(r"\s+", " ", cell)[:40]
+            has_card = key[:24] in re.sub(r"\s+", " ", cards_text)
+            has_g = bool(re.search(r"\bG\b", cards_text)) and bool(
+                re.search(r"[A-Za-z0-9_]+\.sol:\d+", cards_text))
+            if not (has_card or has_g):
+                v.append(f"D-V: baris BEDA nilai/autentikasi tanpa kartu DAN tanpa G berjangkar: {cell[:90]}")
+
+        # D-CY: CY-x tulis-sesudah != kosong DAN guard none -> kartu ATAU G berjangkar
+        for line in c_text.splitlines():
+            if "CY-" not in line:
+                continue
+            low = line.lower()
+            if "none" not in low:
+                continue
+            cells = [x.strip() for x in line.split("|")]
+            # kolom 'Storage ditulis SESUDAH' harus terisi (bukan '-' / kosong)
+            sesudah = [c for c in cells if "sesudah" in c.lower()]
+            filled = bool(sesudah) or len([c for c in cells if c and c != "-"]) >= 8
+            if filled and not (re.search(r"\bCY-\d+\b", cards_text)
+                               and re.search(r"[A-Za-z0-9_]+\.sol:\d+", cards_text)):
+                v.append(f"D-CY: CY-x tulis-sesudah + guard none tanpa kartu DAN tanpa G berjangkar: {line.strip()[:90]}")
+
+        # D-LP: kartu QUEUED yang rantainya memakai LP-x UNVERIFIED harus TUNDA-VERIFIKASI
+        unv = set()
+        for m in re.finditer(r"\bLP-\d+\b[^|\n]{0,120}?UNVERIFIED", c_text):
+            unv.add(m.group(0).split()[0])
+        if unv:
+            for cid, chunk in _split_entries(cards_text):
+                used = set(re.findall(r"\bLP-\d+\b", chunk))
+                if used & unv and "TUNDA-VERIFIKASI" not in chunk:
+                    v.append(f"D-LP: kartu '{cid}' memakai LP-x UNVERIFIED "
+                             f"({', '.join(sorted(used & unv))}) tanpa status TUNDA-VERIFIKASI")
+
+        # D-RMB: jangkar (b)/(c) di berkas Lintasan lain -> kolom Lintasan rambatan wajib terisi
+        for cid, chunk in _split_entries(cards_text):
+            anchors = set(re.findall(r"[A-Za-z0-9_]+\.sol:\d+", chunk))
+            # nama berkas C lain yang disebut di kartu
+            other_c = [n for n in re.findall(r"C\d+-STR-\d+-L\d+-INVENTORY\.md", chunk)]
+            if other_c and not re.search(r"Lintasan rambatan\s*[:|]", chunk):
+                v.append(f"D-RMB: kartu '{cid}' merujuk berkas Lintasan lain ({other_c[0]}) "
+                         f"tetapi kolom 'Lintasan rambatan' kosong")
+    return _report("check-d", f"{ad} [stream {sid}]", v)
+
+
+def cmd_check_e(args):
+    """check-e <file> [--repo DIR]"""
+    v = []
+    text, err = _read(args.file)
+    if err:
+        print(f"GAGAL check-e: {err}")
+        return 1
+
+    n_lazy, details = scan_lazy_tokens(text)
+    for d in details:
+        v.append(f"token kompresi malas [{d}]")
+
+    for m in scan_code_anchors(text):
+        validate_anchor(m, args.repo, v, "check-e")
+
+    if not any(lab in text for lab in ("DIEKSEKUSI", "DIANALISIS", "CODE-REVIEW-ONLY")):
+        v.append("tidak ada label bukti eksplisit (DIEKSEKUSI / DIANALISIS / CODE-REVIEW-ONLY)")
+
+    if ("Observed Live Ceiling" not in text) and ("Proven Potential Ceiling" not in text):
+        v.append("tidak memuat metrik plafon (Observed Live Ceiling atau Proven Potential Ceiling)")
+
+    if not re.search(r"\bgas\b", text, re.IGNORECASE):
+        v.append("tidak mencatat nilai gas eksekusi")
+
+    # ---- v2.1 KOREKSI-09: cakupan varian, MENUNGGU-RANGKAI, plafon per domain
+    ad = Path(args.file).parent
+    if not _is_legacy(ad):
+        # E-UNV: kartu di batch bergantung LP-x UNVERIFIED
+        if re.search(r"\bLP-\d+\b[^|\n]{0,120}?UNVERIFIED", text) and "TUNDA-VERIFIKASI" not in text:
+            v.append("E-UNV: batch bergantung LP-x UNVERIFIED tanpa penanganan TUNDA-VERIFIKASI")
+
+        # E-MR: kartu MENUNGGU-RANGKAI tidak boleh berverdict TERBUKTI
+        if "MENUNGGU-RANGKAI" in text and re.search(r"\bTERBUKTI\b", text):
+            v.append("E-MR: kartu MENUNGGU-RANGKAI tidak boleh berverdict TERBUKTI")
+
+        # E-VAR: anggota varian selain yang diuji tidak boleh dilabeli DIEKSEKUSI
+        if "DIEKSEKUSI" in text:
+            # baris yang menyebut anggota (SAMA / BEDA) tapi dilabeli DIEKSEKUSI
+            for line in text.splitlines():
+                low = line.lower()
+                if ("sama" in low or "beda" in low) and "dieksesekusi" in low:
+                    continue
+                if ("sama" in low or "beda" in low) and "DIEKSEKUSI" in line:
+                    v.append(f"E-VAR: anggota varian dilabeli DIEKSEKUSI padahal bukan yang diuji: {line.strip()[:90]}")
+
+        # E-SUM: plafon total lintas domain tanpa rincian per domain
+        has_total = bool(re.search(r"\b(total|plafon total|agregat)\b[^\n]{0,60}(USD|\$)", text, re.IGNORECASE))
+        has_perdom = bool(re.search(r"\bDOM-\d+\b", text))
+        if has_total and not has_perdom:
+            v.append("E-SUM: angka plafon total lintas domain tanpa rincian per domain yang diuji")
+
+    return _report("check-e", args.file, v)
+
+
+def cmd_check_stream(args):
+    """check-stream <audit_dir> --stream ID — gerbang penutupan Stream sebelum triage G.
+
+    KOREKSI-09 K3: S-1 F antar-Lintasan dievaluasi, S-2 nol MENUNGGU-RANGKAI,
+    S-3 Stream tercakup, S-4 enum Sync_Status v2.1.
+    """
+    v = []
+    ad = Path(args.audit_dir)
+    if not ad.is_dir():
+        print(f"GAGAL check-stream: direktori {ad} tidak ada")
+        return 1
+    sid = args.stream
+    if _is_legacy(ad):
+        return _report("check-stream", f"{ad} [stream {sid}]", [])
+
+    # ---- S-1: F antar-Lintasan dievaluasi (berkas F<NN>-* lapis ANTAR-LINTASAN atau baris TIDAK MENYALA)
+    f_files = sorted(ad.glob("F*.md"))
+    f_text = "\n".join(f.read_text(encoding="utf-8", errors="replace") for f in f_files)
+    b05 = ad / "B05-LEDGER-SISA.md"
+    b05_text = b05.read_text(encoding="utf-8", errors="replace") if b05.is_file() else ""
+    has_f1 = ("ANTAR-LINTASAN" in f_text) or re.search(
+        r"F-ANTAR-LINTASAN:\s*TIDAK MENYALA", b05_text + f_text)
+    if not has_f1:
+        v.append(f"S-1: F antar-Lintasan belum dievaluasi untuk {sid} — tidak ada berkas "
+                 f"F<NN>-* lapis ANTAR-LINTASAN maupun baris 'F-ANTAR-LINTASAN: TIDAK MENYALA'")
+
+    # ---- S-2: nol kartu MENUNGGU-RANGKAI di Lintasan Stream itu
+    mr = []
+    for f in sorted(ad.glob("*.md")):
+        try:
+            t = f.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if sid not in t:
+            continue
+        for i, l in enumerate(t.splitlines(), 1):
+            if "MENUNGGU-RANGKAI" in l and not re.search(
+                    r"\b(selesai|ditutup|0|nol|TIDAK ADA|status)\b", l, re.I):
+                mr.append(f"{f.name}:{i}")
+    if mr:
+        v.append(f"S-2: masih ada kartu MENUNGGU-RANGKAI di {sid}: "
+                 f"{', '.join(mr[:5])}{' ...' if len(mr) > 5 else ''}")
+
+    # ---- S-3: Stream tercakup (EP+VM / EP+SM / IN-x per B04 belum TERPETAKAN_/TERIKAT_)
+    b04 = ad / "B04-STREAMS-AND-CLUSTERS.md"
+    if b04.is_file() and b05.is_file():
+        for i, l in enumerate(b05_text.splitlines(), 1):
+            if sid not in l:
+                continue
+            if re.search(r"\b(BELUM_TERCAKUP|BELUM_MASUK_STREAM|BELUM_TERIKAT)\b", l):
+                v.append(f"S-3: {sid} belum tercakup — B05:{i}: {l.strip()[:90]}")
+
+    # ---- S-4: enum Sync_Status v2.1
+    b07 = ad / "B07-STATE-BRIDGES.md"
+    if b07.is_file():
+        bt = b07.read_text(encoding="utf-8", errors="replace")
+        for bad in ("OPEN", "COMPOSED", "CONSUMED"):
+            if re.search(rf"\b{bad}\b", bt):
+                v.append(f"S-4: B07 memakai nilai Sync_Status lama '{bad}' "
+                         f"(enum v2.1: SEED/WRITER_MAPPED/READER_MAPPED/SINKRON/"
+                         f"DESINKRON:<OBS-id>/TERBUKA_EKSTERNAL)")
+    return _report("check-stream", f"{ad} [stream {sid}]", v)
+
+
+def cmd_check_final(args):
+    """check-final <audit_dir> [--repo DIR]"""
+    v = []
+    ad = Path(args.audit_dir)
+    if not ad.is_dir():
+        print(f"GAGAL check-final: direktori {ad} tidak ada")
+        return 1
+
+    # ---- B05: nol CORE-FLOW BELUM_MASUK_STREAM (EP+VM(yes)) DAN nol EP+SM(state_mutator) tersisa; nol QUEUED>0 / ACTIVE>0
+    b05 = ad / "B05-LEDGER-SISA.md"
+    if not b05.is_file():
+        v.append("B05-LEDGER-SISA.md tidak ada; keberadaan wajib bagi cakupan 100%")
+    else:
+        text = b05.read_text(encoding="utf-8", errors="replace")
+        for i, l in enumerate(text.splitlines(), 1):
+            if "BELUM_MASUK_STREAM" in l and "CORE-FLOW" in l:
+                v.append(f"B05:{i}: EP+VM(yes) CORE-FLOW tersisa BELUM_MASUK_STREAM: {l.strip()[:100]}")
+        # --- B14-v2: nol sisa populasi EP+SM(state_mutator) pada CORE-FLOW
+        for i, l in enumerate(text.splitlines(), 1):
+            has_sm = ("EP+SM" in l) or ("state_mutator" in l)
+            uncovered = ("BELUM_TERCAKUP" in l) or ("BELUM_MASUK_STREAM" in l)
+            if has_sm and uncovered and ("CORE-FLOW" in l or "state_mutator" in l):
+                v.append(f"B05:{i}: EP+SM(state_mutator) CORE-FLOW tersisa belum tercakup: {l.strip()[:100]}")
+        for i, l in enumerate(text.splitlines(), 1):
+            mq = re.search(r"QUEUED\s*(?:==|=|:)\s*(\d+)", l)
+            ma = re.search(r"ACTIVE\s*(?:==|=|:)\s*(\d+)", l)
+            if mq and int(mq.group(1)) > 0:
+                v.append(f"B05:{i}: QUEUED = {mq.group(1)} > 0 pada Stream: {l.strip()[:80]}")
+            if ma and int(ma.group(1)) > 0:
+                v.append(f"B05:{i}: ACTIVE = {ma.group(1)} > 0 pada Stream: {l.strip()[:80]}")
+        n_lazy, details = scan_lazy_tokens(text)
+        for d in details:
+            v.append(f"B05: token kompresi malas [{d}]")
+
+    # ---- G01
+    g01 = ad / "G01-VERDICT.md"
+    if not g01.is_file():
+        v.append("G01-VERDICT.md tidak ada")
+    else:
+        gtext = g01.read_text(encoding="utf-8", errors="replace")
+        n_lazy, details = scan_lazy_tokens(gtext)
+        for d in details:
+            v.append(f"G01-VERDICT.md: token kompresi malas [{d}]")
+
+    # ---- 06: REJECTED_POC_FAILS / NEGATIVE_EV / DUST wajib BUKTI_SIMULASI
+    f06 = ad / "06-refuted-invalid.md"
+    if f06.is_file():
+        body = f06.read_text(encoding="utf-8", errors="replace")
+        for eid, chunk in _split_entries(body):
+            if any(lab in chunk for lab in
+                   ("REJECTED_POC_FAILS", "REJECTED_NEGATIVE_EV", "REJECTED_DUST")):
+                if "BUKTI_SIMULASI:" not in chunk:
+                    v.append(f"06 '{eid}': penolakan POC_FAILS/NEGATIVE_EV/DUST tanpa blok BUKTI_SIMULASI: "
+                             f"(anti PAPER_REFUTATION_DETECTED)")
+
+    # ---- v2.1 KOREKSI-09: F-MR (nol MENUNGGU-RANGKAI) + F-F3 (F antar-varian dievaluasi)
+    if not _is_legacy(ad):
+        mr_hits = []
+        # dokumen kerangka (konstitusi/metode) menyebut istilah ini sebagai definisi,
+        # bukan sebagai kartu aktif -> dikecualikan agar gate tidak memberi alarm palsu
+        FRAMEWORK_DOCS = {"AGENTS.md", "README.md", "SOUL.md", "INTEL.md", "STATE.md"}
+        for f in sorted(ad.glob("*.md")):
+            if f.name in FRAMEWORK_DOCS:
+                continue
+            try:
+                t = f.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            for i, l in enumerate(t.splitlines(), 1):
+                if "MENUNGGU-RANGKAI" in l and not re.search(r"\b(selesai|ditutup|0|nol|TIDAK ADA)\b", l, re.I):
+                    mr_hits.append(f"{f.name}:{i}")
+        if mr_hits:
+            v.append(f"F-MR: masih ada kartu MENUNGGU-RANGKAI di proyek: "
+                     f"{', '.join(mr_hits[:5])}{' ...' if len(mr_hits) > 5 else ''}")
+        # F-F3: mode != TUNGGAL wajib ada jejak F pemicu 3
+        b00 = ad / "B00-TOPOLOGY.md"
+        if b00.is_file():
+            bt = b00.read_text(encoding="utf-8", errors="replace")
+            mode = re.search(r"\b(TUNGGAL-BERINSTANS|MULTI-DOMAIN|TUNGGAL)\b", bt)
+            if mode and mode.group(1) != "TUNGGAL":
+                has_f3 = False
+                b05p = ad / "B05-LEDGER-SISA.md"
+                if b05p.is_file():
+                    has_f3 = has_f3 or ("ANTAR-VARIAN" in b05p.read_text(encoding="utf-8", errors="replace"))
+                for ff in sorted(ad.glob("F*.md")):
+                    has_f3 = has_f3 or ("ANTAR-VARIAN" in ff.read_text(encoding="utf-8", errors="replace"))
+                if not has_f3:
+                    v.append(f"F-F3: mode {mode.group(1)} (bukan TUNGGAL) tetapi tidak ada "
+                             f"berkas/baris F pemicu 3 (antar-varian)")
+
+    # ---- 11d GAP REGISTER: nol sisa pada tiga register Tahap B -> C
+    b05g = ad / "B05-LEDGER-SISA.md"
+    if b05g.is_file() and not _is_legacy(ad):
+        gt = b05g.read_text(encoding="utf-8", errors="replace")
+        if "GAP REGISTER" in gt:
+            for tag, label in (("BELUM_MASUK_STREAM", "11a EP tanpa Lintasan"),
+                               ("BELUM_DIPERIKSA", "11b modifier penulis state"),
+                               ("BELUM_DIPERLUAS", "11c unknown belum diperluas")):
+                # hanya baris tabel register (bukan prosa penjelas)
+                n = sum(1 for ln in gt.splitlines()
+                        if ln.lstrip().startswith("|") and f"`{tag}`" in ln)
+                if n:
+                    v.append(f"GAP-REGISTER {label}: masih {n} baris `{tag}` — "
+                             f"wajib diselesaikan Tahap C sebelum laporan ditutup")
+
+    # ---- 07: wajib Disposition: + PERCOBAAN:
+    f07 = ad / "07-needs-next-step.md"
+    if f07.is_file():
+        body = f07.read_text(encoding="utf-8", errors="replace")
+        for eid, chunk in _split_entries(body):
+            if "Disposition:" not in chunk:
+                v.append(f"07 '{eid}': tanpa 'Disposition:' (anti LAZY_BAILOUT_DETECTED)")
+            if "PERCOBAAN:" not in chunk:
+                v.append(f"07 '{eid}': tanpa blok 'PERCOBAAN:' (anti LAZY_BAILOUT_DETECTED)")
+
+    return _report("check-final", str(ad), v)
+
+
+# ---------------------------------------------------------------------------
+# 5. Utilistik pelaporan
+# ---------------------------------------------------------------------------
+
+
+LEGACY_MARKER = "LEGACY-v2.0"
+MODES = ("TUNGGAL-BERINSTANS", "MULTI-DOMAIN", "TUNGGAL")  # urutan: paling spesifik dulu
+IN_CLASSES = ("USER", "ACTOR", "CALLBACK", "PASSIVE", "ACCRUAL", "ADMIN")
+
+
+def _is_legacy(ad):
+    """Proyek lama (pra-v2.1) boleh ditandai LEGACY-v2.0 agar gerbang baru tidak memblokir."""
+    if (ad / LEGACY_MARKER).is_file():
+        return True
+    for name in ("B04-STREAMS-AND-CLUSTERS.md", "B01-SCOPE.md", "B05-LEDGER-SISA.md", "README.md"):
+        f = ad / name
+        if not f.is_file():
+            continue
+        txt, _err = _read(f)
+        if txt and LEGACY_MARKER in txt:
+            return True
+    return False
+
+
+def cmd_check_b0(args):
+    """check-b0 <audit_dir> — gerbang v2.1: profil topologi, IN-x, domain, varian, lintasan."""
+    v = []
+    ad = Path(args.audit_dir)
+    if not ad.is_dir():
+        print(f"GAGAL check-b0: direktori {ad} tidak ada")
+        return 1
+
+    topo = ad / "B00-TOPOLOGY.md"
+    if not topo.is_file():
+        if _is_legacy(ad):
+            print(f"LEWATI check-b0: proyek ditandai {LEGACY_MARKER} (tanpa B00-TOPOLOGY.md)")
+            return 0
+        v.append("B00-TOPOLOGY.md hilang (v2.1 B0) — atau tandai proyek lama dengan LEGACY-v2.0")
+        _report("check-b0", str(ad), v)
+        return 1
+
+    t, terr = _read(topo)
+    if t is None:
+        v.append(f"B00-TOPOLOGY.md tidak bisa dibaca: {terr}")
+        _report("check-b0", str(topo), v)
+        return 1
+    n_lazy, lazy_hits = scan_lazy_tokens_wide(t)
+    if n_lazy:
+        for hit in lazy_hits:
+            v.append(f"B00-TOPOLOGY.md: token kompresi malas [{hit}]")
+
+    mode = None
+    for m in MODES:
+        if re.search(rf"\b{m}\b", t):
+            mode = m
+            break
+    if not mode:
+        v.append("B00-TOPOLOGY.md: mode topologi tidak dinyatakan (TUNGGAL / BERINSTANS / MULTI-DOMAIN)")
+
+    # B0 v2.1 (A03): kelas aset baku — minimal 3 token muncul (boleh MUNGKIN)
+    ASSET_CLASSES = ("NATIVE", "WRAPPED_NATIVE", "ERC20_STD", "FEE_ON_TRANSFER",
+                     "REBASING", "HOOK_TOKEN", "DECIMALS", "NON_EVM_ASSET")
+    hits = [c for c in ASSET_CLASSES if c in t.upper()]
+    if len(hits) < 3:
+        v.append(f"B00-TOPOLOGY.md: kelas aset belum dinyatakan (A03 — minimal 3 dari {len(ASSET_CLASSES)} token baku; MUNGKIN sah)")
+
+    for hit in ("DOM-", "VK-", "VC-"):
+        if hit not in t:
+            v.append(f"B00-TOPOLOGY.md: hitungan {hit}x tidak ada (B0)")
+
+    # B17 v2.1: katalog IN-x berdomisili di B04 Bagian 2b. B00 hanya wajib memuat daftar
+    # kelas bila ia MEMANG mencantumkan bagian katalog IN-x; bila tidak, pemeriksaan
+    # kelas ingress menjadi tanggung jawab check-b (yang membaca B04).
+    b04 = ad / "B04-STREAMS-AND-CLUSTERS.md"
+    b04_text = b04.read_text(encoding="utf-8", errors="replace") if b04.is_file() else ""
+    b00_has_catalog = bool(re.search(r"Katalog Ingress|IN-x", t))
+    if b00_has_catalog:
+        for cls in IN_CLASSES:
+            if not re.search(rf"\b{cls}\b", t):
+                v.append(f"B00-TOPOLOGY.md: memuat Katalog Ingress tetapi kelas {cls} "
+                         f"tidak tercatat (B17)")
+    elif b04.is_file():
+        missing = [c for c in IN_CLASSES if not re.search(rf"\b{c}\b", b04_text)]
+        if missing:
+            v.append(f"B04-STREAMS-AND-CLUSTERS.md: kelas ingress belum lengkap "
+                     f"{missing} (B17 — katalog ada di B04 Bagian 2b)")
+
+    if mode == "TUNGGAL-BERINSTANS":
+        if "Selisih Varian" not in t:
+            v.append("B00-TOPOLOGY.md: mode TUNGGAL-BERINSTANS tanpa Tabel Selisih Varian (B20)")
+        else:
+            for tok in ("BEDA", "SAMA"):
+                if tok not in t:
+                    v.append(f"Tabel Selisih Varian: enum {tok} tidak muncul (B20)")
+    # v2.1: Matriks Domain wajib untuk MULTI-DOMAIN
+    if mode == "MULTI-DOMAIN" and "Matriks Domain" not in t:
+        v.append("B00-TOPOLOGY.md: mode MULTI-DOMAIN tanpa Matriks Domain (B0)")
+
+    if mode == "MULTI-DOMAIN":
+        # v2.1: penamaan resmi Lintasan = STR-nn.Lk (A04/B19-0). LINT-nn = warisan, tetap diterima.
+        if not re.search(r"STR-\d+\.L\d+", t) and not re.search(r"LINT-\d+", t):
+            v.append("B00-TOPOLOGY.md: mode MULTI-DOMAIN tanpa daftar Lintasan "
+                     "(harus `STR-nn.Lk`, mis. `STR-01.L1`; `LINT-nn` hanya warisan) (B19-0)")
+
+    b03 = ad / "B03-CENSUS-LIVE.md"
+    if b03.is_file():
+        b3, _e3 = _read(b03)
+        b3 = b3 or ""
+        if not re.search(r"\|\s*domain\s*\|", b3, re.I) and "domain" not in b3.lower():
+            v.append("B03-CENSUS-LIVE.md: kolom `domain` tidak ada (B0 aturan 2)")
+    else:
+        v.append("B03-CENSUS-LIVE.md hilang — kolom domain tidak bisa diverifikasi")
+
+    _report("check-b0", str(topo), v)
+    return 0 if not v else 1
+
+
+def _once(v, msg):
+    if msg not in v:
+        v.append(msg)
+
+
+def _split_entries(text):
+    """ciutkan teks jadi [(judul, blok)] per heading '## '."""
+    chunks = []
+    cur_title, buf = None, []
+    for l in text.splitlines():
+        if l.startswith("## "):
+            if cur_title is not None:
+                chunks.append((cur_title, "\n".join(buf)))
+            cur_title, buf = l.strip("# ").strip(), []
+        elif cur_title is not None:
+            buf.append(l)
+    if cur_title is not None:
+        chunks.append((cur_title, "\n".join(buf)))
+    return chunks
+
+
+def _report(cmd, subject, violations):
+    if violations:
+        print(f"GAGAL {cmd} [{subject}] — {len(violations)} pelanggaran:")
+        for x in violations:
+            print(f"  - {x}")
+        return 1
+    print(f"LULUS {cmd} [{subject}]")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# 6. CLI
+# ---------------------------------------------------------------------------
+
+def main():
+    ap = argparse.ArgumentParser(
+        prog="verify_flow.py",
+        description="Pemeriksa deterministik gerbang metode moneyflow v2.0 (exit 0 = LULUS, 1 = GAGAL).",
+    )
+    ap.add_argument("--repo", help="direktori repo target untuk validasi jangkar (opsional); "
+                                   "terbawa ke sub-perintah yang mendukung")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("check-staging", help="staging subagent sebelum merge")
+    p.add_argument("file")
+    p.add_argument("--repo")
+    p.set_defaults(func=cmd_check_staging)
+
+    p = sub.add_parser("check-b0", help="gerbang v2.1: profil topologi B00 + IN-x + domain + varian + lintasan")
+    p.add_argument("audit_dir")
+    p.add_argument("--repo")
+    p.set_defaults(func=cmd_check_b0)
+
+    p = sub.add_parser("check-b", help="artefak Tahap B + sensus statis JSONL")
+    p.add_argument("audit_dir")
+    p.add_argument("--repo")
+    p.set_defaults(func=cmd_check_b)
+
+    p = sub.add_parser("check-c", help="inventaris Tahap C (C00 atau per-Stream)")
+    p.add_argument("file")
+    p.add_argument("--repo")
+    p.set_defaults(func=cmd_check_c)
+
+    p = sub.add_parser("check-d", help="gelombang + kartu lead per Stream")
+    p.add_argument("audit_dir")
+    p.add_argument("--stream", required=True)
+    p.add_argument("--repo")
+    p.set_defaults(func=cmd_check_d)
+
+    p = sub.add_parser("check-stream", help="gerbang penutupan Stream sebelum triage G (S-1..S-4)")
+    p.add_argument("audit_dir")
+    p.add_argument("--stream", required=True)
+    p.set_defaults(func=cmd_check_stream)
+
+    p = sub.add_parser("check-e", help="berkas bukti batch Tahap E")
+    p.add_argument("file")
+    p.add_argument("--repo")
+    p.set_defaults(func=cmd_check_e)
+
+    p = sub.add_parser("check-final", help="gerbang penutupan proyek (0-sisa + G01 + 06/07)")
+    p.add_argument("audit_dir")
+    p.add_argument("--repo")
+    p.set_defaults(func=cmd_check_final)
+
+    args = ap.parse_args()
+    sysexit(args.func(args))
+
+
+if __name__ == "__main__":
+    main()

@@ -23,33 +23,6 @@ Mode topologi dari `B00-TOPOLOGY.md` menentukan bentuk Lintasan; format dan gerb
 | `C00-SHARED-PRIMITIVES.md` | inventaris deskriptif seluruh unit `SHARED-PRIMITIVE` (sekali, sebelum Lintasan pertama) + titik serah kendali per primitif (`C00-Uxx/CY`) |
 | `C<NN>-<STR>-<Lk>-INVENTORY.md` | inventaris Lintasan (9 bagian di bawah) |
 
-## Langkah 0b — `C00-RESOURCE-REGISTRY` (prasyarat SEMUA round Lintasan, mengikat)
-
-Sebelum round Lintasan **pertama**, himpun seluruh resource yang akan dipakai semua round. Alasannya:
-bila resource dicari di dalam round, round berhenti di tengah, dan "lengkap" hanya berlaku untuk
-bagian yang sempat dikerjakan. Registry membuat kelengkapan **mendahului** pekerjaan.
-
-Berkas: `C00-RESOURCE-REGISTRY.md` + `scripts/out/resource-*.json`. Enam kelompok wajib:
-
-| Kode | Resource | Wajib berisi | Sumber |
-| :--- | :--- | :--- | :--- |
-| `R1` | **Aset** | setiap token/native per domain: alamat, `decimals()` **terukur live**, `symbol()` terukur, kelas aset | `generated/constants.json` + `cast call` per domain |
-| `R2` | **Relasi** | Stream → kontrak → berkas → jumlah `EP`; seluruh `EP` sensus wajib punya rumah (Stream atau `C00-SHARED-PRIMITIVE`) | `B02` + `B04` |
-| `R3` | **Domain** | chainId, blok pin, SpokePool, implementation EIP-1967, **RPC yang terbukti menjawab**, status | `B03` |
-| `R4` | **Target eksternal** | setiap ujung `HB-x`: alamat per domain | `L1_ADDRESS_MAP` / `L2_ADDRESS_MAP` / `OP_STACK_ADDRESS_MAP` |
-| `R5` | **Ketersediaan sumber** | kontrak mana yang sumbernya ada di pin (bisa `KORIDOR_SAMA`) vs tidak (wajib `KORIDOR_TIDAK_TERBUKTI`) | `B01` `NO_SOURCE` |
-| `R6` | **State-Bridge** | rujukan `SB-xx` dari `B07` | `B07` |
-
-**Aturan pakai:**
-1. Setiap `C<NN>-<STR>-<Lk>-INVENTORY.md` **mengambil** dari registry, bukan mencari ulang.
-2. Resource yang tidak ada → masuk **Gap Registry** di `C00` §7. **Dilarang** improvisasi di dalam round.
-3. `Bagian 10` baris 1 (Aset) dan baris 4 (Parameter live) merujuk ID registry (`R1:<symbol>@<chain>`,
-   `R3:<chain>`), bukan menyalin ulang alamat.
-4. Registry **append-only**; entri lama tidak boleh diubah tanpa catatan alasan.
-
-**Gerbang:** Lintasan yang membutuhkan resource masih berstatus `BELUM` di Gap Registry **tidak boleh**
-dimulai. Contoh nyata: Lintasan non-EVM menunggu `R1` untuk TRON/Solana.
-
 ## Langkah 0 — Tetapkan batas Lintasan (sebelum menulis segmen)
 
 1. Ambil usulan Lintasan dari `B04`. Lakukan **perluasan warisan/implementasi** (B14.6/B14.7) dan **penguraian dispatcher `unknown`** (B14.4) untuk entrypoint Lintasan.
@@ -136,7 +109,7 @@ Satu baris per titik di dalam segmen tempat eksekusi berpindah ke kode yang tida
 | Storage ditulis SEBELUM | variabel + `File:Baris` |
 | Storage ditulis SESUDAH | variabel + `File:Baris` (kosong = pola CEI terpenuhi secara deskriptif) |
 | Storage dibaca SESUDAH | variabel + `File:Baris` |
-| Guard aktif | `nonReentrant` / lock khusus / `none` — **modifier yang menulis state wajib disebut namanya + efeknya**, bukan hanya "lock khusus". Contoh wajib: `validateInternalCalls — menulis callValidated selama delegatecall, membuka semua onlyAdmin`. Daftar modifier penulis state ada di `B05` §11b; bila Lintasan menyentuhnya dan kolom hanya ditulis `lock khusus`, Lintasan itu belum selesai |
+| Guard aktif | `nonReentrant` / lock khusus / `none` |
 | Efek bila revert | `PROPAGASI` / `DITELAN` (try/catch, low-level call tanpa require) / `DEFER` (dicatat utang) |
 
 Aturan:
@@ -278,27 +251,3 @@ Aturan:
 - nol invariant, nol buruan, nol PoC
 - `B05` diperbarui (nama); `B07` diperbarui bila menyentuh jembatan; `B04` dikoreksi bila Lintasan dipecah/digabung
 - `python3 tools/verify_flow.py check-c <berkas> --repo <repo>` → **LULUS**
-
-### Bagian 10 — Kesiapan Eksplorasi (`SIAP-D`) — **gerbang masuk Tahap D**
-
-Prinsip **kelengkapan bertambah**: B ⊂ C ⊂ D. Sebelum Tahap D menyentuh Lintasan ini, **semua** yang
-terkait Lintasan harus sudah teridentifikasi di C. Bagian ini adalah daftar periksa yang **dihitung**,
-bukan dinarasikan.
-
-| # | Objek | Wajib terisi | Status |
-| :-: | :--- | :--- | :--- |
-| 1 | **Aset** | setiap token/native yang menyentuh `Value_Holder` Lintasan ini: alamat per domain + **kelas aset** (`NATIVE` / `WRAPPED_NATIVE` / `ERC20_STD` / `FEE_ON_TRANSFER` / `REBASING` / `HOOK_TOKEN` / `DECIMALS≠18` / `NON_EVM_ASSET`) + fungsi:baris tempat ia masuk/keluar | `LENGKAP` \| `BELUM: <nama>` |
-| 2 | **Data / storage** | setiap variabel storage yang **ditulis** dan **dibaca** di koridor, dengan `File:Baris` + `HB-x` bila menyeberang Lintasan | `LENGKAP` \| `BELUM: <nama>` |
-| 3 | **Entrypoint** | setiap `EP+VM`/`EP+SM` yang dialokasikan ke Lintasan ini di `B05` muncul di kolom `Fungsi & Jangkar Eksak` minimal satu segmen — **atau** ditulis `DI_LUAR_KORIDOR: <fungsi> — <alasan + jangkar>` | `LENGKAP` \| `BELUM: <nama>` |
-| 4 | **Parameter live** | setiap `LP-x` Bagian 8 punya `Nilai @ blok pin` + `Status Cabang` (`LIVE` / `DEAD-CONFIG` / `UNVERIFIED`) | `LENGKAP` \| `BELUM: <nama>` |
-| 5 | **Serah kendali & ingress** | jumlah `CY-x` Bagian 3 dan `S0` Bagian 2 cocok dengan daftar di Bagian 9, masing-masing punya `Guard aktif` | `LENGKAP` \| `BELUM: <nama>` |
-| 6 | **Bahan invariant** | daftar `INV-` yang akan diuji Lintasan ini (rujuk `B06`), atau `NIHIL_KANDIDAT: <alasan>` | `LENGKAP` \| `BELUM: <nama>` |
-
-**Aturan gerbang:**
-
-1. Baris berstatus `BELUM: …` **memblokir** Tahap D untuk Lintasan ini. `check-c` menolak berkas yang
-   masih memuat `BELUM:` pada Bagian 10.
-2. Baris 3 diuji **mekanis**: gabungan fungsi di kolom `Fungsi & Jangkar Eksak` seluruh segmen harus
-   memuat setiap fungsi yang dilabeli `TERPETAKAN_DI_<STR>.<Lk>` di `B05`. Selisih = segmen bolong.
-3. Baris 1 dan 2 **tidak boleh** disalin dari `B00`/`B07` sebagai prosa — wajib `File:Baris` Lintasan ini.
-4. Bila objek memang tidak ada di Lintasan ini, tulis `TIDAK_ADA: <alasan>` — bukan dikosongkan.
